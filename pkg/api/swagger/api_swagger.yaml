@@ -1,0 +1,141 @@
+basePath: /api/v1
+definitions:
+  models.AuthResponse:
+    properties:
+      auth_url:
+        type: string
+      expiry:
+        type: integer
+    type: object
+  models.RefreshError:
+    properties:
+      error:
+        type: string
+      error_description:
+        type: string
+    type: object
+  models.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      expires_in:
+        type: integer
+      refresh_token:
+        type: string
+      token_type:
+        type: string
+    type: object
+host: localhost:8192
+info:
+  contact:
+    email: admin@loopholelabs.io
+    name: API Support
+  description: API for Scale, V1
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://loopholelabs.io/privacy
+  title: Scale API V1
+  version: "1.0"
+paths:
+  /auth/callback/github:
+    get:
+      consumes:
+      - application/json
+      description: Github Callback
+      produces:
+      - application/json
+      responses:
+        "302":
+          description: Found
+          headers:
+            Location:
+              type: string
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Github Callback
+      tags:
+      - auth
+  /auth/github:
+    get:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Login with Github
+      parameters:
+      - description: Redirect
+        in: query
+        name: redirect
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.AuthResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Login with Github
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Exchange a Refresh Token
+      parameters:
+      - description: Grant Type
+        in: formData
+        name: grantType
+        required: true
+        type: string
+      - description: Refresh Token
+        in: formData
+        name: refreshToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.RefreshResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.RefreshError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.RefreshError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.RefreshError'
+      summary: Exchange a Refresh Token
+      tags:
+      - auth
+schemes:
+- https
+securityDefinitions:
+  APIKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
