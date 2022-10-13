@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/go-openapi/strfmt"
 	"github.com/loopholelabs/scale-cli/internal/token"
 	"github.com/loopholelabs/scale-cli/pkg/build"
@@ -95,7 +96,7 @@ The scale build service will build the scale function and return the compiled mo
 		}
 		logger.Debug().Msgf("read scale function file %s in %s", inputPath, time.Since(start))
 
-		outputPath := path.Join(directory, scaleFile.Name)
+		outputPath := fmt.Sprintf("%s.wasm", path.Join(directory, scaleFile.Name))
 
 		build.Build(input, outputPath, t["access_token"], scaleFile, new(tls.Config), logger)
 
