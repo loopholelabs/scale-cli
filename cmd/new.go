@@ -33,6 +33,7 @@ var (
 
 var newCmd = &cobra.Command{
 	Use:   "new [language] [name]",
+	Args:  cobra.ExactArgs(2),
 	Short: "new generates a scalefile for a scale function with the given name and language",
 	Long:  `New generates a scalefile for a scale function with the given name and language.`,
 	Run: func(cmd *cobra.Command, args []string) {
