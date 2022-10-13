@@ -30,10 +30,7 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "login to your scale account",
-	Long: `Login to your scale account using your browser 
-or by providing an API key.
-
-You can create API keys at https://app.scale.sh/account/api-keys`,
+	Long:  `Login to your scale account using your browser.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := config.Init(cmd)
 
@@ -68,5 +65,4 @@ You can create API keys at https://app.scale.sh/account/api-keys`,
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
-	loginCmd.PersistentFlags().StringP("api-key", "a", "", "API key to use for authentication")
 }

@@ -41,7 +41,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file (default is $HOME/.config/scale/scale.json)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
-	rootCmd.PersistentFlags().String("api", "https://app-dev.scale.sh", "Scale API URL")
+	rootCmd.PersistentFlags().String("api", "https://app.scale.sh", "Scale API URL")
 
 	err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
 	if err != nil {
