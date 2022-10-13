@@ -43,12 +43,7 @@ func init() {
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 	rootCmd.PersistentFlags().String("api", "https://app.scale.sh", "Scale API URL")
 
-	err := viper.BindPFlag("debug", rootCmd.PersistentFlags().Lookup("debug"))
-	if err != nil {
-		panic(err)
-	}
-
-	err = viper.BindPFlag("api", rootCmd.PersistentFlags().Lookup("api"))
+	err := viper.BindPFlag("api", rootCmd.PersistentFlags().Lookup("api"))
 	if err != nil {
 		panic(err)
 	}
@@ -58,6 +53,5 @@ func init() {
 		panic(err)
 	}
 
-	viper.SetDefault("debug", false)
-	viper.SetConfigFile(fmt.Sprintf("%s/.config/scale/scale.json", homedir))
+	viper.SetConfigFile(fmt.Sprintf("%s/.config/scale/config.json", homedir))
 }

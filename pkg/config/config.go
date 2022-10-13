@@ -47,8 +47,10 @@ func Init(cmd *cobra.Command) zerolog.Logger {
 		}
 	}
 
-	if viper.GetBool("debug") {
+	if cmd.Flag("debug").Value.String() == "true" {
 		logger = logger.Level(zerolog.DebugLevel)
+	} else {
+		logger = logger.Level(zerolog.InfoLevel)
 	}
 
 	return logger

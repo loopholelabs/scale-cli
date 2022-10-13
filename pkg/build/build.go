@@ -31,7 +31,6 @@ import (
 )
 
 func Build(input []byte, outputPath string, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, logger zerolog.Logger) {
-	start := time.Now()
 	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating builder fRPC client")
@@ -41,6 +40,7 @@ func Build(input []byte, outputPath string, token string, scaleFile scalefile.Sc
 
 	isErr := true
 	streamDone := make(chan struct{})
+	start := time.Now()
 	err = client.Connect(builderServer, func(stream *frisbee.Stream) {
 		streamPacket := build.NewBuildStreamPacket()
 		for {
