@@ -25,7 +25,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "scale-cli",
+	Use:   "scale",
 	Short: "The Scale CLI is a command line interface for working with Scale Functions",
 	Long: `The Scale CLI is a command line interface for working with Scale Functions, the 
 Scale Registry, and the Scale Build Service.`,
