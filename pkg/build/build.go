@@ -18,6 +18,7 @@ package build
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"github.com/loopholelabs/frisbee-go"
 	"github.com/loopholelabs/frisbee-go/pkg/packet"
@@ -29,9 +30,9 @@ import (
 	"time"
 )
 
-func Build(input []byte, outputPath string, token string, scaleFile scalefile.ScaleFile, logger zerolog.Logger) {
+func Build(input []byte, outputPath string, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, logger zerolog.Logger) {
 	start := time.Now()
-	client, err := build.NewClient(nil, nil)
+	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating builder fRPC client")
 	}

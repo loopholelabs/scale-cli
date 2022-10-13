@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/go-openapi/strfmt"
 	"github.com/loopholelabs/scale-cli/internal/token"
@@ -97,7 +98,7 @@ The scale build service will build the scale function and return the compiled mo
 
 		outputPath := fmt.Sprintf("%s/%s.wasm", directory, scaleFile.Name)
 
-		build.Build(input, outputPath, t["access_token"], scaleFile, logger)
+		build.Build(input, outputPath, t["access_token"], scaleFile, new(tls.Config), logger)
 
 		logger.Info().Msg("Module Compilation Completed")
 	},
