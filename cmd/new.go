@@ -1,18 +1,18 @@
 /*
-	Copyright 2022 Loophole Labs
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-		   http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+ * Copyright 2022 Loophole Labs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package cmd
 
@@ -22,15 +22,12 @@ import (
 	"github.com/loopholelabs/scale-cli/pkg/scalefile"
 	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 )
 
 var (
-	languageLUT = map[string]string{
+	extensionLUT = map[string]string{
 		"go": "go",
-		//"js":   "js",
-		//"rust": "rs",
 	}
 )
 
@@ -44,7 +41,7 @@ var newCmd = &cobra.Command{
 		name := args[1]
 
 		logger.Debug().Msgf("new called with language '%s' and name '%s'", language, name)
-		extension, ok := languageLUT[language]
+		extension, ok := extensionLUT[language]
 		if !ok {
 			logger.Fatal().Msgf("language '%s' is not supported", language)
 		}
@@ -58,7 +55,10 @@ var newCmd = &cobra.Command{
 			File: fmt.Sprintf("%s.%s", name, extension),
 		}
 
-		directory := viper.GetString("directory")
+		directory := cmd.Flag("directory").Value.String()
+		if directory == "" {
+			directory = "."
+		}
 		if _, err := os.Stat(directory); os.IsNotExist(err) {
 			err = os.MkdirAll(directory, 0755)
 			if err != nil {
@@ -81,8 +81,4 @@ var newCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(newCmd)
 	newCmd.Flags().StringP("directory", "d", ".", "the directory to create the scale function in")
-	err := viper.BindPFlag("directory", newCmd.Flags().Lookup("directory"))
-	if err != nil {
-		panic(err)
-	}
 }

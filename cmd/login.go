@@ -1,26 +1,26 @@
 /*
-	Copyright 2022 Loophole Labs
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-		   http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+ * Copyright 2022 Loophole Labs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package cmd
 
 import (
 	"github.com/go-openapi/strfmt"
-	authServer "github.com/loopholelabs/scale-cli/pkg/api/auth"
-	"github.com/loopholelabs/scale-cli/pkg/api/client"
-	"github.com/loopholelabs/scale-cli/pkg/api/client/auth"
+	authServer "github.com/loopholelabs/scale-cli/pkg/auth"
+	"github.com/loopholelabs/scale-cli/pkg/client"
+	"github.com/loopholelabs/scale-cli/pkg/client/auth"
 	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -46,13 +46,13 @@ You can create API keys at https://app.scale.sh/account/api-keys`,
 		defaultConfig.Schemes = []string{apiURL.Scheme}
 		defaultConfig.Host = apiURL.Host
 		client := client.NewHTTPClientWithConfig(strfmt.Default, defaultConfig)
-		res, err := client.Auth.GetAuthGithub(auth.NewGetAuthGithubParams().WithRedirect("http://localhost:8085/auth/callback"))
+		res, err := client.Auth.GetAuthGithub(auth.NewGetAuthGithubParams().WithRedirect(authServer.RedirectURL))
 		if err != nil {
 			logger.Fatal().Err(err).Msg("failed to get github auth url")
 		}
 
-		logger.Info().Msgf("Please visit %s to authenticate", res.Payload.AuthURL)
-		as, err := authServer.Do("localhost:8085", logger)
+		logger.Info().Msgf("Please visit %s/api/v1/auth/%s/device?device_code=%s to authenticate", api, "github", res.Payload.DeviceCode)
+		as, err := authServer.Do(logger)
 		if err != nil {
 			logger.Fatal().Err(err).Msg("failed to authenticate")
 		}
@@ -69,8 +69,4 @@ You can create API keys at https://app.scale.sh/account/api-keys`,
 func init() {
 	rootCmd.AddCommand(loginCmd)
 	loginCmd.PersistentFlags().StringP("api-key", "a", "", "API key to use for authentication")
-	err := viper.BindPFlag("api-key", loginCmd.PersistentFlags().Lookup("api-key"))
-	if err != nil {
-		panic(err)
-	}
 }

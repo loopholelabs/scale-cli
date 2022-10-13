@@ -1,18 +1,18 @@
 /*
-	Copyright 2022 Loophole Labs
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-		   http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+ * Copyright 2022 Loophole Labs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package auth
 
@@ -27,6 +27,12 @@ import (
 	"time"
 )
 
+const (
+	Listen       = "127.0.0.1:8085"
+	CallbackPath = "/auth/callback"
+	RedirectURL  = "http://" + Listen + CallbackPath
+)
+
 type Auth struct {
 	Username     string `json:"username"`
 	AccessToken  string `json:"access_token"`
@@ -36,7 +42,7 @@ type Auth struct {
 }
 
 type server struct {
-	logger   *zerolog.Logger
+	logger   zerolog.Logger
 	app      *fiber.App
 	listener net.Listener
 	wg       sync.WaitGroup
@@ -44,10 +50,9 @@ type server struct {
 	err      chan error
 }
 
-func Do(addr string, logger *zerolog.Logger) (*Auth, error) {
-	l := logger.With().Str(zerolog.CallerFieldName, "AUTH").Logger()
+func Do(logger zerolog.Logger) (*Auth, error) {
 	s := &server{
-		logger: &l,
+		logger: logger.With().Str(zerolog.CallerFieldName, "AUTH").Logger(),
 		app: fiber.New(fiber.Config{
 			DisableStartupMessage: true,
 			ReadTimeout:           time.Second * 10,
@@ -65,16 +70,16 @@ func Do(addr string, logger *zerolog.Logger) (*Auth, error) {
 	s.wg.Add(1)
 	go func() {
 		defer s.wg.Done()
-		err := s.start(addr)
+		err := s.start()
 		if err != nil {
-			l.Error().Err(err).Msg("Failed to start auth server")
+			s.logger.Error().Err(err).Msg("Failed to start auth server")
 			s.err <- err
 		}
 	}()
 	defer func() {
 		err := s.app.Shutdown()
 		if err != nil {
-			l.Error().Err(err).Msg("Failed to shutdown auth server")
+			s.logger.Error().Err(err).Msg("Failed to shutdown auth server")
 		}
 		s.wg.Wait()
 	}()
@@ -88,7 +93,7 @@ func Do(addr string, logger *zerolog.Logger) (*Auth, error) {
 
 func (s *server) init() {
 	s.app.Use(cors.New())
-	s.app.Get("/auth/callback", func(ctx *fiber.Ctx) error {
+	s.app.Get(CallbackPath, func(ctx *fiber.Ctx) error {
 		username := ctx.Query("username")
 		if username == "" {
 			return ctx.Status(fiber.StatusBadRequest).SendString("username is required")
@@ -127,9 +132,9 @@ func (s *server) init() {
 	})
 }
 
-func (s *server) start(addr string) error {
+func (s *server) start() error {
 	var err error
-	s.listener, err = net.Listen("tcp", addr)
+	s.listener, err = net.Listen("tcp", Listen)
 	if err != nil {
 		return err
 	}

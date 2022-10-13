@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package build;
+option go_package = "/build";
+
+service Service {
+  rpc Build(Request) returns (Response) {}
+}
+
+enum StreamType {
+  ERROR = 0;
+  CLOSE = 1;
+  STDOUT = 2;
+  STDERR = 3;
+  OUTPUT = 4;
+}
+
+message StreamPacket {
+  StreamType Type = 1;
+  bytes Data = 2;
+}
+
+message Dependency {
+  string Name = 1;
+  string Version = 2;
+}
+
+message BuildConfig {
+  string Language = 1;
+  repeated Dependency Dependencies = 2;
+}
+
+message ScaleFile {
+  string Name = 1;
+  bytes Input = 2;
+  BuildConfig BuildConfig = 3;
+}
+
+message Request {
+  string Token = 1;
+  ScaleFile ScaleFile = 2;
+}
+
+message Response {
+  uint32 StreamID = 1;
+}

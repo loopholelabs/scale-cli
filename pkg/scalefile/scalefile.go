@@ -1,23 +1,23 @@
 /*
-	Copyright 2022 Loophole Labs
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-		   http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
+ * Copyright 2022 Loophole Labs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * 	   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package scalefile
 
 import (
-	"encoding/json"
+	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 )
@@ -43,7 +43,9 @@ func Write(path string, scalefile ScaleFile) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	return encode(file, scalefile)
 }
@@ -53,13 +55,15 @@ func Read(path string) (ScaleFile, error) {
 	if err != nil {
 		return ScaleFile{}, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	return decode(file)
 }
 
 func decode(data io.Reader) (ScaleFile, error) {
-	decoder := json.NewDecoder(data)
+	decoder := yaml.NewDecoder(data)
 	manifest := ScaleFile{}
 	err := decoder.Decode(&manifest)
 	if err != nil {
@@ -70,7 +74,7 @@ func decode(data io.Reader) (ScaleFile, error) {
 }
 
 func encode(data io.Writer, scalefile ScaleFile) error {
-	encoder := json.NewEncoder(data)
-	encoder.SetIndent("", "  ")
+	encoder := yaml.NewEncoder(data)
+	encoder.SetIndent(2)
 	return encoder.Encode(scalefile)
 }
