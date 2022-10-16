@@ -18,14 +18,19 @@ package config
 
 import (
 	"errors"
+	"github.com/go-openapi/strfmt"
+	"github.com/loopholelabs/scale-cli/internal/token"
+	"github.com/loopholelabs/scale-cli/pkg/client"
+	"github.com/loopholelabs/scale-cli/pkg/client/auth"
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"net/url"
 	"os"
 	"path"
 )
 
-func Init(cmd *cobra.Command) zerolog.Logger {
+func Init(cmd *cobra.Command, isAuth bool) (zerolog.Logger, map[string]string) {
 	logger := zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
 	if cmd.Flag("config").Value.String() != "" {
 		viper.SetConfigFile(cmd.Flag("config").Value.String())
@@ -53,5 +58,42 @@ func Init(cmd *cobra.Command) zerolog.Logger {
 		logger = logger.Level(zerolog.InfoLevel)
 	}
 
-	return logger
+	if isAuth {
+		t := viper.GetStringMapString("auth")
+		if t["access_token"] == "" {
+			logger.Fatal().Msg("You must be logged in to use the scale build service. Please run `scale login` to login.")
+		}
+
+		expired, err := token.Expired(t["access_token"])
+		if err != nil {
+			logger.Fatal().Err(err).Msg("failed to check if access token is expired")
+		}
+		if expired {
+			logger.Debug().Msg("access token is expired, refreshing")
+			defaultConfig := client.DefaultTransportConfig()
+			api := viper.GetString("api")
+			apiURL, err := url.Parse(api)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("Invalid API URL")
+			}
+			defaultConfig.Schemes = []string{apiURL.Scheme}
+			defaultConfig.Host = apiURL.Host
+			c := client.NewHTTPClientWithConfig(strfmt.Default, defaultConfig)
+			res, err := c.Auth.PostAuthRefresh(auth.NewPostAuthRefreshParams().WithGrantType("refresh_token").WithRefreshToken(t["refresh_token"]))
+			if err != nil {
+				logger.Fatal().Err(err).Msg("You must be logged in to use the scale build service. If you were already logged in, your access token may have expired. Please run `scale login` again.")
+			}
+			t["refresh_token"] = res.Payload.RefreshToken
+			t["access_token"] = res.Payload.AccessToken
+			t["token_type"] = res.Payload.TokenType
+			err = viper.WriteConfig()
+			if err != nil {
+				logger.Fatal().Err(err).Msg("failed to update config")
+			}
+		}
+
+		return logger, t
+	}
+
+	return logger, nil
 }

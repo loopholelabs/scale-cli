@@ -32,7 +32,7 @@ var loginCmd = &cobra.Command{
 	Short: "login to your scale account",
 	Long:  `Login to your scale account using your browser.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := config.Init(cmd)
+		logger, _ := config.Init(cmd, false)
 
 		defaultConfig := client.DefaultTransportConfig()
 		api := viper.GetString("api")

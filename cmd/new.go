@@ -37,7 +37,7 @@ var newCmd = &cobra.Command{
 	Short: "new generates a scalefile for a scale function with the given name and language",
 	Long:  `New generates a scalefile for a scale function with the given name and language.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := config.Init(cmd)
+		logger, _ := config.Init(cmd, false)
 		language := args[0]
 		name := args[1]
 
@@ -57,7 +57,7 @@ var newCmd = &cobra.Command{
 			Build: scalefile.Build{
 				Language: language,
 			},
-			File:       fmt.Sprintf("%s.%s", name, extension),
+			Source:     fmt.Sprintf("%s.%s", name, extension),
 			Middleware: middleware,
 		}
 
@@ -77,7 +77,7 @@ var newCmd = &cobra.Command{
 			logger.Fatal().Err(err).Msg("error writing scalefile")
 		}
 
-		err = os.WriteFile(fmt.Sprintf("%s/%s", directory, scaleFile.File), template.LUT[language](), 0644)
+		err = os.WriteFile(fmt.Sprintf("%s/%s", directory, scaleFile.Source), template.LUT[language](), 0644)
 		if err != nil {
 			logger.Fatal().Err(err).Msg("error writing scale function template")
 		}

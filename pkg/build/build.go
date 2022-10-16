@@ -24,19 +24,23 @@ import (
 	"github.com/loopholelabs/frisbee-go/pkg/packet"
 	"github.com/loopholelabs/scale-cli/rpc/build"
 	"github.com/loopholelabs/scale-go/scalefile"
+	"github.com/loopholelabs/scale-go/scalefunc"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
-	"os"
 	"time"
 )
 
-func Build(input []byte, outputPath string, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, logger zerolog.Logger) {
+func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, logger zerolog.Logger) *scalefunc.ScaleFunc {
 	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while creating builder fRPC client")
 	}
 
 	builderServer := viper.GetString("builder")
+
+	scaleFunc := &scalefunc.ScaleFunc{
+		ScaleFile: scaleFile,
+	}
 
 	isErr := true
 	streamDone := make(chan struct{})
@@ -64,11 +68,7 @@ func Build(input []byte, outputPath string, token string, scaleFile scalefile.Sc
 			case build.BuildSTDERR:
 				logger.Warn().Msg(string(streamPacket.Data))
 			case build.BuildOUTPUT:
-				logger.Info().Msgf("Writing Compiled Scale Function to %s", outputPath)
-				err = os.WriteFile(outputPath, streamPacket.Data, 0644)
-				if err != nil {
-					logger.Error().Err(err).Msgf("error while writing compiled scale function to %s", outputPath)
-				}
+				scaleFunc.Function = streamPacket.Data
 				isErr = false
 			case build.BuildCLOSE:
 				break
@@ -96,12 +96,14 @@ func Build(input []byte, outputPath string, token string, scaleFile scalefile.Sc
 	start = time.Now()
 	res, err := client.Service.Build(context.Background(), req)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("error while sending compilation request to wabuild server")
+		logger.Fatal().Err(err).Msg("error while sending compilation request to scale build server")
 	}
 	logger.Debug().Msgf("stream ID: %d", res.StreamID)
 	<-streamDone
 	logger.Debug().Msgf("completed remote build in %s", time.Since(start))
 	if isErr {
-		logger.Fatal().Msg("Error Occurred while Compiling Module")
+		logger.Fatal().Msg("Error Occurred while Compiling Scale Function")
 	}
+
+	return scaleFunc
 }

@@ -18,17 +18,11 @@ package cmd
 
 import (
 	"crypto/tls"
-	"fmt"
-	"github.com/go-openapi/strfmt"
-	"github.com/loopholelabs/scale-cli/internal/token"
 	"github.com/loopholelabs/scale-cli/pkg/build"
-	"github.com/loopholelabs/scale-cli/pkg/client"
-	"github.com/loopholelabs/scale-cli/pkg/client/auth"
 	"github.com/loopholelabs/scale-cli/pkg/config"
+	"github.com/loopholelabs/scale-cli/pkg/storage"
 	"github.com/loopholelabs/scale-go/scalefile"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"net/url"
 	"os"
 	"path"
 	"time"
@@ -42,40 +36,7 @@ var buildCmd = &cobra.Command{
 The scalefile is a YAML file that describes the scale function and its dependencies. 
 The scale build service will build the scale function and return the compiled module.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := config.Init(cmd)
-
-		t := viper.GetStringMapString("auth")
-		if t["access_token"] == "" {
-			logger.Fatal().Msg("You must be logged in to use the scale build service. Please run `scale login` to login.")
-		}
-
-		expired, err := token.Expired(t["access_token"])
-		if err != nil {
-			logger.Fatal().Err(err).Msg("failed to check if access token is expired")
-		}
-		if expired {
-			logger.Debug().Msg("access token is expired, refreshing")
-			defaultConfig := client.DefaultTransportConfig()
-			api := viper.GetString("api")
-			apiURL, err := url.Parse(api)
-			if err != nil {
-				logger.Fatal().Err(err).Msg("Invalid API URL")
-			}
-			defaultConfig.Schemes = []string{apiURL.Scheme}
-			defaultConfig.Host = apiURL.Host
-			client := client.NewHTTPClientWithConfig(strfmt.Default, defaultConfig)
-			res, err := client.Auth.PostAuthRefresh(auth.NewPostAuthRefreshParams().WithGrantType("refresh_token").WithRefreshToken(t["refresh_token"]))
-			if err != nil {
-				logger.Fatal().Err(err).Msg("You must be logged in to use the scale build service. If you were already logged in, your access token may have expired. Please run `scale login` again.")
-			}
-			t["refresh_token"] = res.Payload.RefreshToken
-			t["access_token"] = res.Payload.AccessToken
-			t["token_type"] = res.Payload.TokenType
-			err = viper.WriteConfig()
-			if err != nil {
-				logger.Fatal().Err(err).Msg("failed to update config")
-			}
-		}
+		logger, t := config.Init(cmd, true)
 
 		scalefilePath := cmd.Flag("scalefile").Value.String()
 		if scalefilePath == "" {
@@ -87,30 +48,32 @@ The scale build service will build the scale function and return the compiled mo
 			logger.Fatal().Err(err).Msg("error reading scalefile")
 		}
 		directory := path.Dir(scalefilePath)
-		inputPath := path.Join(directory, scaleFile.File)
+		sourcePath := path.Join(directory, scaleFile.Source)
 
 		start := time.Now()
-		input, err := os.ReadFile(inputPath)
+		source, err := os.ReadFile(sourcePath)
 		if err != nil {
-			logger.Fatal().Err(err).Msgf("error while reading scale function file %s", inputPath)
+			logger.Fatal().Err(err).Msgf("error while reading scale function source %s", sourcePath)
 		}
-		logger.Debug().Msgf("read scale function file %s in %s", inputPath, time.Since(start))
+		logger.Debug().Msgf("read scale function source %s in %s", sourcePath, time.Since(start))
 
-		outputPath := fmt.Sprintf("%s.wasm", path.Join(directory, scaleFile.Name))
+		scaleFunc := build.Build(source, t["access_token"], scaleFile, new(tls.Config), logger)
+		tag := cmd.Flag("tag").Value.String()
+		if tag != "" {
+			err = storage.Default.Put(scaleFunc.ScaleFile.Name, scaleFunc, tag)
+		} else {
+			err = storage.Default.Put(scaleFunc.ScaleFile.Name, scaleFunc)
+		}
+		if err != nil {
+			logger.Fatal().Err(err).Msg("error while storing scale function")
+		}
 
-		build.Build(input, outputPath, t["access_token"], scaleFile, new(tls.Config), logger)
-
-		logger.Info().Msg("Module Compilation Completed")
+		logger.Info().Msg("Scale Function Compilation Completed")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(buildCmd)
-	buildCmd.PersistentFlags().StringP("builder", "b", "build.scale.sh:8192", "Scale Build Service URL")
 	buildCmd.Flags().StringP("scalefile", "s", "scalefile", "the scalefile to use")
-
-	err := viper.BindPFlag("builder", buildCmd.PersistentFlags().Lookup("builder"))
-	if err != nil {
-		panic(err)
-	}
+	buildCmd.Flags().StringP("tag", "t", "", "the (optional) tag to use for this module")
 }

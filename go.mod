@@ -10,7 +10,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.0
-	github.com/loopholelabs/scale-go v0.0.0-20221016031010-4328e8040eb7
+	github.com/loopholelabs/scale-go v0.0.1-dev2
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
@@ -29,6 +29,7 @@ require (
 	github.com/go-openapi/loads v0.21.1 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/validate v0.21.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
@@ -49,6 +50,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
+	github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.40.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect

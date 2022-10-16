@@ -17,8 +17,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
+	"path"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -42,16 +42,28 @@ func init() {
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file (default is $HOME/.config/scale/scale.json)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
 	rootCmd.PersistentFlags().String("api", "https://app.scale.sh", "Scale API URL")
+	rootCmd.PersistentFlags().String("registry", "https://registry.scale.sh", "Scale Registry URL")
+	rootCmd.PersistentFlags().String("builder", "build.scale.sh:8192", "Scale Build Service URL")
 
 	err := viper.BindPFlag("api", rootCmd.PersistentFlags().Lookup("api"))
 	if err != nil {
 		panic(err)
 	}
 
-	homedir, err := os.UserHomeDir()
+	err = viper.BindPFlag("registry", rootCmd.PersistentFlags().Lookup("registry"))
 	if err != nil {
 		panic(err)
 	}
 
-	viper.SetConfigFile(fmt.Sprintf("%s/.config/scale/config.json", homedir))
+	err = viper.BindPFlag("builder", rootCmd.PersistentFlags().Lookup("builder"))
+	if err != nil {
+		panic(err)
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	viper.SetConfigFile(path.Join(homeDir, ".config", "scale", "config.json"))
 }

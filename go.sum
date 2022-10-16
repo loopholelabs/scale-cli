@@ -188,6 +188,7 @@ github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm4
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
+github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/googleapis/gax-go/v2 v2.0.4/go.mod h1:0Wqv26UfaUD9n4G6kQubkQ+KchISgw+vpHVxEJEs9eg=
 github.com/googleapis/gax-go/v2 v2.0.5/go.mod h1:DWXyrwAJ9X0FpwwEdw+IPEYBICEFu5mhpdKc/us6bOk=
 github.com/googleapis/google-cloud-go-testing v0.0.0-20200911160855-bcd43fbb19e8/go.mod h1:dvDLG8qkwmyD9a/MJJN3XJcT3xFxOKAvTZGvuZmac9g=
@@ -226,8 +227,8 @@ github.com/loopholelabs/frisbee-go v0.7.0 h1:LGzG/NYQBsRnmojfVoSBTC31PgfV9XutQA3
 github.com/loopholelabs/frisbee-go v0.7.0/go.mod h1:XfDgwwOkgN/ktzaDAq3Zu0A9Dl0w5/xkZ2qfXAvRbjs=
 github.com/loopholelabs/polyglot-go v0.5.0 h1:F65/d+65qgAu2F0GcWzP6UVIwd9897bNEgylNMr8FGk=
 github.com/loopholelabs/polyglot-go v0.5.0/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale-go v0.0.0-20221016031010-4328e8040eb7 h1:72KT/iGkJqL3KnytWqjSK9MfqIwhiTD9W2z7AKxxerI=
-github.com/loopholelabs/scale-go v0.0.0-20221016031010-4328e8040eb7/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
+github.com/loopholelabs/scale-go v0.0.1-dev2 h1:Lr1R3bR4CpA0np2i5v7JtN+qwSb/w6ozko96bNXebn0=
+github.com/loopholelabs/scale-go v0.0.1-dev2/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
@@ -305,6 +306,8 @@ github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PK
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
+github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c h1:JKp5FvVhUo8K/VhRX2hOk1XaNJXg0+lSD1q76pMl5ZE=
+github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c/go.mod h1:CD5smBN5rGZo7UNe8aUiWyYE3bDWED/CQSonog9NSEg=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
