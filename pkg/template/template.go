@@ -23,15 +23,15 @@ var (
 )
 
 func Go() []byte {
-	return []byte(`package guest
+	return []byte(`package scale
 
 import (
-  "middleware/wasm/pkg/request"
+	"github.com/loopholelabs/scale-go/context"
 )
 
-func Middleware(r ctx.Request) {
-	if r.ReadHeader("NewHeader") == nil {
-    	r.SetHeader("NewHeader", "somethingTotallyNew")
-	}
-}`)
+func Scale(ctx *context.Context) *context.Context {
+	ctx.Response().SetBody("Hello, World!")
+	return ctx
+}
+`)
 }
