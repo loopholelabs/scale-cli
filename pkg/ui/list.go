@@ -58,6 +58,7 @@ func NewList(entries []*scalefunc.ScaleFunc, middleware bool) error {
 
 	s := table.DefaultStyles()
 	s.Selected.Foreground(lipgloss.Color("#FFFFFF"))
+	s.Selected.Bold(false)
 	s.Cell.Foreground(lipgloss.Color("#FFFFFF"))
 	s.Header = s.Header.
 		BorderStyle(lipgloss.NormalBorder()).
