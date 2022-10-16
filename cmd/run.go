@@ -71,5 +71,5 @@ also be used to temporarily expose your scale function to the internet using lyn
 func init() {
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().StringP("tag", "t", "", "the (optional) tag to use for this module")
-	runCmd.Flags().StringP("listen", "l", "0.0.0.0:8080", "the address the scale function should listen on")
+	runCmd.Flags().StringP("listen", "l", "127.0.0.1:8080", "the address the scale function should listen on")
 }
