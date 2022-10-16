@@ -227,8 +227,8 @@ github.com/loopholelabs/frisbee-go v0.7.0 h1:LGzG/NYQBsRnmojfVoSBTC31PgfV9XutQA3
 github.com/loopholelabs/frisbee-go v0.7.0/go.mod h1:XfDgwwOkgN/ktzaDAq3Zu0A9Dl0w5/xkZ2qfXAvRbjs=
 github.com/loopholelabs/polyglot-go v0.5.0 h1:F65/d+65qgAu2F0GcWzP6UVIwd9897bNEgylNMr8FGk=
 github.com/loopholelabs/polyglot-go v0.5.0/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale-go v0.0.1-dev2 h1:Lr1R3bR4CpA0np2i5v7JtN+qwSb/w6ozko96bNXebn0=
-github.com/loopholelabs/scale-go v0.0.1-dev2/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
+github.com/loopholelabs/scale-go v0.0.1 h1:rLiJG4Wqg/b9+e8YD25VUMcOWn56HRlqKriTotqqtxk=
+github.com/loopholelabs/scale-go v0.0.1/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
