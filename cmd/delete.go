@@ -17,32 +17,36 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
-	"github.com/loopholelabs/scale-cli/pkg/ui"
 	"github.com/spf13/cobra"
+	"os"
+	"strings"
 )
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Args:  cobra.ExactArgs(0),
-	Short: "list lists all the scale functions that are available",
-	Long:  `List lists all the scale functions that are available.`,
+var deleteCmd = &cobra.Command{
+	Use:   "delete [scale function name]",
+	Args:  cobra.ExactArgs(1),
+	Short: "delete deletes a specific scale function",
+	Long:  `Delete deletes a specific scale function given the name.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		logger, _ := config.Init(cmd, false)
-		scaleFuncEntries, err := storage.Default.List()
-		if err != nil {
-			logger.Fatal().Err(err).Msg("error listing scale functions")
+		name := args[0]
+		names := strings.Split(name, ":")
+		if len(names) != 2 {
+			name = fmt.Sprintf("%s:latest", name)
 		}
-		middleware := cmd.Flag("middleware").Value.String() == "true"
-		err = ui.NewList(scaleFuncEntries, middleware)
+		err := storage.Default.Delete(name)
 		if err != nil {
-			logger.Fatal().Err(err).Msg("error displaying scale function list")
+			if os.IsNotExist(err) {
+				logger.Fatal().Msgf("scale function '%s' does not exist", name)
+			}
+			logger.Fatal().Err(err).Msg("error deleting scale function")
 		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().BoolP("middleware", "m", false, "only list middleware functions")
+	rootCmd.AddCommand(deleteCmd)
 }

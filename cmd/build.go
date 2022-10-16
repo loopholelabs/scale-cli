@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/loopholelabs/scale-cli/pkg/build"
 	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
@@ -25,6 +26,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -47,6 +49,7 @@ The scale build service will build the scale function and return the compiled mo
 		if err != nil {
 			logger.Fatal().Err(err).Msg("error reading scalefile")
 		}
+
 		directory := path.Dir(scalefilePath)
 		sourcePath := path.Join(directory, scaleFile.Source)
 
@@ -58,11 +61,21 @@ The scale build service will build the scale function and return the compiled mo
 		logger.Debug().Msgf("read scale function source %s in %s", sourcePath, time.Since(start))
 
 		scaleFunc := build.Build(source, t["access_token"], scaleFile, new(tls.Config), logger)
-		tag := cmd.Flag("tag").Value.String()
-		if tag != "" {
-			err = storage.Default.Put(scaleFunc.ScaleFile.Name, scaleFunc, tag)
+		name := cmd.Flag("name").Value.String()
+		if name != "" {
+			scaleFunc.ScaleFile.Name = name
+			names := strings.Split(name, ":")
+			if len(names) == 2 {
+				scaleFunc.ScaleFile.Name = names[0]
+				scaleFunc.Tag = names[1]
+				name = fmt.Sprintf("%s:%s", scaleFunc.ScaleFile.Name, scaleFunc.Tag)
+			} else {
+				scaleFunc.Tag = "latest"
+				name = fmt.Sprintf("%s:%s", name, scaleFunc.Tag)
+			}
+			err = storage.Default.Put(name, scaleFunc)
 		} else {
-			err = storage.Default.Put(scaleFunc.ScaleFile.Name, scaleFunc)
+			err = storage.Default.Put(fmt.Sprintf("%s:%s", scaleFunc.ScaleFile.Name, scaleFunc.Tag), scaleFunc)
 		}
 		if err != nil {
 			logger.Fatal().Err(err).Msg("error while storing scale function")
@@ -75,5 +88,5 @@ The scale build service will build the scale function and return the compiled mo
 func init() {
 	rootCmd.AddCommand(buildCmd)
 	buildCmd.Flags().StringP("scalefile", "s", "scalefile", "the scalefile to use")
-	buildCmd.Flags().StringP("tag", "t", "", "the (optional) tag to use for this module")
+	buildCmd.Flags().StringP("name", "n", "", "the (optional) name of this scale function")
 }

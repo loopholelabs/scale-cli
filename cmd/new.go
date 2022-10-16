@@ -53,7 +53,8 @@ var newCmd = &cobra.Command{
 		}
 
 		scaleFile := scalefile.ScaleFile{
-			Name: name,
+			Version: "v1",
+			Name:    name,
 			Build: scalefile.Build{
 				Language: language,
 			},

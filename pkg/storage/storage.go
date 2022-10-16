@@ -22,17 +22,11 @@ import (
 	"github.com/loopholelabs/scale-go/scalefunc"
 	"os"
 	"path"
-	"strings"
 )
 
 var (
 	Default *Storage
 )
-
-type Entry struct {
-	ScaleFunc *scalefunc.ScaleFunc
-	Tag       string
-}
 
 func init() {
 	homeDir, err := os.UserHomeDir()
@@ -61,16 +55,13 @@ func New(baseDirectory string) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) path(name string, tag ...string) string {
-	if len(tag) > 0 {
-		return path.Join(s.BaseDirectory, fmt.Sprintf("%s:%s", name, tag[0]))
-	}
+func (s *Storage) path(name string) string {
 	return path.Join(s.BaseDirectory, name)
 }
 
-// Get returns the Scale Function with the given name and optional tag
-func (s *Storage) Get(name string, tag ...string) (*scalefunc.ScaleFunc, error) {
-	data, err := os.ReadFile(s.path(name, tag...))
+// Get returns the Scale Function with the given name
+func (s *Storage) Get(name string) (*scalefunc.ScaleFunc, error) {
+	data, err := os.ReadFile(s.path(name))
 	if err != nil {
 		return nil, err
 	}
@@ -85,45 +76,31 @@ func (s *Storage) Get(name string, tag ...string) (*scalefunc.ScaleFunc, error) 
 }
 
 // List returns all the Scale Functions stored in the storage
-func (s *Storage) List() ([]Entry, error) {
+func (s *Storage) List() ([]*scalefunc.ScaleFunc, error) {
 	entries, err := os.ReadDir(s.BaseDirectory)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read base directory: %w", err)
 	}
-	var scaleFuncEntries []Entry
+	var scaleFuncEntries []*scalefunc.ScaleFunc
 	for _, entry := range entries {
 		if entry.IsDir() {
 			continue
 		}
-		nameList := strings.Split(entry.Name(), ":")
-		if len(nameList) > 1 {
-			scaleFunc, err := s.Get(nameList[0], nameList[1])
-			if err != nil {
-				return nil, fmt.Errorf("failed to get scale function %s: %w", entry.Name(), err)
-			}
-			scaleFuncEntries = append(scaleFuncEntries, Entry{
-				ScaleFunc: scaleFunc,
-				Tag:       nameList[1],
-			})
-		} else {
-			scaleFunc, err := s.Get(nameList[0])
-			if err != nil {
-				return nil, fmt.Errorf("failed to get scale function %s: %w", entry.Name(), err)
-			}
-			scaleFuncEntries = append(scaleFuncEntries, Entry{
-				ScaleFunc: scaleFunc,
-			})
+		scaleFunc, err := s.Get(entry.Name())
+		if err != nil {
+			return nil, fmt.Errorf("failed to get scale function %s: %w", entry.Name(), err)
 		}
+		scaleFuncEntries = append(scaleFuncEntries, scaleFunc)
 	}
 	return scaleFuncEntries, nil
 }
 
 // Put stores the Scale Function with the given name and optional tag
-func (s *Storage) Put(name string, sf *scalefunc.ScaleFunc, tag ...string) error {
-	return os.WriteFile(s.path(name, tag...), sf.Encode(), 0644)
+func (s *Storage) Put(name string, sf *scalefunc.ScaleFunc) error {
+	return os.WriteFile(s.path(name), sf.Encode(), 0644)
 }
 
 // Delete removes the Scale Function with the given name and optional tag
-func (s *Storage) Delete(name string, tag ...string) error {
-	return os.Remove(s.path(name, tag...))
+func (s *Storage) Delete(name string) error {
+	return os.Remove(s.path(name))
 }

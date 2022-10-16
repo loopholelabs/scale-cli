@@ -36,20 +36,10 @@ also be used to temporarily expose your scale function to the internet using lyn
 	Run: func(cmd *cobra.Command, args []string) {
 		logger, _ := config.Init(cmd, false)
 		name := args[0]
-		tag := cmd.Flag("tag").Value.String()
-		logger.Debug().Msgf("run called with name '%s' and tag '%s'", name, tag)
-		var scaleFunc *scalefunc.ScaleFunc
-		var err error
-		if tag == "" {
-			scaleFunc, err = storage.Default.Get(name)
-			if err != nil {
-				logger.Fatal().Err(err).Msgf("error getting scale function '%s'", name)
-			}
-		} else {
-			scaleFunc, err = storage.Default.Get(name, tag)
-			if err != nil {
-				logger.Fatal().Err(err).Msgf("error getting scale function '%s' with tag '%s'", name, tag)
-			}
+		logger.Debug().Msgf("run called with name '%s'", name)
+		scaleFunc, err := storage.Default.Get(name)
+		if err != nil {
+			logger.Fatal().Err(err).Msgf("error getting scale function '%s'", name)
 		}
 		listen := cmd.Flag("listen").Value.String()
 		if listen == "" {
@@ -70,6 +60,5 @@ also be used to temporarily expose your scale function to the internet using lyn
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().StringP("tag", "t", "", "the (optional) tag to use for this module")
 	runCmd.Flags().StringP("listen", "l", "127.0.0.1:8080", "the address the scale function should listen on")
 }

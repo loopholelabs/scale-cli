@@ -40,6 +40,7 @@ func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig 
 
 	scaleFunc := &scalefunc.ScaleFunc{
 		ScaleFile: scaleFile,
+		Tag:       "latest",
 	}
 
 	isErr := true
