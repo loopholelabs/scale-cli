@@ -25,7 +25,7 @@ import (
 	"github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/client/auth"
 	"github.com/loopholelabs/scale-cli/pkg/config"
-	"github.com/loopholelabs/scale-cli/pkg/scalefile"
+	"github.com/loopholelabs/scale-go/scalefile"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/url"

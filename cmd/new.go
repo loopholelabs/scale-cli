@@ -19,8 +19,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/loopholelabs/scale-cli/pkg/config"
-	"github.com/loopholelabs/scale-cli/pkg/scalefile"
 	"github.com/loopholelabs/scale-cli/pkg/template"
+	"github.com/loopholelabs/scale-go/scalefile"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -47,13 +47,18 @@ var newCmd = &cobra.Command{
 			logger.Fatal().Msgf("language '%s' is not supported", language)
 		}
 
+		middleware := false
+		if cmd.Flag("middleware").Value.String() == "true" {
+			middleware = true
+		}
+
 		scaleFile := scalefile.ScaleFile{
 			Name: name,
-			Builder: scalefile.Build{
-				Language:     language,
-				Dependencies: nil,
+			Build: scalefile.Build{
+				Language: language,
 			},
-			File: fmt.Sprintf("%s.%s", name, extension),
+			File:       fmt.Sprintf("%s.%s", name, extension),
+			Middleware: middleware,
 		}
 
 		directory := cmd.Flag("directory").Value.String()
@@ -82,4 +87,5 @@ var newCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(newCmd)
 	newCmd.Flags().StringP("directory", "d", ".", "the directory to create the scale function in")
+	newCmd.Flags().BoolP("middleware", "m", false, "create a middleware function")
 }

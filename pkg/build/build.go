@@ -22,8 +22,8 @@ import (
 	"errors"
 	"github.com/loopholelabs/frisbee-go"
 	"github.com/loopholelabs/frisbee-go/pkg/packet"
-	"github.com/loopholelabs/scale-cli/pkg/scalefile"
 	"github.com/loopholelabs/scale-cli/rpc/build"
+	"github.com/loopholelabs/scale-go/scalefile"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 	"os"
@@ -85,8 +85,8 @@ func Build(input []byte, outputPath string, token string, scaleFile scalefile.Sc
 	req.Token = token
 	req.ScaleFile.Name = scaleFile.Name
 	req.ScaleFile.Input = input
-	req.ScaleFile.BuildConfig.Language = scaleFile.Builder.Language
-	for _, dependency := range scaleFile.Builder.Dependencies {
+	req.ScaleFile.BuildConfig.Language = scaleFile.Build.Language
+	for _, dependency := range scaleFile.Build.Dependencies {
 		req.ScaleFile.BuildConfig.Dependencies = append(req.ScaleFile.BuildConfig.Dependencies, &build.BuildDependency{
 			Name:    dependency.Name,
 			Version: dependency.Version,

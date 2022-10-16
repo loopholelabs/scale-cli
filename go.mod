@@ -10,11 +10,11 @@ require (
 	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.0
+	github.com/loopholelabs/scale-go v0.0.0-20221016031010-4328e8040eb7
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
 	gopkg.in/square/go-jose.v2 v2.6.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -60,4 +60,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

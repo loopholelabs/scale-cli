@@ -186,8 +186,8 @@ github.com/google/pprof v0.0.0-20201203190320-1bf35d6f28c2/go.mod h1:kpwsk12EmLe
 github.com/google/pprof v0.0.0-20201218002935-b9804c9f04c2/go.mod h1:kpwsk12EmLew5upagYY7GY0pfYCcupk39gWOCRROcvE=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/google/uuid v1.1.2 h1:EVhdT+1Kseyi1/pUmXKaFxYsDNy9RQYkMWRH68J/W7Y=
 github.com/google/uuid v1.1.2/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/google/uuid v1.3.0 h1:t6JiXgmwXMjEs8VusXIJk2BXHsn+wx8BZdTaoZ5fu7I=
 github.com/googleapis/gax-go/v2 v2.0.4/go.mod h1:0Wqv26UfaUD9n4G6kQubkQ+KchISgw+vpHVxEJEs9eg=
 github.com/googleapis/gax-go/v2 v2.0.5/go.mod h1:DWXyrwAJ9X0FpwwEdw+IPEYBICEFu5mhpdKc/us6bOk=
 github.com/googleapis/google-cloud-go-testing v0.0.0-20200911160855-bcd43fbb19e8/go.mod h1:dvDLG8qkwmyD9a/MJJN3XJcT3xFxOKAvTZGvuZmac9g=
@@ -226,6 +226,8 @@ github.com/loopholelabs/frisbee-go v0.7.0 h1:LGzG/NYQBsRnmojfVoSBTC31PgfV9XutQA3
 github.com/loopholelabs/frisbee-go v0.7.0/go.mod h1:XfDgwwOkgN/ktzaDAq3Zu0A9Dl0w5/xkZ2qfXAvRbjs=
 github.com/loopholelabs/polyglot-go v0.5.0 h1:F65/d+65qgAu2F0GcWzP6UVIwd9897bNEgylNMr8FGk=
 github.com/loopholelabs/polyglot-go v0.5.0/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
+github.com/loopholelabs/scale-go v0.0.0-20221016025335-9adc15f20cd0 h1:NzLxKn++MH3SdBkQB65qIs80TaO4vgUlgUqXz/d7b0Y=
+github.com/loopholelabs/scale-go v0.0.0-20221016025335-9adc15f20cd0/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
