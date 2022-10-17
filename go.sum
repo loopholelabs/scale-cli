@@ -240,8 +240,8 @@ github.com/loopholelabs/frisbee-go v0.7.0 h1:LGzG/NYQBsRnmojfVoSBTC31PgfV9XutQA3
 github.com/loopholelabs/frisbee-go v0.7.0/go.mod h1:XfDgwwOkgN/ktzaDAq3Zu0A9Dl0w5/xkZ2qfXAvRbjs=
 github.com/loopholelabs/polyglot-go v0.5.0 h1:F65/d+65qgAu2F0GcWzP6UVIwd9897bNEgylNMr8FGk=
 github.com/loopholelabs/polyglot-go v0.5.0/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale-go v0.0.2-dev h1:ghgsnymNdlByxR9YKT+ka/Nh7yOJmHZtQ1SPCVZVYnU=
-github.com/loopholelabs/scale-go v0.0.2-dev/go.mod h1:t1UoGg8boyBzDSspGYOVMtRujL4k5OeIFHTuvSHDNAY=
+github.com/loopholelabs/scale-go v0.0.4 h1:oPAihS/q9E5/2fBf/vSOU9BlJRrwdnY9eBHK63IuQqM=
+github.com/loopholelabs/scale-go v0.0.4/go.mod h1:nNzZU3ZUyO9BR09Jya6ibGeqh50eyyzsyCLrYhDa4bQ=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
@@ -343,8 +343,8 @@ github.com/stretchr/testify v1.8.0 h1:pSgiaMZlXftHpm5L7V1+rVB+AZJydKsMxsQBIJw4PK
 github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c h1:JKp5FvVhUo8K/VhRX2hOk1XaNJXg0+lSD1q76pMl5ZE=
-github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c/go.mod h1:CD5smBN5rGZo7UNe8aUiWyYE3bDWED/CQSonog9NSEg=
+github.com/tetratelabs/wazero v1.0.0-pre.2 h1:sHYi8DKUL7s7c4sKz6lw0pNqky5EogYK0Iq4pSIsDog=
+github.com/tetratelabs/wazero v1.0.0-pre.2/go.mod h1:M8UDNECGm/HVjOfq0EOe4QfCY9Les1eq54IChMLETbc=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=

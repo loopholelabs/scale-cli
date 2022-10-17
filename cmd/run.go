@@ -18,13 +18,20 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
-	adapter "github.com/loopholelabs/scale-go/adapters/http"
+	adapter "github.com/loopholelabs/scale-go/adapters/fasthttp"
 	"github.com/loopholelabs/scale-go/runtime"
 	"github.com/loopholelabs/scale-go/scalefunc"
 	"github.com/spf13/cobra"
-	"net/http"
+	"github.com/valyala/fasthttp"
+	"os"
+	"os/signal"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
 )
 
 var runCmd = &cobra.Command{
@@ -37,6 +44,10 @@ also be used to temporarily expose your scale function to the internet using lyn
 		logger, _ := config.Init(cmd, false)
 		name := args[0]
 		logger.Debug().Msgf("run called with name '%s'", name)
+		names := strings.Split(name, ":")
+		if len(names) != 2 {
+			name = fmt.Sprintf("%s:latest", name)
+		}
 		scaleFunc, err := storage.Default.Get(name)
 		if err != nil {
 			logger.Fatal().Err(err).Msgf("error getting scale function '%s'", name)
@@ -50,11 +61,33 @@ also be used to temporarily expose your scale function to the internet using lyn
 			logger.Fatal().Err(err).Msg("error creating runtime")
 		}
 
-		logger.Info().Msgf("scale function %s listening on %s", name, listen)
-		err = http.ListenAndServe(listen, adapter.New(nil, r))
-		if err != nil {
-			logger.Fatal().Err(err).Msg("error starting http server")
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+		server := fasthttp.Server{
+			Handler:         adapter.New(r).Handle,
+			CloseOnShutdown: true,
+			IdleTimeout:     time.Second,
 		}
+
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			logger.Info().Msgf("scale function %s listening on %s", name, listen)
+			err = server.ListenAndServe(listen)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("error starting server")
+			}
+		}()
+		<-stop
+		logger.Debug().Msg("shutting down server")
+		err = server.Shutdown()
+		if err != nil {
+			logger.Fatal().Err(err).Msg("error shutting down server")
+		}
+
+		wg.Wait()
 	},
 }
 

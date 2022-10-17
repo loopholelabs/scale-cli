@@ -13,10 +13,11 @@ require (
 	github.com/gofiber/fiber/v2 v2.38.1
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.0
-	github.com/loopholelabs/scale-go v0.0.2-dev
+	github.com/loopholelabs/scale-go v0.0.4
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/cobra v1.6.0
 	github.com/spf13/viper v1.13.0
+	github.com/valyala/fasthttp v1.40.0
 	gopkg.in/square/go-jose.v2 v2.6.0
 )
 
@@ -62,9 +63,8 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	github.com/tetratelabs/wazero v0.0.0-20220807015034-ef190285134c // indirect
+	github.com/tetratelabs/wazero v1.0.0-pre.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.40.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
