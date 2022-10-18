@@ -18,10 +18,10 @@ package cmd
 
 import (
 	"github.com/go-openapi/strfmt"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	authServer "github.com/loopholelabs/scale-cli/pkg/auth"
 	"github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/client/auth"
-	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/url"

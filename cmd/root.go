@@ -41,6 +41,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().StringP("config", "c", "", "config file (default is $HOME/.config/scale/scale.json)")
 	rootCmd.PersistentFlags().Bool("debug", false, "debug output")
+	rootCmd.PersistentFlags().Bool("json", false, "json output")
 	rootCmd.PersistentFlags().String("app", "https://app.scale.sh", "Scale API URL")
 	rootCmd.PersistentFlags().String("builder", "build.scale.sh:8192", "Scale Build Service URL")
 

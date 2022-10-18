@@ -40,7 +40,7 @@ func NewList(entries []*scalefunc.ScaleFunc, middleware bool) error {
 		if middleware && !scaleFunc.ScaleFile.Middleware {
 			continue
 		}
-		row := table.Row{scaleFunc.ScaleFile.Name, "", scaleFunc.ScaleFile.Build.Language, "false"}
+		row := table.Row{scaleFunc.ScaleFile.Name, "latest", scaleFunc.ScaleFile.Build.Language, "false"}
 		if scaleFunc.ScaleFile.Middleware {
 			row[3] = "true"
 		}

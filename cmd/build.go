@@ -19,8 +19,8 @@ package cmd
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/build"
-	"github.com/loopholelabs/scale-cli/pkg/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
 	"github.com/loopholelabs/scale-go/scalefile"
 	"github.com/spf13/cobra"

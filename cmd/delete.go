@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/loopholelabs/scale-cli/pkg/config"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
 	"github.com/spf13/cobra"
 	"os"

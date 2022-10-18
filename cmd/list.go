@@ -17,9 +17,10 @@
 package cmd
 
 import (
-	"github.com/loopholelabs/scale-cli/pkg/config"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale-cli/internal/json"
+	"github.com/loopholelabs/scale-cli/internal/ui"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
-	"github.com/loopholelabs/scale-cli/pkg/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -35,9 +36,16 @@ var listCmd = &cobra.Command{
 			logger.Fatal().Err(err).Msg("error listing scale functions")
 		}
 		middleware := cmd.Flag("middleware").Value.String() == "true"
-		err = ui.NewList(scaleFuncEntries, middleware)
-		if err != nil {
-			logger.Fatal().Err(err).Msg("error displaying scale function list")
+		if cmd.Flag("json").Value.String() == "true" {
+			err = json.NewList(scaleFuncEntries, middleware)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("error displaying scale function list as json")
+			}
+		} else {
+			err = ui.NewList(scaleFuncEntries, middleware)
+			if err != nil {
+				logger.Fatal().Err(err).Msg("error displaying scale function list")
+			}
 		}
 	},
 }

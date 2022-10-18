@@ -18,6 +18,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"github.com/go-openapi/strfmt"
 	"github.com/loopholelabs/scale-cli/internal/token"
 	"github.com/loopholelabs/scale-cli/pkg/client"
@@ -28,10 +29,60 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"strings"
+)
+
+const (
+	colorBlack = iota + 30
+	colorRed
+	colorGreen
+	colorYellow
+	colorBlue
+	colorMagenta
+	colorCyan
+	colorWhite
+
+	colorBold     = 1
+	colorDarkGray = 90
 )
 
 func Init(cmd *cobra.Command, isAuth bool) (zerolog.Logger, map[string]string) {
-	logger := zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger()
+	consoleWriter := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
+		w.FormatLevel = func(i interface{}) string {
+			var l string
+			if ll, ok := i.(string); ok {
+				switch ll {
+				case zerolog.LevelTraceValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorMagenta, "TRACE")
+				case zerolog.LevelDebugValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorYellow, "DEBUG")
+				case zerolog.LevelInfoValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorGreen, "INFO")
+				case zerolog.LevelWarnValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "WARN")
+				case zerolog.LevelErrorValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "ERROR"))
+				case zerolog.LevelFatalValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "FATAL"))
+				case zerolog.LevelPanicValue:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "PANIC"))
+				default:
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, "???")
+				}
+			} else {
+				if i == nil {
+					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, "???")
+				} else {
+					l = strings.ToUpper(fmt.Sprintf("%s", i))[0:3]
+				}
+			}
+			return l
+		}
+		w.FormatTimestamp = func(i interface{}) string {
+			return ""
+		}
+	})
+	logger := zerolog.New(consoleWriter)
 	if cmd.Flag("config").Value.String() != "" {
 		viper.SetConfigFile(cmd.Flag("config").Value.String())
 	}

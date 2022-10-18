@@ -19,7 +19,7 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/loopholelabs/scale-cli/pkg/config"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
 	adapter "github.com/loopholelabs/scale-go/adapters/fasthttp"
 	"github.com/loopholelabs/scale-go/runtime"
@@ -65,7 +65,7 @@ also be used to temporarily expose your scale function to the internet using lyn
 		signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 		server := fasthttp.Server{
-			Handler:         adapter.New(r).Handle,
+			Handler:         adapter.New(nil, r).Handle,
 			CloseOnShutdown: true,
 			IdleTimeout:     time.Second,
 		}
