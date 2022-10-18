@@ -240,8 +240,8 @@ github.com/loopholelabs/frisbee-go v0.7.0 h1:LGzG/NYQBsRnmojfVoSBTC31PgfV9XutQA3
 github.com/loopholelabs/frisbee-go v0.7.0/go.mod h1:XfDgwwOkgN/ktzaDAq3Zu0A9Dl0w5/xkZ2qfXAvRbjs=
 github.com/loopholelabs/polyglot-go v0.5.0 h1:F65/d+65qgAu2F0GcWzP6UVIwd9897bNEgylNMr8FGk=
 github.com/loopholelabs/polyglot-go v0.5.0/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale-go v0.0.4 h1:oPAihS/q9E5/2fBf/vSOU9BlJRrwdnY9eBHK63IuQqM=
-github.com/loopholelabs/scale-go v0.0.4/go.mod h1:nNzZU3ZUyO9BR09Jya6ibGeqh50eyyzsyCLrYhDa4bQ=
+github.com/loopholelabs/scale-go v0.0.5 h1:x1I4UlLtiIPyymHsVCU2UTVf6RNmAn8tUUm+arNsxu8=
+github.com/loopholelabs/scale-go v0.0.5/go.mod h1:nNzZU3ZUyO9BR09Jya6ibGeqh50eyyzsyCLrYhDa4bQ=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/lucasb-eyer/go-colorful v1.2.0 h1:1nnpGOrhyZZuNyfu1QjKiUICQ74+3FNCN69Aj6K7nkY=
 github.com/lucasb-eyer/go-colorful v1.2.0/go.mod h1:R4dSotOR9KMtayYi1e77YzuveK+i7ruzyGqttikkLy0=
