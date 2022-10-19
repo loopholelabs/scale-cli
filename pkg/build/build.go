@@ -95,12 +95,18 @@ func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig 
 	}
 	logger.Info().Msgf("Compiling %s...", scaleFile.Name)
 	start = time.Now()
-	res, err := client.Service.Build(context.Background(), req)
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*10))
+	defer cancel()
+	res, err := client.Service.Build(ctx, req)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error while sending compilation request to scale build server")
 	}
 	logger.Debug().Msgf("stream ID: %d", res.StreamID)
-	<-streamDone
+	select {
+	case <-streamDone:
+	case <-ctx.Done():
+		logger.Fatal().Err(ctx.Err()).Msg("error while waiting for build stream to close")
+	}
 	logger.Debug().Msgf("completed remote build in %s", time.Since(start))
 	if isErr {
 		logger.Fatal().Msg("Error Occurred while Compiling Scale Function")

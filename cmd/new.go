@@ -56,7 +56,8 @@ var newCmd = &cobra.Command{
 			Version: "v1",
 			Name:    name,
 			Build: scalefile.Build{
-				Language: language,
+				Language:     language,
+				Dependencies: scalefile.DefaultDependencies,
 			},
 			Source:     fmt.Sprintf("%s.%s", name, extension),
 			Middleware: middleware,
