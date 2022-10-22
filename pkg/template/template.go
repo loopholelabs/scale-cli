@@ -26,7 +26,7 @@ func Go() []byte {
 	return []byte(`package scale
 
 import (
-	"github.com/loopholelabs/scale-go/context"
+	"github.com/loopholelabs/scale/go/context"
 )
 
 func Scale(ctx *context.Context) *context.Context {

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-	"github.com/loopholelabs/scale-go/scalefile"
+	"github.com/loopholelabs/scale/go/scalefile"
 	"github.com/spf13/cobra"
 	"os"
 )

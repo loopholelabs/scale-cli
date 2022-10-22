@@ -2,7 +2,7 @@ package json
 
 import (
 	"encoding/json"
-	"github.com/loopholelabs/scale-go/scalefunc"
+	"github.com/loopholelabs/scale/go/scalefunc"
 )
 
 type output struct {
