@@ -17,14 +17,11 @@ import (
 // swagger:model models.AuthResponse
 type ModelsAuthResponse struct {
 
-	// auth url
-	AuthURL string `json:"auth_url,omitempty"`
+	// client id
+	ClientID string `json:"client_id,omitempty"`
 
-	// device code
-	DeviceCode string `json:"device_code,omitempty"`
-
-	// expiry
-	Expiry int64 `json:"expiry,omitempty"`
+	// endpoint
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // Validate validates this models auth response

@@ -10,7 +10,7 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/loopholelabs/scale-cli/pkg/client/auth"
+	"github.com/loopholelabs/scale-cli/pkg/client/config"
 )
 
 // Default scale API v1 HTTP client.
@@ -19,10 +19,10 @@ var Default = NewHTTPClient(nil)
 const (
 	// DefaultHost is the default Host
 	// found in Meta (info) section of spec file
-	DefaultHost string = "app-dev.scale.sh"
+	DefaultHost string = "api.scale.sh"
 	// DefaultBasePath is the default BasePath
 	// found in Meta (info) section of spec file
-	DefaultBasePath string = "/api/v1"
+	DefaultBasePath string = "/v1"
 )
 
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file
@@ -55,7 +55,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *ScaleAPIV1
 
 	cli := new(ScaleAPIV1)
 	cli.Transport = transport
-	cli.Auth = auth.New(transport, formats)
+	cli.Config = config.New(transport, formats)
 	return cli
 }
 
@@ -100,7 +100,7 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // ScaleAPIV1 is a client for scale API v1
 type ScaleAPIV1 struct {
-	Auth auth.ClientService
+	Config config.ClientService
 
 	Transport runtime.ClientTransport
 }
@@ -108,5 +108,5 @@ type ScaleAPIV1 struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *ScaleAPIV1) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
-	c.Auth.SetTransport(transport)
+	c.Config.SetTransport(transport)
 }

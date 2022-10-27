@@ -14,28 +14,22 @@
 	limitations under the License.
 */
 
-package main
+package auth
 
 import (
-	"context"
-	"github.com/loopholelabs/scale-cli/cmd"
-	"os"
-	"os/signal"
+	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"github.com/spf13/cobra"
 )
 
-var (
-	version string
-	commit  string
-	date    string
-)
+// Cmd returns the base command for authentication.
+func Cmd(ch *cmdutil.Helper) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "auth <command>",
+		Short: "Login and logout via the Scale API",
+		Long:  "Manage authentication",
+	}
 
-func main() {
-	os.Exit(realMain())
-}
-
-func realMain() int {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	return cmd.Execute(ctx, version, commit, date)
+	cmd.AddCommand(LoginCmd(ch))
+	cmd.AddCommand(LogoutCmd(ch))
+	return cmd
 }

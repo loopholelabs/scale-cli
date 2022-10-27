@@ -1,150 +1,162 @@
-/*
-	Copyright 2022 Loophole Labs
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
-		   http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-*/
-
 package config
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/go-openapi/strfmt"
-	"github.com/loopholelabs/scale-cli/internal/token"
-	"github.com/loopholelabs/scale-cli/pkg/client"
-	"github.com/loopholelabs/scale-cli/pkg/client/auth"
-	"github.com/rs/zerolog"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"net/url"
+	"github.com/loopholelabs/auth/pkg/client"
+	"github.com/loopholelabs/auth/pkg/token/tokenKind"
+	apiClient "github.com/loopholelabs/scale-cli/pkg/client"
+	"github.com/mitchellh/go-homedir"
+	exec "golang.org/x/sys/execabs"
+	"log"
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 const (
-	colorBlack = iota + 30
-	colorRed
-	colorGreen
-	colorYellow
-	colorBlue
-	colorMagenta
-	colorCyan
-	colorWhite
-
-	colorBold     = 1
-	colorDarkGray = 90
+	defaultConfigPath = "~/.config/scale"
+	projectConfigName = ".scale.yml"
+	configName        = "scale.yml"
+	TokenFileMode     = 0o600
 )
 
-func Init(cmd *cobra.Command, isAuth bool) (zerolog.Logger, map[string]string) {
-	consoleWriter := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
-		w.FormatLevel = func(i interface{}) string {
-			var l string
-			if ll, ok := i.(string); ok {
-				switch ll {
-				case zerolog.LevelTraceValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorMagenta, "TRACE")
-				case zerolog.LevelDebugValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorYellow, "DEBUG")
-				case zerolog.LevelInfoValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorGreen, "INFO")
-				case zerolog.LevelWarnValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "WARN")
-				case zerolog.LevelErrorValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "ERROR"))
-				case zerolog.LevelFatalValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "FATAL"))
-				case zerolog.LevelPanicValue:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorRed, "PANIC"))
-				default:
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, "???")
-				}
-			} else {
-				if i == nil {
-					l = fmt.Sprintf("\x1b[%dm%v\x1b[0m", colorBold, "???")
-				} else {
-					l = strings.ToUpper(fmt.Sprintf("%s", i))[0:3]
-				}
-			}
-			return l
-		}
-		w.FormatTimestamp = func(i interface{}) string {
-			return ""
-		}
-	})
-	logger := zerolog.New(consoleWriter)
-	if cmd.Flag("config").Value.String() != "" {
-		viper.SetConfigFile(cmd.Flag("config").Value.String())
+type Token struct {
+	AccessToken  string         `yaml:"access_token"`
+	TokenType    string         `yaml:"token_type,omitempty"`
+	RefreshToken string         `yaml:"refresh_token,omitempty"`
+	Expiry       time.Time      `yaml:"expiry,omitempty"`
+	Kind         tokenKind.Kind `yaml:"kind"`
+}
+
+func FromClientToken(t *client.Token, kind tokenKind.Kind) *Token {
+	return &Token{
+		AccessToken:  t.AccessToken,
+		TokenType:    t.TokenType,
+		RefreshToken: t.RefreshToken,
+		Expiry:       t.Expiry,
+		Kind:         kind,
 	}
-	err := viper.ReadInConfig()
+}
+
+// Config is dynamically sourced from various files and environment variables.
+type Config struct {
+	BaseURL string `yaml:"base_url"`
+	Token   *Token `yaml:"token"`
+}
+
+func New() (*Config, error) {
+	var token Token
+	tokenPath, err := TokenPath()
 	if err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok || errors.Is(err, os.ErrNotExist) {
-			logger.Info().Msg("config file not found, creating new config")
-			err = os.MkdirAll(path.Dir(viper.ConfigFileUsed()), 0755)
-			if err != nil {
-				logger.Fatal().Err(err).Msg("failed to create config directory")
-			}
-			err = viper.WriteConfig()
-			if err != nil {
-				logger.Fatal().Err(err).Msg("failed to create config file")
-			}
-		} else {
-			logger.Fatal().Err(err).Msg("failed to read config")
-		}
+		return nil, err
 	}
 
-	if cmd.Flag("debug").Value.String() == "true" {
-		logger = logger.Level(zerolog.DebugLevel)
+	stat, err := os.Stat(tokenPath)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			log.Fatal(err)
+		}
 	} else {
-		logger = logger.Level(zerolog.InfoLevel)
-	}
-
-	if isAuth {
-		t := viper.GetStringMapString("auth")
-		if t["access_token"] == "" {
-			logger.Fatal().Msg("You must be logged in to use the scale build service. Please run `scale login` to login.")
+		if stat.Mode()&^TokenFileMode != 0 {
+			err = os.Chmod(tokenPath, TokenFileMode)
+			if err != nil {
+				log.Printf("Unable to change %v file mode to 0%o: %v", tokenPath, TokenFileMode, err)
+			}
 		}
-
-		expired, err := token.Expired(t["access_token"])
+		tokenData, err := os.ReadFile(tokenPath)
 		if err != nil {
-			logger.Fatal().Err(err).Msg("failed to check if access token is expired")
-		}
-		if expired {
-			logger.Debug().Msg("access token is expired, refreshing")
-			defaultConfig := client.DefaultTransportConfig()
-			api := viper.GetString("api")
-			apiURL, err := url.Parse(api)
-			if err != nil {
-				logger.Fatal().Err(err).Msg("Invalid API URL")
-			}
-			defaultConfig.Schemes = []string{apiURL.Scheme}
-			defaultConfig.Host = apiURL.Host
-			c := client.NewHTTPClientWithConfig(strfmt.Default, defaultConfig)
-			res, err := c.Auth.PostAuthRefresh(auth.NewPostAuthRefreshParams().WithGrantType("refresh_token").WithRefreshToken(t["refresh_token"]))
-			if err != nil {
-				logger.Fatal().Err(err).Msg("You must be logged in to use the scale build service. If you were already logged in, your access token may have expired. Please run `scale login` again.")
-			}
-			t["refresh_token"] = res.Payload.RefreshToken
-			t["access_token"] = res.Payload.AccessToken
-			t["token_type"] = res.Payload.TokenType
-			err = viper.WriteConfig()
-			if err != nil {
-				logger.Fatal().Err(err).Msg("failed to update config")
-			}
+			log.Fatal(err)
 		}
 
-		return logger, t
+		err = json.Unmarshal(tokenData, &token)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	return logger, nil
+	return &Config{
+		BaseURL: "https://api.scale.sh",
+		Token:   &token,
+	}, nil
+}
+
+func (c *Config) IsAuthenticated() error {
+	if c.Token == nil || c.Token.AccessToken == "" {
+		return errors.New("access token is empty")
+	}
+
+	return nil
+}
+
+type ClientOption func(c *apiClient.ScaleAPIV1) error
+
+var (
+	WithUserAgent = func(userAgent string) ClientOption {
+		return func(c *apiClient.ScaleAPIV1) error {
+			//c.UserAgent = userAgent
+			return nil
+		}
+	}
+	WithRequestHeaders = func(headers map[string]string) ClientOption {
+		return func(c *apiClient.ScaleAPIV1) error {
+			//c.RequestHeaders = headers
+			return nil
+		}
+	}
+)
+
+// NewClientFromConfig creates a Scale API client from our configuration
+func (c *Config) NewClientFromConfig(opts ...ClientOption) (*apiClient.ScaleAPIV1, error) {
+	return apiClient.NewHTTPClientWithConfig(nil, &apiClient.TransportConfig{
+		Host:     "",
+		BasePath: "",
+		Schemes:  nil,
+	}), nil
+}
+
+// TokenPath is the path for the access token file
+func TokenPath() (string, error) {
+	dir, err := Dir()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(dir, "token"), nil
+}
+
+// Dir is the directory for Scale config.
+func Dir() (string, error) {
+	dir, err := homedir.Expand(defaultConfigPath)
+	if err != nil {
+		return "", fmt.Errorf("can't expand path %q: %s", defaultConfigPath, err)
+	}
+
+	return dir, nil
+}
+
+func RootGitRepoDir() (string, error) {
+	tl := []string{"rev-parse", "--show-toplevel"}
+	out, err := exec.Command("git", tl...).CombinedOutput()
+	if err != nil {
+		return "", errors.New("unable to find git root directory")
+	}
+
+	return strings.TrimSuffix(string(out), "\n"), nil
+}
+
+func ProjectConfigFile() string {
+	return projectConfigName
+}
+
+// DefaultConfigPath returns the default path for the config file.
+func DefaultConfigPath() (string, error) {
+	dir, err := Dir()
+	if err != nil {
+		return "", err
+	}
+
+	return path.Join(dir, configName), nil
 }

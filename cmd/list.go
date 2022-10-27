@@ -16,41 +16,33 @@
 
 package cmd
 
-import (
-	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/internal/json"
-	"github.com/loopholelabs/scale-cli/internal/ui"
-	"github.com/loopholelabs/scale-cli/pkg/storage"
-	"github.com/spf13/cobra"
-)
-
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Args:  cobra.ExactArgs(0),
-	Short: "list lists all the scale functions that are available",
-	Long:  `List lists all the scale functions that are available.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		logger, _ := config.Init(cmd, false)
-		scaleFuncEntries, err := storage.Default.List()
-		if err != nil {
-			logger.Fatal().Err(err).Msg("error listing scale functions")
-		}
-		middleware := cmd.Flag("middleware").Value.String() == "true"
-		if cmd.Flag("json").Value.String() == "true" {
-			err = json.NewList(scaleFuncEntries, middleware)
-			if err != nil {
-				logger.Fatal().Err(err).Msg("error displaying scale function list as json")
-			}
-		} else {
-			err = ui.NewList(scaleFuncEntries, middleware)
-			if err != nil {
-				logger.Fatal().Err(err).Msg("error displaying scale function list")
-			}
-		}
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(listCmd)
-	listCmd.Flags().BoolP("middleware", "m", false, "only list middleware functions")
-}
+//var listCmd = &cobra.Command{
+//	Use:   "list",
+//	Args:  cobra.ExactArgs(0),
+//	Short: "list lists all the scale functions that are available",
+//	Long:  `List lists all the scale functions that are available.`,
+//	Run: func(cmd *cobra.Command, args []string) {
+//		logger, _ := config.Init(cmd, false)
+//		scaleFuncEntries, err := storage.Default.List()
+//		if err != nil {
+//			logger.Fatal().Err(err).Msg("error listing scale functions")
+//		}
+//		middleware := cmd.Flag("middleware").Value.String() == "true"
+//		if cmd.Flag("json").Value.String() == "true" {
+//			err = json.NewList(scaleFuncEntries, middleware)
+//			if err != nil {
+//				logger.Fatal().Err(err).Msg("error displaying scale function list as json")
+//			}
+//		} else {
+//			err = ui.NewList(scaleFuncEntries, middleware)
+//			if err != nil {
+//				logger.Fatal().Err(err).Msg("error displaying scale function list")
+//			}
+//		}
+//	},
+//}
+//
+//func init() {
+//	rootCmd.AddCommand(listCmd)
+//	listCmd.Flags().BoolP("middleware", "m", false, "only list middleware functions")
+//}

@@ -16,37 +16,28 @@
 
 package cmd
 
-import (
-	"fmt"
-	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/pkg/storage"
-	"github.com/spf13/cobra"
-	"os"
-	"strings"
-)
-
-var deleteCmd = &cobra.Command{
-	Use:   "delete [scale function name]",
-	Args:  cobra.ExactArgs(1),
-	Short: "delete deletes a specific scale function",
-	Long:  `Delete deletes a specific scale function given the name.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		logger, _ := config.Init(cmd, false)
-		name := args[0]
-		names := strings.Split(name, ":")
-		if len(names) != 2 {
-			name = fmt.Sprintf("%s:latest", name)
-		}
-		err := storage.Default.Delete(name)
-		if err != nil {
-			if os.IsNotExist(err) {
-				logger.Fatal().Msgf("scale function '%s' does not exist", name)
-			}
-			logger.Fatal().Err(err).Msg("error deleting scale function")
-		}
-	},
-}
-
-func init() {
-	rootCmd.AddCommand(deleteCmd)
-}
+//var deleteCmd = &cobra.Command{
+//	Use:   "delete [scale function name]",
+//	Args:  cobra.ExactArgs(1),
+//	Short: "delete deletes a specific scale function",
+//	Long:  `Delete deletes a specific scale function given the name.`,
+//	Run: func(cmd *cobra.Command, args []string) {
+//		logger, _ := config.Init(cmd, false)
+//		name := args[0]
+//		names := strings.Split(name, ":")
+//		if len(names) != 2 {
+//			name = fmt.Sprintf("%s:latest", name)
+//		}
+//		err := storage.Default.Delete(name)
+//		if err != nil {
+//			if os.IsNotExist(err) {
+//				logger.Fatal().Msgf("scale function '%s' does not exist", name)
+//			}
+//			logger.Fatal().Err(err).Msg("error deleting scale function")
+//		}
+//	},
+//}
+//
+//func init() {
+//	rootCmd.AddCommand(deleteCmd)
+//}
