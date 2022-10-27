@@ -21,7 +21,6 @@ import (
 	"io"
 	"os"
 
-	"github.com/loopholelabs/scale-cli/internal/auth"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/printer"
@@ -31,9 +30,6 @@ import (
 )
 
 func LogoutCmd(ch *cmdutil.Helper) *cobra.Command {
-	var clientID string
-	var apiURL string
-
 	cmd := &cobra.Command{
 		Use:   "logout",
 		Args:  cobra.NoArgs,
@@ -62,9 +58,6 @@ func LogoutCmd(ch *cmdutil.Helper) *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().StringVar(&clientID, "client-id", auth.OAuthClientID, "The client ID for the Scale CLI application.")
-	cmd.Flags().StringVar(&apiURL, "api", auth.DefaultEndpoint, "The Scale API URL.")
 	return cmd
 }
 
