@@ -23,7 +23,7 @@ var (
 )
 
 const (
-	GoTemplate = `module github.com/loopholelabs/scale/go/compile
+	GoTemplate = `module scale
 
 go 1.18
 {{range .}}
