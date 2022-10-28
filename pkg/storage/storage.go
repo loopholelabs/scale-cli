@@ -22,6 +22,7 @@ import (
 	"github.com/loopholelabs/scale/go/scalefunc"
 	"os"
 	"path"
+	"strings"
 )
 
 var (
@@ -73,6 +74,25 @@ func (s *Storage) Get(name string) (*scalefunc.ScaleFunc, error) {
 	}
 
 	return sf, nil
+}
+
+// Copy copies the Scale Function with the given name to the given destination
+func (s *Storage) Copy(name string, destination string) (string, error) {
+	data, err := os.ReadFile(path.Join(s.BaseDirectory, name))
+	if err != nil {
+		return "", err
+	}
+
+	if !strings.HasSuffix(destination, ".scale") {
+		destination = fmt.Sprintf("%s.scale", destination)
+	}
+
+	err = os.WriteFile(destination, data, 0644)
+	if err != nil {
+		return "", err
+	}
+
+	return destination, nil
 }
 
 // List returns all the Scale Functions stored in the storage

@@ -29,6 +29,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/pkg/client"
+	buildVersion "github.com/loopholelabs/scale-cli/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -51,17 +52,17 @@ var rootCmd = &cobra.Command{
 
 // Execute executes the command and returns the exit status of the finished
 // command.
-func Execute(ctx context.Context, ver, commit, buildDate string) int {
+func Execute(ctx context.Context) int {
 	var format printer.Format
 	var debug bool
 
 	if _, ok := os.LookupEnv("SCALE_DISABLE_DEV_WARNING"); !ok {
-		if commit == "" || ver == "" || buildDate == "" {
+		if buildVersion.GitCommit == "" || buildVersion.GoVersion == "" || buildVersion.Date == "" || buildVersion.Version == "" || buildVersion.Platform == "" {
 			_, _ = fmt.Fprintf(os.Stderr, "!! WARNING: You are using a self-compiled binary which is not officially supported.\n!! To dismiss this warning, set SCALE_DISABLE_DEV_WARNING=true\n\n")
 		}
 	}
 
-	err := runCmd(ctx, ver, commit, buildDate, &format, &debug)
+	err := runCmd(ctx, &format, &debug)
 	if err == nil {
 		return 0
 	}
@@ -85,7 +86,7 @@ func Execute(ctx context.Context, ver, commit, buildDate string) int {
 
 // runCmd adds all child commands to the root command, sets flags
 // appropriately, and runs the root command.
-func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.Format, debug *bool) error {
+func runCmd(ctx context.Context, format *printer.Format, debug *bool) error {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config",
@@ -93,7 +94,7 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
 
-	v := version.Format(ver, commit, buildDate)
+	v := buildVersion.Format()
 	rootCmd.SetVersionTemplate(v)
 	rootCmd.Version = v
 	rootCmd.Flags().Bool("version", false, "Show scale cli version")
@@ -141,10 +142,19 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 	logoutCmd := auth.LogoutCmd(ch)
 	logoutCmd.Hidden = true
 
+	buildCmd := function.BuildCmd(ch)
+	buildCmd.Hidden = true
+
+	newCmd := function.NewCmd(ch)
+	newCmd.Hidden = true
+
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
+	rootCmd.AddCommand(buildCmd)
+	rootCmd.AddCommand(newCmd)
+
 	rootCmd.AddCommand(auth.Cmd(ch))
-	rootCmd.AddCommand(version.Cmd(ch, ver, commit, buildDate))
+	rootCmd.AddCommand(version.Cmd(ch))
 	rootCmd.AddCommand(apikey.Cmd(ch))
 	rootCmd.AddCommand(function.Cmd(ch))
 

@@ -1,0 +1,29 @@
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+      - freebsd
+      - openbsd
+    ldflags:
+      - -s -w -X "github.com/loopholelabs/scale-cli/version.GitCommit={{.FullCommit}}" -X "github.com/loopholelabs/scale-cli/version.GoVersion={{.Env.GO_VERSION}}" -X "github.com/loopholelabs/scale-cli/version.Platform={{.Env.GO_PLATFORM}}" -X "github.com/loopholelabs/scale-cli/version.Version={{.Tag}}" -X "github.com/loopholelabs/scale-cli/version.Date={{.Env.DATE}}"
+archives:
+  - files:
+      - none*
+checksum:
+  name_template: "checksums.txt"
+snapshot:
+  name_template: "{{ incpatch .Version }}-snapshot"
+release:
+  prerelease: "true"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

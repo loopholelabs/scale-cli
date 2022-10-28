@@ -45,10 +45,12 @@ jobs:
         run: |
           echo "::set-output name=go-version::$(go version | cut -d' ' -f3)"
           echo "::set-output name=go-platform::$(go version | cut -d' ' -f4)"
+          echo "::set-output name=date::$(date)"
 
       - name: Run GoReleaser
         run: goreleaser release --rm-dist
         env:
           GO_VERSION: ${{ steps.build-variables.outputs.go-version }}
           GO_PLATFORM: ${{ steps.build-variables.outputs.go-platform }}
+          DATE: ${{ steps.build-variables.outputs.date }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

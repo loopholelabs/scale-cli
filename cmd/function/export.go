@@ -14,37 +14,43 @@
 	limitations under the License.
 */
 
-package version
+package function
 
 import (
+	"fmt"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
-	"github.com/loopholelabs/scale-cli/version"
-
+	"github.com/loopholelabs/scale-cli/pkg/storage"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
-// Cmd encapsulates the commands for showing a version
-func Cmd(ch *cmdutil.Helper) *cobra.Command {
+func ExportCmd(ch *cmdutil.Helper) *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "version <command>",
-		// we can also show the version via `--version`, hence this doesn't
-		// need to be displayed.
-		Hidden: true,
+		Use:   "export <function> <output>",
+		Args:  cobra.ExactArgs(2),
+		Short: "export a compiled scale function to the given output path",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			output := args[1]
+			names := strings.Split(name, ":")
+			if len(names) != 2 {
+				name = fmt.Sprintf("%s:latest", name)
+			}
+
+			destination, err := storage.Default.Copy(name, output)
+			if err != nil {
+				return fmt.Errorf("failed to export scale function %s to %s: %w", name, destination, err)
+			}
+
 			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Println(version.Format())
+				ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(name), printer.BoldBlue(destination))
 				return nil
 			}
 
-			v := map[string]string{
-				"version":    version.Version,
-				"commit":     version.GitCommit,
-				"build_date": version.Date,
-				"go_version": version.GoVersion,
-				"platform":   version.Platform,
-			}
-			return ch.Printer.PrintResource(v)
+			return ch.Printer.PrintResource(map[string]string{
+				"destination": destination,
+			})
 		},
 	}
 

@@ -23,12 +23,6 @@ import (
 	"os/signal"
 )
 
-var (
-	version string
-	commit  string
-	date    string
-)
-
 func main() {
 	os.Exit(realMain())
 }
@@ -37,5 +31,5 @@ func realMain() int {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	return cmd.Execute(ctx, version, commit, date)
+	return cmd.Execute(ctx)
 }
