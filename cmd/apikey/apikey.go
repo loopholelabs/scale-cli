@@ -7,15 +7,15 @@ import (
 
 type apiKey struct {
 	Name    string `header:"name" json:"name"`
-	Created string `header:"created" json:"created"`
 	ID      string `header:"id" json:"id"`
 	Value   string `header:"value" json:"value"`
+	Created string `header:"created" json:"created"`
 }
 
 type apiKeyRedacted struct {
 	Name    string `header:"name" json:"name"`
-	Created string `header:"created" json:"created"`
 	ID      string `header:"id" json:"id"`
+	Created string `header:"created" json:"created"`
 }
 
 // Cmd encapsulates the command for interacting with API Keys.

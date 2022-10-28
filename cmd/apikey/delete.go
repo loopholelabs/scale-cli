@@ -23,14 +23,14 @@ func DeleteCmd(ch *cmdutil.Helper) *cobra.Command {
 			id := args[0]
 
 			end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting API Key %s...", id))
-			res, err := client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
+			_, err = client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
 			end()
 			if err != nil {
 				return err
 			}
 
 			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("API Key %s %s\n", printer.BoldGreen(res.Payload), printer.BoldRed("deleted"))
+				ch.Printer.Printf("API Key %s %s\n", printer.BoldGreen(id), printer.BoldRed("deleted"))
 				return nil
 			}
 
