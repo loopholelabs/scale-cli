@@ -33,14 +33,14 @@ var (
 	// Version is filled in at build time and contains the official release version of this application
 	Version = ""
 
-	// Date  is filled in at build time and contains the date when this application was build
-	Date = ""
+	// BuildDate is filled in at build time and contains the date when this application was build
+	BuildDate = ""
 )
 
 func Format() string {
-	if GitCommit == "" && GoVersion == "" && Platform == "" || Version == "" || Date == "" {
+	if GitCommit == "" && GoVersion == "" && Platform == "" || Version == "" || BuildDate == "" {
 		return "scale cli version (built from source)"
 	}
 
-	return fmt.Sprintf("scale cli version %s (build date: %s git commit: %s go version: %s build platform: %s)\n", Version, Date, GitCommit, GoVersion, Platform)
+	return fmt.Sprintf("scale cli version %s (build date: %s git commit: %s go version: %s build platform: %s)\n", Version, BuildDate, GitCommit, GoVersion, Platform)
 }

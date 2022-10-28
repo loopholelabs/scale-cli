@@ -11,7 +11,7 @@ builds:
       - freebsd
       - openbsd
     ldflags:
-      - -s -w -X "github.com/loopholelabs/scale-cli/version.GitCommit={{.FullCommit}}" -X "github.com/loopholelabs/scale-cli/version.GoVersion={{.Env.GO_VERSION}}" -X "github.com/loopholelabs/scale-cli/version.Platform={{.Env.GO_PLATFORM}}" -X "github.com/loopholelabs/scale-cli/version.Version={{.Tag}}" -X "github.com/loopholelabs/scale-cli/version.Date={{.Env.DATE}}"
+      - -s -w -X "github.com/loopholelabs/scale-cli/version.GitCommit={{.FullCommit}}" -X "github.com/loopholelabs/scale-cli/version.GoVersion={{.Env.GO_VERSION}}" -X "github.com/loopholelabs/scale-cli/version.Platform={{.Env.GO_PLATFORM}}" -X "github.com/loopholelabs/scale-cli/version.Version={{.Tag}}" -X "github.com/loopholelabs/scale-cli/version.BuildDate={{.Env.BUILD_DATE}}"
 archives:
   - files:
       - none*

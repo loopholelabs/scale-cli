@@ -40,7 +40,7 @@ func Cmd(ch *cmdutil.Helper) *cobra.Command {
 			v := map[string]string{
 				"version":    version.Version,
 				"commit":     version.GitCommit,
-				"build_date": version.Date,
+				"build_date": version.BuildDate,
 				"go_version": version.GoVersion,
 				"platform":   version.Platform,
 			}

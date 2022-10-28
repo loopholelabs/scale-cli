@@ -43,14 +43,14 @@ jobs:
 
       - id: build-variables
         run: |
-          echo "::set-output name=go-version::$(go version | cut -d' ' -f3)"
-          echo "::set-output name=go-platform::$(go version | cut -d' ' -f4)"
-          echo "::set-output name=date::$(date)"
+          echo "go-version=$(go version | cut -d' ' -f3)" >> $GITHUB_OUTPUT
+          echo "go-platform=$(go version | cut -d' ' -f4)" >> $GITHUB_OUTPUT
+          echo "build-date=$(date)" >> $GITHUB_OUTPUT
 
       - name: Run GoReleaser
         run: goreleaser release --rm-dist
         env:
           GO_VERSION: ${{ steps.build-variables.outputs.go-version }}
           GO_PLATFORM: ${{ steps.build-variables.outputs.go-platform }}
-          DATE: ${{ steps.build-variables.outputs.date }}
+          BUILD_DATE: ${{ steps.build-variables.outputs.build-date }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -57,7 +57,7 @@ func Execute(ctx context.Context) int {
 	var debug bool
 
 	if _, ok := os.LookupEnv("SCALE_DISABLE_DEV_WARNING"); !ok {
-		if buildVersion.GitCommit == "" || buildVersion.GoVersion == "" || buildVersion.Date == "" || buildVersion.Version == "" || buildVersion.Platform == "" {
+		if buildVersion.GitCommit == "" || buildVersion.GoVersion == "" || buildVersion.BuildDate == "" || buildVersion.Version == "" || buildVersion.Platform == "" {
 			_, _ = fmt.Fprintf(os.Stderr, "!! WARNING: You are using a self-compiled binary which is not officially supported.\n!! To dismiss this warning, set SCALE_DISABLE_DEV_WARNING=true\n\n")
 		}
 	}
