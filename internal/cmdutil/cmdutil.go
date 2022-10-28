@@ -1,12 +1,31 @@
+/*
+	Copyright 2022 Loophole Labs
+
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+
+		   http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+*/
+
 package cmdutil
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/pkg/client"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	exec "golang.org/x/sys/execabs"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -54,6 +73,40 @@ func RequiredArgs(reqArgs ...string) cobra.PositionalArgs {
 	}
 }
 
+func WriteToken(token *config.Token) error {
+	configDir, err := config.Dir()
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(configDir)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(configDir, 0771)
+		if err != nil {
+			return errors.Wrap(err, "error creating config directory")
+		}
+	} else if err != nil {
+		return err
+	}
+
+	tokenPath, err := config.TokenPath()
+	if err != nil {
+		return err
+	}
+
+	tokenData, err := json.Marshal(token)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(tokenPath, tokenData, config.TokenFileMode)
+	if err != nil {
+		return errors.Wrap(err, "error writing token")
+	}
+
+	return nil
+}
+
 // CheckAuthentication checks whether the user is authenticated and returns an
 // actionable error message.
 func CheckAuthentication(cfg *config.Config) func(cmd *cobra.Command, args []string) error {
@@ -63,6 +116,13 @@ func CheckAuthentication(cfg *config.Config) func(cmd *cobra.Command, args []str
 		}
 
 		return nil
+	}
+}
+
+// UpdateToken updates the token in the config file.
+func UpdateToken(cfg *config.Config) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		return WriteToken(cfg.Token)
 	}
 }
 

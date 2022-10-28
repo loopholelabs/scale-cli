@@ -17,7 +17,6 @@
 package auth
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/loopholelabs/auth/pkg/client"
@@ -109,7 +108,7 @@ func LoginCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error getting token: %w", err)
 			}
 
-			err = writeToken(config.FromClientToken(token, kind, authEndpoint, authBasePath, clientID))
+			err = cmdutil.WriteToken(config.FromClientToken(token, kind, authEndpoint, authBasePath, clientID))
 			if err != nil {
 				return errors.Wrap(err, "error logging in")
 			}
@@ -125,38 +124,4 @@ func LoginCmd(ch *cmdutil.Helper) *cobra.Command {
 	cmd.Flags().StringVarP(&apiKey, "api-key", "a", "", "The API Key to authenticate with the Scale API")
 
 	return cmd
-}
-
-func writeToken(token *config.Token) error {
-	configDir, err := config.Dir()
-	if err != nil {
-		return err
-	}
-
-	_, err = os.Stat(configDir)
-	if os.IsNotExist(err) {
-		err := os.MkdirAll(configDir, 0771)
-		if err != nil {
-			return errors.Wrap(err, "error creating config directory")
-		}
-	} else if err != nil {
-		return err
-	}
-
-	tokenPath, err := config.TokenPath()
-	if err != nil {
-		return err
-	}
-
-	tokenData, err := json.Marshal(token)
-	if err != nil {
-		return err
-	}
-
-	err = os.WriteFile(tokenPath, tokenData, config.TokenFileMode)
-	if err != nil {
-		return errors.Wrap(err, "error writing token")
-	}
-
-	return nil
 }
