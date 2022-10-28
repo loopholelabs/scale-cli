@@ -93,7 +93,7 @@ func (s *Storage) get(name string) (*scalefunc.ScaleFunc, error) {
 
 // Copy copies the Scale Function with the given name to the given destination
 func (s *Storage) Copy(name string, destination string) (string, error) {
-	data, err := os.ReadFile(path.Join(s.BaseDirectory, name))
+	data, err := os.ReadFile(s.path(name))
 	if err != nil {
 		return "", err
 	}
