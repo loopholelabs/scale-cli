@@ -84,7 +84,7 @@ func LoginCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error getting token: %w", err)
 			}
 
-			err = writeToken(config.FromClientToken(token, tokenKind.OAuthKind))
+			err = writeToken(config.FromClientToken(token, tokenKind.OAuthKind, authEndpoint, authBasePath, clientID))
 			if err != nil {
 				return errors.Wrap(err, "error logging in")
 			}

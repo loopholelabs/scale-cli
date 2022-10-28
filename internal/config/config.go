@@ -29,22 +29,28 @@ type Token struct {
 	RefreshToken string         `yaml:"refresh_token,omitempty"`
 	Expiry       time.Time      `yaml:"expiry,omitempty"`
 	Kind         tokenKind.Kind `yaml:"kind"`
+	Endpoint     string         `yaml:"endpoint"`
+	BasePath     string         `yaml:"base_path"`
+	ClientID     string         `yaml:"client_id"`
 }
 
-func FromClientToken(t *client.Token, kind tokenKind.Kind) *Token {
+func FromClientToken(t *client.Token, kind tokenKind.Kind, endpoint string, basePath string, clientID string) *Token {
 	return &Token{
 		AccessToken:  t.AccessToken,
 		TokenType:    t.TokenType,
 		RefreshToken: t.RefreshToken,
 		Expiry:       t.Expiry,
 		Kind:         kind,
+		Endpoint:     endpoint,
+		BasePath:     basePath,
+		ClientID:     clientID,
 	}
 }
 
 // Config is dynamically sourced from various files and environment variables.
 type Config struct {
-	BaseURL string `yaml:"base_url"`
-	Token   *Token `yaml:"token"`
+	Endpoint string `yaml:"endpoint"`
+	Token    *Token `yaml:"token"`
 }
 
 func New() (*Config, error) {
@@ -78,8 +84,8 @@ func New() (*Config, error) {
 	}
 
 	return &Config{
-		BaseURL: "https://api.scale.sh",
-		Token:   &token,
+		Endpoint: "https://api.scale.sh",
+		Token:    &token,
 	}, nil
 }
 
@@ -108,13 +114,20 @@ var (
 	}
 )
 
-// NewClientFromConfig creates a Scale API client from our configuration
-func (c *Config) NewClientFromConfig(opts ...ClientOption) (*apiClient.ScaleAPIV1, error) {
-	return apiClient.NewHTTPClientWithConfig(nil, &apiClient.TransportConfig{
-		Host:     "",
-		BasePath: "",
-		Schemes:  nil,
-	}), nil
+// NewAuthenticatedClientFromConfig creates an Authenticated Scale API client from our configuration
+func (c *Config) NewAuthenticatedClientFromConfig(endpoint string, t *Token) (*apiClient.ScaleAPIV1, error) {
+	_, cl, err := client.AuthenticatedClient(endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, path.Join(t.Endpoint, t.BasePath), t.ClientID, t.Kind, client.NewToken(t.AccessToken, t.TokenType, t.RefreshToken, t.Expiry))
+	if err != nil {
+		return nil, err
+	}
+
+	return apiClient.New(cl, nil), nil
+}
+
+// NewUnauthenticatedClientFromConfig creates an Unauthenticated Scale API client from our configuration
+func (c *Config) NewUnauthenticatedClientFromConfig(endpoint string) (*apiClient.ScaleAPIV1, error) {
+	cl, _ := client.UnauthenticatedClient(endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil)
+	return apiClient.New(cl, nil), nil
 }
 
 // TokenPath is the path for the access token file

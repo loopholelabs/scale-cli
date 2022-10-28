@@ -2,7 +2,7 @@ module github.com/loopholelabs/scale-cli
 
 go 1.18
 
-replace github.com/cli/oauth => github.com/loopholelabs/oauth v0.9.1-0.20221027010653-e36bc62e9f08
+replace github.com/cli/oauth => github.com/loopholelabs/oauth v0.10.0
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6
@@ -18,7 +18,7 @@ require (
 	github.com/gocarina/gocsv v0.0.0-20220927221512-ad3251f9fa25
 	github.com/gofiber/fiber/v2 v2.39.0
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7
-	github.com/loopholelabs/auth v0.0.0-20221027004924-90773dea639d
+	github.com/loopholelabs/auth v0.0.7
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.0
 	github.com/loopholelabs/scale v0.0.10

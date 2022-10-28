@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/loopholelabs/scale-cli/cmd/apikey"
 	"github.com/loopholelabs/scale-cli/cmd/auth"
 	"github.com/loopholelabs/scale-cli/cmd/version"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
@@ -101,7 +102,7 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 		return err
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfg.BaseURL, "api", "https://api.scale.sh", "The base URL for the Scale API.")
+	rootCmd.PersistentFlags().StringVar(&cfg.Endpoint, "api", "https://api.scale.sh", "The base URL for the Scale API.")
 
 	rootCmd.PersistentFlags().VarP(printer.NewFormatValue(printer.Human, format), "format", "f",
 		"Show output in a specific format. Possible values: [human, json, csv]")
@@ -121,11 +122,10 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 		Printer: printer.NewPrinter(format),
 		Config:  cfg,
 		Client: func() (*client.ScaleAPIV1, error) {
-			userAgent := "scale-cli/" + ver
-			headers := map[string]string{
-				"scale-cli-version": ver,
+			if cfg.Token == nil {
+				return cfg.NewUnauthenticatedClientFromConfig(cfg.Endpoint)
 			}
-			return cfg.NewClientFromConfig(config.WithUserAgent(userAgent), config.WithRequestHeaders(headers))
+			return cfg.NewAuthenticatedClientFromConfig(cfg.Endpoint, cfg.Token)
 		},
 	}
 	ch.SetDebug(debug)
@@ -144,6 +144,7 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(auth.Cmd(ch))
 	rootCmd.AddCommand(version.Cmd(ch, ver, commit, buildDate))
+	rootCmd.AddCommand(apikey.Cmd(ch))
 
 	return rootCmd.ExecuteContext(ctx)
 }

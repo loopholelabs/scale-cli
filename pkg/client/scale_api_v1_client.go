@@ -10,7 +10,7 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/loopholelabs/scale-cli/pkg/client/config"
+	"github.com/loopholelabs/scale-cli/pkg/client/access"
 )
 
 // Default scale API v1 HTTP client.
@@ -55,7 +55,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *ScaleAPIV1
 
 	cli := new(ScaleAPIV1)
 	cli.Transport = transport
-	cli.Config = config.New(transport, formats)
+	cli.Access = access.New(transport, formats)
 	return cli
 }
 
@@ -100,7 +100,7 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 
 // ScaleAPIV1 is a client for scale API v1
 type ScaleAPIV1 struct {
-	Config config.ClientService
+	Access access.ClientService
 
 	Transport runtime.ClientTransport
 }
@@ -108,5 +108,5 @@ type ScaleAPIV1 struct {
 // SetTransport changes the transport on the client and all its subresources
 func (c *ScaleAPIV1) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
-	c.Config.SetTransport(transport)
+	c.Access.SetTransport(transport)
 }
