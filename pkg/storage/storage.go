@@ -62,6 +62,21 @@ func (s *Storage) path(name string) string {
 
 // Get returns the Scale Function with the given name
 func (s *Storage) Get(name string) (*scalefunc.ScaleFunc, error) {
+	data, err := os.ReadFile(s.path(name))
+	if err != nil {
+		return nil, err
+	}
+
+	sf := new(scalefunc.ScaleFunc)
+	err = sf.Decode(data)
+	if err != nil {
+		return nil, err
+	}
+
+	return sf, nil
+}
+
+func (s *Storage) get(name string) (*scalefunc.ScaleFunc, error) {
 	data, err := os.ReadFile(path.Join(s.BaseDirectory, name))
 	if err != nil {
 		return nil, err
@@ -106,7 +121,7 @@ func (s *Storage) List() ([]*scalefunc.ScaleFunc, error) {
 		if entry.IsDir() {
 			continue
 		}
-		scaleFunc, err := s.Get(entry.Name())
+		scaleFunc, err := s.get(entry.Name())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get scale function %s: %w", entry.Name(), err)
 		}
