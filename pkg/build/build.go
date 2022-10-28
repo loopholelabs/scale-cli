@@ -20,23 +20,22 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"github.com/loopholelabs/frisbee-go"
 	"github.com/loopholelabs/frisbee-go/pkg/packet"
+	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/rpc/build"
 	"github.com/loopholelabs/scale/go/scalefile"
 	"github.com/loopholelabs/scale/go/scalefunc"
-	"github.com/rs/zerolog"
-	"github.com/spf13/viper"
 	"time"
 )
 
-func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, logger zerolog.Logger) *scalefunc.ScaleFunc {
+func Build(ctx context.Context, endpoint string, input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
 	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("error while creating builder fRPC client")
+		return nil, err
 	}
-
-	builderServer := viper.GetString("builder")
 
 	scaleFunc := &scalefunc.ScaleFunc{
 		ScaleFile: scaleFile,
@@ -45,29 +44,28 @@ func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig 
 
 	isErr := true
 	streamDone := make(chan struct{})
-	start := time.Now()
-	err = client.Connect(builderServer, func(stream *frisbee.Stream) {
+	err = client.Connect(endpoint, func(stream *frisbee.Stream) {
 		streamPacket := build.NewBuildStreamPacket()
 		for {
 			p, err := stream.ReadPacket()
 			if err != nil {
 				packet.Put(p)
 				if !errors.Is(err, frisbee.StreamClosed) {
-					logger.Error().Err(err).Msg("error while reading packet from builder stream")
+					ch.Printer.Printf("%s %v\n", printer.Red("Error reading packet from builder stream:"), printer.BoldRed(err))
 				}
 				break
 			}
 			err = streamPacket.Decode(p.Content.Bytes())
 			packet.Put(p)
 			if err != nil {
-				logger.Error().Err(err).Msg("error while decoding packet from builder stream")
+				ch.Printer.Printf("%s %v\n", printer.Red("Error decoding packet from builder stream:"), printer.BoldRed(err))
 				break
 			}
 			switch streamPacket.Type {
 			case build.BuildSTDOUT:
-				logger.Info().Msg(string(streamPacket.Data))
+				ch.Printer.Printf("%s\n", printer.BoldBlue(string(streamPacket.Data)))
 			case build.BuildSTDERR:
-				logger.Warn().Msg(string(streamPacket.Data))
+				ch.Printer.Printf("%s\n", printer.BoldYellow(string(streamPacket.Data)))
 			case build.BuildOUTPUT:
 				scaleFunc.Function = streamPacket.Data
 				isErr = false
@@ -79,9 +77,8 @@ func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig 
 		streamDone <- struct{}{}
 	})
 	if err != nil {
-		logger.Fatal().Err(err).Msg("error while connecting to scale build server")
+		return nil, fmt.Errorf("error connecting to build service: %w", err)
 	}
-	logger.Debug().Msgf("connected to scale build server in %s", time.Since(start))
 	req := build.NewBuildRequest()
 	req.Token = token
 	req.ScaleFile.Name = scaleFile.Name
@@ -93,24 +90,21 @@ func Build(input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig 
 			Version: dependency.Version,
 		})
 	}
-	logger.Info().Msgf("Compiling %s...", scaleFile.Name)
-	start = time.Now()
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second*10))
+	ch.Printer.Printf("%s %s...\n", printer.BoldBlue("Building function"), printer.BoldGreen(scaleFile.Name))
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
 	defer cancel()
-	res, err := client.Service.Build(ctx, req)
+	_, err = client.Service.Build(ctx, req)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("error while sending compilation request to scale build server")
+		return nil, fmt.Errorf("error sending build request to build service: %w", err)
 	}
-	logger.Debug().Msgf("stream ID: %d", res.StreamID)
 	select {
 	case <-streamDone:
 	case <-ctx.Done():
-		logger.Fatal().Err(ctx.Err()).Msg("error while waiting for build stream to close")
+		return nil, fmt.Errorf("error waiting for build stream to close: %w", ctx.Err())
 	}
-	logger.Debug().Msgf("completed remote build in %s", time.Since(start))
 	if isErr {
-		logger.Fatal().Msg("Error Occurred while Compiling Scale Function")
+		return nil, errors.New("error occured during build")
 	}
 
-	return scaleFunc
+	return scaleFunc, nil
 }

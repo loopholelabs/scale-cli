@@ -23,6 +23,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/loopholelabs/scale-cli/cmd/apikey"
 	"github.com/loopholelabs/scale-cli/cmd/auth"
+	"github.com/loopholelabs/scale-cli/cmd/function"
 	"github.com/loopholelabs/scale-cli/cmd/version"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -145,6 +146,7 @@ func runCmd(ctx context.Context, ver, commit, buildDate string, format *printer.
 	rootCmd.AddCommand(auth.Cmd(ch))
 	rootCmd.AddCommand(version.Cmd(ch, ver, commit, buildDate))
 	rootCmd.AddCommand(apikey.Cmd(ch))
+	rootCmd.AddCommand(function.Cmd(ch))
 
 	return rootCmd.ExecuteContext(ctx)
 }

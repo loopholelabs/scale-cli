@@ -50,6 +50,7 @@ func FromClientToken(t *client.Token, kind tokenKind.Kind, endpoint string, base
 // Config is dynamically sourced from various files and environment variables.
 type Config struct {
 	Endpoint string `yaml:"endpoint"`
+	Build    string `yaml:"build"`
 	Token    *Token `yaml:"token"`
 }
 
@@ -85,6 +86,7 @@ func New() (*Config, error) {
 
 	return &Config{
 		Endpoint: "https://api.scale.sh",
+		Build:    "build.scale.sh:8192",
 		Token:    &token,
 	}, nil
 }
@@ -96,23 +98,6 @@ func (c *Config) IsAuthenticated() error {
 
 	return nil
 }
-
-type ClientOption func(c *apiClient.ScaleAPIV1) error
-
-var (
-	WithUserAgent = func(userAgent string) ClientOption {
-		return func(c *apiClient.ScaleAPIV1) error {
-			//c.UserAgent = userAgent
-			return nil
-		}
-	}
-	WithRequestHeaders = func(headers map[string]string) ClientOption {
-		return func(c *apiClient.ScaleAPIV1) error {
-			//c.RequestHeaders = headers
-			return nil
-		}
-	}
-)
 
 // NewAuthenticatedClientFromConfig creates an Authenticated Scale API client from our configuration
 func (c *Config) NewAuthenticatedClientFromConfig(endpoint string, t *Token) (*apiClient.ScaleAPIV1, error) {
