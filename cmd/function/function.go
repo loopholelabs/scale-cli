@@ -21,6 +21,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type scaleFunction struct {
+	Name       string `header:"name" json:"name"`
+	Tag        string `header:"tag" json:"tag"`
+	Language   string `header:"language" json:"language"`
+	Middleware bool   `header:"middleware" json:"middleware"`
+	Version    string `header:"version,v1" json:"version"`
+}
+
 // Cmd returns the base command for function.
 func Cmd(ch *cmdutil.Helper) *cobra.Command {
 	cmd := &cobra.Command{
@@ -31,5 +39,7 @@ func Cmd(ch *cmdutil.Helper) *cobra.Command {
 
 	cmd.AddCommand(BuildCmd(ch))
 	cmd.AddCommand(NewCmd(ch))
+	cmd.AddCommand(ListCmd(ch))
+	cmd.AddCommand(DeleteCmd(ch))
 	return cmd
 }

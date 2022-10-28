@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-func Build(ctx context.Context, endpoint string, input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
+func Build(ctx context.Context, endpoint string, name string, input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
 	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
 		return nil, err
@@ -63,9 +63,9 @@ func Build(ctx context.Context, endpoint string, input []byte, token string, sca
 			}
 			switch streamPacket.Type {
 			case build.BuildSTDOUT:
-				ch.Printer.Printf("%s\n", printer.BoldBlue(string(streamPacket.Data)))
+				ch.Printer.Printf("%s", printer.BoldBlue(string(streamPacket.Data))) // Ignoring newline because it's already in the data
 			case build.BuildSTDERR:
-				ch.Printer.Printf("%s\n", printer.BoldYellow(string(streamPacket.Data)))
+				ch.Printer.Printf("%s", printer.BoldYellow(string(streamPacket.Data))) // Ignoring newline because it's already in the data
 			case build.BuildOUTPUT:
 				scaleFunc.Function = streamPacket.Data
 				isErr = false
@@ -90,7 +90,7 @@ func Build(ctx context.Context, endpoint string, input []byte, token string, sca
 			Version: dependency.Version,
 		})
 	}
-	ch.Printer.Printf("%s %s...\n", printer.BoldBlue("Building function"), printer.BoldGreen(scaleFile.Name))
+	ch.Printer.Printf("%s %s...\n", printer.BoldBlue("Building scale function"), printer.BoldGreen(name))
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
 	defer cancel()
 	_, err = client.Service.Build(ctx, req)

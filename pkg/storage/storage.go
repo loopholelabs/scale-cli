@@ -56,12 +56,12 @@ func New(baseDirectory string) (*Storage, error) {
 }
 
 func (s *Storage) path(name string) string {
-	return path.Join(s.BaseDirectory, name)
+	return fmt.Sprintf("%s.scale", path.Join(s.BaseDirectory, name))
 }
 
 // Get returns the Scale Function with the given name
 func (s *Storage) Get(name string) (*scalefunc.ScaleFunc, error) {
-	data, err := os.ReadFile(s.path(name))
+	data, err := os.ReadFile(path.Join(s.BaseDirectory, name))
 	if err != nil {
 		return nil, err
 	}

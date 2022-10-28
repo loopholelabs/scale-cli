@@ -22,6 +22,16 @@ var (
 	}
 )
 
+const (
+	GoTemplate = `module github.com/loopholelabs/scale/go/compile
+
+go 1.18
+{{range .}}
+require {{.Name}} {{.Version}}
+{{end}}
+`
+)
+
 func Go() []byte {
 	return []byte(`package scale
 
@@ -32,6 +42,5 @@ import (
 func Scale(ctx *context.Context) *context.Context {
 	ctx.Response().SetBody("Hello, World!")
 	return ctx
-}
-`)
+}`)
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/loopholelabs/scale/go/scalefile"
 	"github.com/spf13/cobra"
 	"os"
+	textTemplate "text/template"
 )
 
 var (
@@ -21,7 +22,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 	var middleware bool
 
 	cmd := &cobra.Command{
-		Use:     "new <language> <name>",
+		Use:     "new <language> <name> [flags]",
 		Args:    cobra.ExactArgs(2),
 		Short:   "generate a new scale function with the given name and language",
 		PreRunE: cmdutil.CheckAuthentication(ch.Config),
@@ -62,8 +63,28 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error writing source file: %w", err)
 			}
 
+			tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+			if err != nil {
+				return fmt.Errorf("error parsing dependency template: %w", err)
+			}
+
+			switch language {
+			case "go":
+				dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
+				if err != nil {
+					return fmt.Errorf("error creating dependencies file: %w", err)
+				}
+				err = tmpl.Execute(dependencyFile, scaleFile.Build.Dependencies)
+				if err != nil {
+					_ = dependencyFile.Close()
+					return fmt.Errorf("error writing dependencies file: %w", err)
+				}
+			default:
+				return fmt.Errorf("language %s is not supported", language)
+			}
+
 			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully created new %s function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
+				ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
 				return nil
 			}
 

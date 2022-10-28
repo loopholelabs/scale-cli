@@ -44,7 +44,7 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 				return err
 			}
 
-			scaleFunc, err := build.Build(ctx, ch.Config.Build, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
+			scaleFunc, err := build.Build(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
 			if err != nil {
 				return err
 			}
@@ -70,7 +70,7 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 			}
 
 			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully built function %s\n", printer.BoldGreen(name))
+				ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(name))
 				return nil
 			}
 
