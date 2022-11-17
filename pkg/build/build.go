@@ -26,20 +26,26 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/rpc/build"
-	"github.com/loopholelabs/scale/go/scalefile"
-	"github.com/loopholelabs/scale/go/scalefunc"
+	"github.com/loopholelabs/scale/scalefile"
+	"github.com/loopholelabs/scale/scalefunc"
 	"time"
 )
 
-func Build(ctx context.Context, endpoint string, name string, input []byte, token string, scaleFile scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
+func Build(ctx context.Context, endpoint string, name string, input []byte, token string, scaleFile *scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
 	client, err := build.NewClient(tlsConfig, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	scaleFunc := &scalefunc.ScaleFunc{
-		ScaleFile: scaleFile,
-		Tag:       "latest",
+		Version:   scalefunc.V1Alpha,
+		Name:      fmt.Sprintf("%s:latest", scaleFile.Name),
+		Signature: scaleFile.Signature,
+		Language:  scalefunc.Language(scaleFile.Language),
+	}
+
+	for _, f := range scaleFile.Extensions {
+		scaleFunc.Extensions = append(scaleFunc.Extensions, scalefunc.Extension(f))
 	}
 
 	isErr := true
@@ -83,8 +89,8 @@ func Build(ctx context.Context, endpoint string, name string, input []byte, toke
 	req.Token = token
 	req.ScaleFile.Name = scaleFile.Name
 	req.ScaleFile.Input = input
-	req.ScaleFile.BuildConfig.Language = scaleFile.Build.Language
-	for _, dependency := range scaleFile.Build.Dependencies {
+	req.ScaleFile.BuildConfig.Language = string(scaleFunc.Language)
+	for _, dependency := range scaleFile.Dependencies {
 		req.ScaleFile.BuildConfig.Dependencies = append(req.ScaleFile.BuildConfig.Dependencies, &build.BuildDependency{
 			Name:    dependency.Name,
 			Version: dependency.Version,

@@ -27,11 +27,10 @@ import (
 	"github.com/loopholelabs/scale-cli/pkg/build"
 	apiClient "github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
-	"github.com/loopholelabs/scale/go/scalefile"
+	"github.com/loopholelabs/scale/scalefile"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
-	"strings"
 )
 
 func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
@@ -89,22 +88,11 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 				return err
 			}
 			if name != "" {
-				scaleFunc.ScaleFile.Name = name
-				names := strings.Split(name, ":")
-				var fname string
-				if len(names) == 2 {
-					scaleFunc.ScaleFile.Name = names[0]
-					scaleFunc.Tag = names[1]
-					fname = fmt.Sprintf("%s:%s", scaleFunc.ScaleFile.Name, scaleFunc.Tag)
-				} else {
-					scaleFunc.Tag = "latest"
-					fname = fmt.Sprintf("%s:%s", name, scaleFunc.Tag)
-				}
-				err = storage.Default.Put(fname, scaleFunc)
+				scaleFunc.Name = name
 			} else {
-				name = scaleFunc.ScaleFile.Name
-				err = storage.Default.Put(fmt.Sprintf("%s:%s", name, scaleFunc.Tag), scaleFunc)
+				name = scaleFunc.Name
 			}
+			err = storage.Default.Put(scaleFunc.Name, scaleFunc)
 			if err != nil {
 				return err
 			}
@@ -116,7 +104,6 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 
 			return ch.Printer.PrintResource(map[string]string{
 				"Name": name,
-				"Tag":  scaleFunc.Tag,
 			})
 		},
 	}

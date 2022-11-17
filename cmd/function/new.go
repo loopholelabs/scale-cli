@@ -21,7 +21,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-	"github.com/loopholelabs/scale/go/scalefile"
+	"github.com/loopholelabs/scale/scalefile"
 	"github.com/spf13/cobra"
 	"os"
 	textTemplate "text/template"
@@ -35,7 +35,6 @@ var (
 
 func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 	var directory string
-	var middleware bool
 
 	cmd := &cobra.Command{
 		Use:     "new <language> <name> [flags]",
@@ -51,15 +50,19 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("language %s is not supported", language)
 			}
 
-			scaleFile := scalefile.ScaleFile{
-				Version: "v1",
-				Name:    name,
-				Build: scalefile.Build{
-					Language:     language,
-					Dependencies: scalefile.DefaultDependencies,
+			scaleFile := &scalefile.ScaleFile{
+				Version:   scalefile.V1Alpha,
+				Name:      name,
+				Signature: "http",
+				Language:  scalefile.Language(language),
+				Dependencies: []scalefile.Dependency{
+					{
+						Name:    "github.com/loopholelabs/scale",
+						Version: "v0.0.10",
+					},
 				},
+				Extensions: nil,
 				Source:     fmt.Sprintf("%s.%s", name, extension),
-				Middleware: middleware,
 			}
 
 			if _, err := os.Stat(directory); os.IsNotExist(err) {
@@ -90,7 +93,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("error creating dependencies file: %w", err)
 				}
-				err = tmpl.Execute(dependencyFile, scaleFile.Build.Dependencies)
+				err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
 				if err != nil {
 					_ = dependencyFile.Close()
 					return fmt.Errorf("error writing dependencies file: %w", err)
@@ -112,7 +115,6 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-	cmd.Flags().BoolVarP(&middleware, "middleware", "m", false, "create a middleware function")
 
 	return cmd
 }

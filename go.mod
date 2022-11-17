@@ -16,8 +16,8 @@ require (
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7
 	github.com/loopholelabs/auth v0.0.7
 	github.com/loopholelabs/frisbee-go v0.7.0
-	github.com/loopholelabs/polyglot-go v0.5.0
-	github.com/loopholelabs/scale v0.0.10
+	github.com/loopholelabs/polyglot-go v0.5.1
+	github.com/loopholelabs/scale v0.0.10-0.20221117210210-ac7f6287c01d
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1

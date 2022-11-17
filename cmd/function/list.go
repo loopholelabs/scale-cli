@@ -43,10 +43,9 @@ func ListCmd(ch *cmdutil.Helper) *cobra.Command {
 			funcs := make([]scaleFunction, len(scaleFuncEntries))
 			for i, entry := range scaleFuncEntries {
 				funcs[i] = scaleFunction{
-					Name:       entry.ScaleFile.Name,
-					Tag:        entry.Tag,
-					Language:   entry.ScaleFile.Build.Language,
-					Middleware: entry.ScaleFile.Middleware,
+					Name:     entry.Name,
+					Language: string(entry.Language),
+					Version:  string(entry.Version),
 				}
 			}
 

@@ -22,11 +22,9 @@ import (
 )
 
 type scaleFunction struct {
-	Name       string `header:"name" json:"name"`
-	Tag        string `header:"tag" json:"tag"`
-	Language   string `header:"language" json:"language"`
-	Middleware bool   `header:"middleware" json:"middleware"`
-	Version    string `header:"version,v1" json:"version"`
+	Name     string `header:"name" json:"name"`
+	Language string `header:"language" json:"language"`
+	Version  string `header:"version" json:"version"`
 }
 
 // Cmd returns the base command for function.

@@ -19,7 +19,7 @@ package storage
 
 import (
 	"fmt"
-	"github.com/loopholelabs/scale/go/scalefunc"
+	"github.com/loopholelabs/scale/scalefunc"
 	"os"
 	"path"
 	"strings"

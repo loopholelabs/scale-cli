@@ -23,7 +23,7 @@ import (
 	"github.com/loopholelabs/scale-cli/pkg/storage"
 	adapter "github.com/loopholelabs/scale/go/adapters/fasthttp"
 	"github.com/loopholelabs/scale/go/runtime"
-	"github.com/loopholelabs/scale/go/scalefunc"
+	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
 	"os"

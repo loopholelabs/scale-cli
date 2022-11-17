@@ -24,7 +24,7 @@ import (
 const (
 	DefaultEndpoint = "auth.scale.sh"
 	DefaultBasePath = "/"
-	OAuthClientID   = "dgmOd1GERZf7l6uLGX1Y"
+	OAuthClientID   = "scalecli"
 )
 
 var (
