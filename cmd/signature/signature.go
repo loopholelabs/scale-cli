@@ -31,6 +31,7 @@ func Cmd(ch *cmdutil.Helper) *cobra.Command {
 
 	cmd.AddCommand(NewCmd(ch))
 	cmd.AddCommand(GenerateCmd(ch))
+	cmd.AddCommand(AddCmd(ch))
 
 	return cmd
 }

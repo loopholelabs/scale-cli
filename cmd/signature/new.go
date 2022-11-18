@@ -78,7 +78,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error writing signature definition: %w", err)
 			}
 
-			protoFile, err := os.OpenFile(fmt.Sprintf("%s/%s/signature.proto", name, directory), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+			protoFile, err := os.OpenFile(fmt.Sprintf("%s/%s/signature.proto", directory, name), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 			if err != nil {
 				return fmt.Errorf("error creating signature proto file: %w", err)
 			}
@@ -95,10 +95,10 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error finding scale binary: %w", err)
 			}
 
-			protocCmd := exec.Command(protoc, "--plugin", fmt.Sprintf("protoc-gen-go-scale-signature=%s", scaleBinary), fmt.Sprintf("--go-scale-signature_out=%s/%s", directory, name), fmt.Sprintf("%s/%s/signature.proto", directory, name))
-			protocCmd.Env = append(os.Environ(), "SCALE_PROTOC=true")
+			goProtocCmd := exec.Command(protoc, "--plugin", fmt.Sprintf("protoc-gen-go-scale-signature=%s", scaleBinary), fmt.Sprintf("--go-scale-signature_out=%s/%s", directory, name), fmt.Sprintf("%s/%s/signature.proto", directory, name))
+			goProtocCmd.Env = append(os.Environ(), "SCALE_PROTOC=true")
 
-			err = protocCmd.Run()
+			err = goProtocCmd.Run()
 			if err != nil {
 				return fmt.Errorf("error generating go code from proto file: %w", err)
 			}
@@ -115,7 +115,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale signature in")
+	cmd.Flags().StringVarP(&directory, "directory", "d", "signature", "the directory to create the new scale signature in")
 	cmd.Flags().StringVar(&protoc, "protoc", "", "the path to the protoc binary")
 	return cmd
 }

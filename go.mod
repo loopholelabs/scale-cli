@@ -17,7 +17,7 @@ require (
 	github.com/loopholelabs/auth v0.0.7
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.1
-	github.com/loopholelabs/scale v0.0.10-0.20221118032548-d08f4ee346b0
+	github.com/loopholelabs/scale v0.0.10-0.20221118215902-cab380bcf1ee
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -26,6 +26,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.13.0
 	github.com/valyala/fasthttp v1.40.0
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4
 	golang.org/x/oauth2 v0.0.0-20220909003341-f21342109be1
 	golang.org/x/sys v0.1.0
 	gopkg.in/square/go-jose.v2 v2.6.0
