@@ -260,8 +260,8 @@ github.com/loopholelabs/oauth v0.10.0 h1:ciyX5cUIBRX7yg3y8NdAI0vNQ74eyQ6Sz+9OS9i
 github.com/loopholelabs/oauth v0.10.0/go.mod h1:qd/FX8ZBD6n1sVNQO3aIdRxeu5LGw9WhKnYhIIoC2A4=
 github.com/loopholelabs/polyglot-go v0.5.1 h1:21QVDELp+EodPUAL+Aw8GNXLyt2BFj9gYQsGvHIFlcc=
 github.com/loopholelabs/polyglot-go v0.5.1/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale v0.0.10-0.20221117210210-ac7f6287c01d h1:NaoYYPfXV6y5Yzz/ywmkHfkR7xwHJ0ps2OSLdMnq0w4=
-github.com/loopholelabs/scale v0.0.10-0.20221117210210-ac7f6287c01d/go.mod h1:E0mDXalRzqvrbggUkyQrCe1tskpa7eDHXxNPh9cdvgQ=
+github.com/loopholelabs/scale v0.0.10-0.20221118032548-d08f4ee346b0 h1:U0PK/TB7PVcX0U2rUgcYcW+FS/SnWxiv3JaSLZBQEYo=
+github.com/loopholelabs/scale v0.0.10-0.20221118032548-d08f4ee346b0/go.mod h1:E0mDXalRzqvrbggUkyQrCe1tskpa7eDHXxNPh9cdvgQ=
 github.com/loopholelabs/testing v0.2.3 h1:4nVuK5ctaE6ua5Z0dYk2l7xTFmcpCYLUeGjRBp8keOA=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
@@ -367,6 +367,8 @@ github.com/xdg-go/scram v1.0.2/go.mod h1:1WAq6h33pAW+iRreB34OORO2Nf7qel3VV3fjBj+
 github.com/xdg-go/scram v1.1.1/go.mod h1:RaEWvsqvNKKvBPvcKeFjrG2cJqOkHTiyTpzz23ni57g=
 github.com/xdg-go/stringprep v1.0.2/go.mod h1:8F9zXuvzgwmyT5DUm4GUfZGDdT3W+LCvS6+da4O5kxM=
 github.com/xdg-go/stringprep v1.0.3/go.mod h1:W3f5j4i+9rC0kuIEJL0ky1VpHXQU3ocBgklLGvcBnW8=
+github.com/yalue/merged_fs v1.2.2 h1:vXHTpJBluJryju7BBpytr3PDIkzsPMpiEknxVGPhN/I=
+github.com/yalue/merged_fs v1.2.2/go.mod h1:WqqchfVYQyclV2tnR7wtRhBddzBvLVR83Cjw9BKQw0M=
 github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d/go.mod h1:rHwXgn7JulP+udvsHwJoVG1YGAP6VLg4y9I5dyZdqmA=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

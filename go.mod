@@ -17,7 +17,7 @@ require (
 	github.com/loopholelabs/auth v0.0.7
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.1
-	github.com/loopholelabs/scale v0.0.10-0.20221117210210-ac7f6287c01d
+	github.com/loopholelabs/scale v0.0.10-0.20221118032548-d08f4ee346b0
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
@@ -73,6 +73,7 @@ require (
 	github.com/subosito/gotenv v1.4.1 // indirect
 	github.com/tetratelabs/wazero v1.0.0-pre.2 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
+	github.com/yalue/merged_fs v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect

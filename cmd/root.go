@@ -24,6 +24,8 @@ import (
 	"github.com/loopholelabs/scale-cli/cmd/apikey"
 	"github.com/loopholelabs/scale-cli/cmd/auth"
 	"github.com/loopholelabs/scale-cli/cmd/function"
+	"github.com/loopholelabs/scale-cli/cmd/protoc"
+	"github.com/loopholelabs/scale-cli/cmd/signature"
 	"github.com/loopholelabs/scale-cli/cmd/version"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -62,7 +64,14 @@ func Execute(ctx context.Context) int {
 		}
 	}
 
-	err := runCmd(ctx, &format, &debug)
+	var err error
+	if _, ok := os.LookupEnv("SCALE_PROTOC"); ok {
+		protocCmd := protoc.Cmd()
+		err = protocCmd.ExecuteContext(ctx)
+	} else {
+		err = runCmd(ctx, &format, &debug)
+	}
+
 	if err == nil {
 		return 0
 	}
@@ -148,15 +157,21 @@ func runCmd(ctx context.Context, format *printer.Format, debug *bool) error {
 	newCmd := function.NewCmd(ch)
 	newCmd.Hidden = true
 
+	protocCmd := protoc.Cmd()
+	protocCmd.Hidden = true
+
 	rootCmd.AddCommand(loginCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(buildCmd)
 	rootCmd.AddCommand(newCmd)
+	rootCmd.AddCommand(protocCmd)
 
 	rootCmd.AddCommand(auth.Cmd(ch))
 	rootCmd.AddCommand(version.Cmd(ch))
 	rootCmd.AddCommand(apikey.Cmd(ch))
 	rootCmd.AddCommand(function.Cmd(ch))
+
+	rootCmd.AddCommand(signature.Cmd(ch))
 
 	return rootCmd.ExecuteContext(ctx)
 }
