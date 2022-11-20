@@ -11,6 +11,7 @@ import (
 	"github.com/go-openapi/strfmt"
 
 	"github.com/loopholelabs/scale-cli/pkg/client/access"
+	"github.com/loopholelabs/scale-cli/pkg/client/registry"
 )
 
 // Default scale API v1 HTTP client.
@@ -56,6 +57,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *ScaleAPIV1
 	cli := new(ScaleAPIV1)
 	cli.Transport = transport
 	cli.Access = access.New(transport, formats)
+	cli.Registry = registry.New(transport, formats)
 	return cli
 }
 
@@ -102,6 +104,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 type ScaleAPIV1 struct {
 	Access access.ClientService
 
+	Registry registry.ClientService
+
 	Transport runtime.ClientTransport
 }
 
@@ -109,4 +113,5 @@ type ScaleAPIV1 struct {
 func (c *ScaleAPIV1) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Access.SetTransport(transport)
+	c.Registry.SetTransport(transport)
 }
