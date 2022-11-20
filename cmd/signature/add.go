@@ -39,7 +39,7 @@ var (
 func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 	var directory string
 	var local string
-	var scaleFile string
+	var scaleFilePath string
 	var manifest string
 	var language string
 
@@ -58,7 +58,7 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 				return err
 			}
 
-			var scalefileLanguage scalefile.Language
+			var scaleFileLanguage scalefile.Language
 			if manifest != "" {
 				if language == "" {
 					return errors.New("language must be specified when using the --manifest flag")
@@ -73,21 +73,26 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 				if invalid {
 					return fmt.Errorf("language %s is not supported", language)
 				}
-				scalefileLanguage = scalefile.Language(language)
+				scaleFileLanguage = scalefile.Language(language)
 			} else {
-				sc, err := scalefile.Read(scaleFile)
+				sc, err := scalefile.Read(scaleFilePath)
 				if err != nil {
 					return fmt.Errorf("error reading scale file: %w", err)
 				}
-				scalefileLanguage = sc.Language
-				manifest = path.Join(path.Dir(scaleFile), ManifestLUT[scalefileLanguage])
+				scaleFileLanguage = sc.Language
+				manifest = path.Join(path.Dir(scaleFilePath), ManifestLUT[scaleFileLanguage])
 			}
 			manifestData, err := os.ReadFile(manifest)
 			if err != nil {
 				return fmt.Errorf("error reading manifest file: %w", err)
 			}
 
-			switch scalefileLanguage {
+			scaleFile, err := scalefile.Read(scaleFilePath)
+			if err != nil {
+				return fmt.Errorf("error reading scale file: %w", err)
+			}
+
+			switch scaleFileLanguage {
 			case scalefile.Go:
 				sourcePath := modfile.ModulePath(manifestData)
 				if sourcePath == "" {
@@ -104,12 +109,22 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 					sourcePath = dependency.Name
 				}
 
-				err = signature.CreateGoSignature(scaleFile, directory, sourcePath)
+				err = signature.CreateGoSignature(scaleFilePath, directory, sourcePath)
 				if err != nil {
 					return err
 				}
 			default:
-				return fmt.Errorf("language %s is not supported", scalefileLanguage)
+				return fmt.Errorf("language %s is not supported", scaleFileLanguage)
+			}
+
+			if signatureNamespace != "" {
+				scaleFile.Signature = fmt.Sprintf("%s/%s@%s", signatureNamespace, signatureName, signatureVersion)
+			} else {
+				scaleFile.Signature = fmt.Sprintf("%s@%s", signatureName, signatureVersion)
+			}
+			err = scalefile.Write(scaleFilePath, scaleFile)
+			if err != nil {
+				return fmt.Errorf("error writing scale file: %w", err)
 			}
 
 			if ch.Printer.Format() == printer.Human {
@@ -121,16 +136,16 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 				"Name":      signatureName,
 				"Directory": directory,
 				"Local":     local,
-				"ScaleFile": scaleFile,
+				"ScaleFile": scaleFilePath,
 				"Manifest":  manifest,
-				"Language":  string(scalefileLanguage),
+				"Language":  string(scaleFileLanguage),
 			})
 		},
 	}
 
 	cmd.Flags().StringVarP(&directory, "directory", "d", "signature", "the directory to register the scale signature relative to the scalefile")
 	cmd.Flags().StringVarP(&local, "local", "l", "", "the path to the local signature relative to the scalefile")
-	cmd.Flags().StringVar(&scaleFile, "scalefile", "scalefile", "the path to the scale file for the scale function")
+	cmd.Flags().StringVar(&scaleFilePath, "scalefile", "scalefile", "the path to the scale file for the scale function")
 	cmd.Flags().StringVar(&manifest, "manifest", "", "the path to the manifest file for the guest language for the scale function")
 	cmd.Flags().StringVar(&language, "language", "", "the language of the scale function if the --manifest flag is used (go, rust, etc.)")
 	return cmd
