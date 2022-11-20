@@ -22,12 +22,14 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
+	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/signature"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"os"
 	"path"
+	textTemplate "text/template"
 )
 
 var (
@@ -106,7 +108,25 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 						return err
 					}
 
+					dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
+					if err != nil {
+						return fmt.Errorf("error creating dependencies file: %w", err)
+					}
+
+					tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing dependency template: %w", err)
+					}
+
 					sourcePath = dependency.Name
+					dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
+					copy(dependencies, scaleFile.Dependencies)
+					dependencies[len(dependencies)-1] = *dependency
+					err = tmpl.Execute(dependencyFile, dependencies)
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing dependencies file: %w", err)
+					}
 				}
 
 				err = signature.CreateGoSignature(scaleFilePath, directory, sourcePath)
