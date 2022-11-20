@@ -36,10 +36,10 @@ func Go() []byte {
 	return []byte(`package scale
 
 import (
-	"github.com/loopholelabs/scale/go/context"
+	"scale/signature"
 )
 
-func Scale(ctx *context.Context) *context.Context {
+func Scale(ctx *signature.Context) *signature.Context {
 	ctx.Response().SetBody("Hello, World!")
 	return ctx
 }`)

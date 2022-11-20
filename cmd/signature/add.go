@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
+	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale/scalefile"
-	"github.com/loopholelabs/scale/signature/generator"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"os"
 	"path"
+	"strings"
 )
 
 var (
@@ -49,6 +50,21 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 		PreRunE: cmdutil.CheckAuthentication(ch.Config),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			signature := args[0]
+			signatureNamespaceSplit := strings.Split(signature, "/")
+			if len(signatureNamespaceSplit) == 1 {
+				signatureNamespaceSplit = []string{"", signature}
+			}
+			signatureVersionSplit := strings.Split(signatureNamespaceSplit[1], "@")
+			signatureNamespace := signatureNamespaceSplit[0]
+			signatureName := signatureVersionSplit[0]
+			signatureVersion := signatureVersionSplit[1]
+
+			ctx := cmd.Context()
+			client, err := ch.Client()
+			if err != nil {
+				return err
+			}
+
 			var scalefileLanguage scalefile.Language
 			if manifest != "" {
 				if language == "" {
@@ -78,29 +94,26 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error reading manifest file: %w", err)
 			}
 
-			g := generator.New()
-
 			switch scalefileLanguage {
 			case scalefile.Go:
 				sourcePath := modfile.ModulePath(manifestData)
 				if sourcePath == "" {
 					return errors.New("failed to find module path in go.mod")
 				}
-
 				if local != "" {
 					sourcePath = path.Join(sourcePath, local, signature)
 				} else {
-					return errors.New("remote signatures are not yet supported")
+					dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, signatureNamespace, signatureName, signatureVersion)
+					if err != nil {
+						return err
+					}
+
+					sourcePath = dependency.Name
 				}
 
-				signatureFile, err := os.OpenFile(fmt.Sprintf("%s/signature.go", path.Join(path.Dir(scaleFile), directory)), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+				err = remoteSignature.CreateGoSignature(scaleFile, directory, sourcePath)
 				if err != nil {
-					return fmt.Errorf("error creating signature go file: %w", err)
-				}
-
-				err = g.ExecuteGoSignatureGeneratorTemplate(signatureFile, "signature", sourcePath)
-				if err != nil {
-					return fmt.Errorf("error generating signature go file: %w", err)
+					return err
 				}
 			default:
 				return fmt.Errorf("language %s is not supported", scalefileLanguage)
@@ -114,7 +127,7 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 			return ch.Printer.PrintResource(map[string]string{
 				"Name":      signature,
 				"Directory": directory,
-				"Local":     fmt.Sprintf("%t", local),
+				"Local":     local,
 				"ScaleFile": scaleFile,
 				"Manifest":  manifest,
 				"Language":  string(scalefileLanguage),

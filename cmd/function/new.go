@@ -20,11 +20,19 @@ import (
 	"fmt"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
+	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/spf13/cobra"
 	"os"
+	"path"
 	textTemplate "text/template"
+)
+
+const (
+	defaultSignature        = "http@v0.0.1"
+	defaultSignatureName    = "http"
+	defaultSignatureVersion = "v0.0.1"
 )
 
 var (
@@ -45,6 +53,12 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 			language := args[0]
 			name := args[1]
 
+			ctx := cmd.Context()
+			client, err := ch.Client()
+			if err != nil {
+				return err
+			}
+
 			extension, ok := extensionLUT[language]
 			if !ok {
 				return fmt.Errorf("language %s is not supported", language)
@@ -53,12 +67,12 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 			scaleFile := &scalefile.ScaleFile{
 				Version:   scalefile.V1Alpha,
 				Name:      name,
-				Signature: "http",
+				Signature: defaultSignature,
 				Language:  scalefile.Language(language),
 				Dependencies: []scalefile.Dependency{
 					{
 						Name:    "github.com/loopholelabs/scale",
-						Version: "v0.0.10",
+						Version: "v0.0.10-0.20221120080743-aeb8dd4ef660",
 					},
 				},
 				Extensions: nil,
@@ -72,7 +86,8 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				}
 			}
 
-			err := scalefile.Write(fmt.Sprintf("%s/scalefile", directory), scaleFile)
+			scaleFilePath := path.Join(directory, "scalefile")
+			err = scalefile.Write(scaleFilePath, scaleFile)
 			if err != nil {
 				return fmt.Errorf("error writing scalefile: %w", err)
 			}
@@ -93,11 +108,26 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("error creating dependencies file: %w", err)
 				}
-				err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
+
+				dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, "", defaultSignatureName, defaultSignatureVersion)
+				if err != nil {
+					return err
+				}
+
+				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
+				copy(dependencies, scaleFile.Dependencies)
+				dependencies[len(dependencies)-1] = *dependency
+				err = tmpl.Execute(dependencyFile, dependencies)
 				if err != nil {
 					_ = dependencyFile.Close()
 					return fmt.Errorf("error writing dependencies file: %w", err)
 				}
+
+				err = remoteSignature.CreateGoSignature(scaleFilePath, "signature", dependency.Name)
+				if err != nil {
+					return err
+				}
+
 			default:
 				return fmt.Errorf("language %s is not supported", language)
 			}

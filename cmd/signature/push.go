@@ -71,7 +71,7 @@ func PushCmd(ch *cmdutil.Helper) *cobra.Command {
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Successfully published scale signature %s/%s:%s\n", printer.BoldGreen(res.Payload.Namespace), printer.BoldGreen(res.Payload.Name), printer.BoldGreen(res.Payload.Version))
+					ch.Printer.Printf("Successfully published scale signature %s/%s@%s\n", printer.BoldGreen(res.Payload.Namespace), printer.BoldGreen(res.Payload.Name), printer.BoldGreen(res.Payload.Version))
 					return nil
 				}
 				return ch.Printer.PrintResource(map[string]string{
