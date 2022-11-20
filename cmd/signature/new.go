@@ -49,8 +49,9 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 			name := args[0]
 
 			definition := &signature.Definition{
-				Version: signature.V1Alpha,
-				Name:    name,
+				DefinitionVersion: signature.V1Alpha,
+				Version:           "v0.0.1",
+				Name:              name,
 				PublishedVersions: signature.PublishedVersions{
 					Go: signature.PublishedVersion{
 						Name:    "",

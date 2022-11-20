@@ -17,7 +17,7 @@ require (
 	github.com/loopholelabs/auth v0.0.7
 	github.com/loopholelabs/frisbee-go v0.7.0
 	github.com/loopholelabs/polyglot-go v0.5.1
-	github.com/loopholelabs/scale v0.0.10-0.20221118215902-cab380bcf1ee
+	github.com/loopholelabs/scale v0.0.10-0.20221118223433-1ed54a7e403b
 	github.com/mattn/go-isatty v0.0.16
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pkg/errors v0.9.1
