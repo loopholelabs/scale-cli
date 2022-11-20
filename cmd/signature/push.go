@@ -65,8 +65,8 @@ func PushCmd(ch *cmdutil.Helper) *cobra.Command {
 					},
 					Public: public,
 				}))
+				end()
 				if err != nil {
-					end()
 					return fmt.Errorf("failed to create signature: %w", err)
 				}
 
