@@ -23,11 +23,11 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale/scalefile"
+	"github.com/loopholelabs/scale/signature"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/modfile"
 	"os"
 	"path"
-	"strings"
 )
 
 var (
@@ -49,15 +49,8 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 		Short:   "add a scale signature to an existing scale function",
 		PreRunE: cmdutil.CheckAuthentication(ch.Config),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			signature := args[0]
-			signatureNamespaceSplit := strings.Split(signature, "/")
-			if len(signatureNamespaceSplit) == 1 {
-				signatureNamespaceSplit = []string{"", signature}
-			}
-			signatureVersionSplit := strings.Split(signatureNamespaceSplit[1], "@")
-			signatureNamespace := signatureNamespaceSplit[0]
-			signatureName := signatureVersionSplit[0]
-			signatureVersion := signatureVersionSplit[1]
+			signatureString := args[0]
+			signatureNamespace, signatureName, signatureVersion := signature.ParseSignature(signatureString)
 
 			ctx := cmd.Context()
 			client, err := ch.Client()
@@ -101,7 +94,7 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 					return errors.New("failed to find module path in go.mod")
 				}
 				if local != "" {
-					sourcePath = path.Join(sourcePath, local, signature)
+					sourcePath = path.Join(sourcePath, local, signatureName)
 				} else {
 					dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, signatureNamespace, signatureName, signatureVersion)
 					if err != nil {
@@ -111,7 +104,7 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 					sourcePath = dependency.Name
 				}
 
-				err = remoteSignature.CreateGoSignature(scaleFile, directory, sourcePath)
+				err = signature.CreateGoSignature(scaleFile, directory, sourcePath)
 				if err != nil {
 					return err
 				}
@@ -120,12 +113,12 @@ func AddCmd(ch *cmdutil.Helper) *cobra.Command {
 			}
 
 			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully added scale signature %s\n", printer.BoldGreen(signature))
+				ch.Printer.Printf("Successfully added scale signature %s\n", printer.BoldGreen(signatureName))
 				return nil
 			}
 
 			return ch.Printer.PrintResource(map[string]string{
-				"Name":      signature,
+				"Name":      signatureName,
 				"Directory": directory,
 				"Local":     local,
 				"ScaleFile": scaleFile,

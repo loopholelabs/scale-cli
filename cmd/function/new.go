@@ -23,6 +23,7 @@ import (
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/loopholelabs/scale/scalefile"
+	"github.com/loopholelabs/scale/signature"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
@@ -72,7 +73,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				Dependencies: []scalefile.Dependency{
 					{
 						Name:    "github.com/loopholelabs/scale",
-						Version: "v0.0.10-0.20221120080743-aeb8dd4ef660",
+						Version: "v0.0.10-0.20221120082504-7d637f71676c",
 					},
 				},
 				Extensions: nil,
@@ -123,7 +124,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error writing dependencies file: %w", err)
 				}
 
-				err = remoteSignature.CreateGoSignature(scaleFilePath, "signature", dependency.Name)
+				err = signature.CreateGoSignature(scaleFilePath, "signature", dependency.Name)
 				if err != nil {
 					return err
 				}

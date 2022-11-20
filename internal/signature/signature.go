@@ -19,14 +19,10 @@ package signature
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/client/models"
 	"github.com/loopholelabs/scale-cli/pkg/client/registry"
 	"github.com/loopholelabs/scale/scalefile"
-	"github.com/loopholelabs/scale/signature/generator"
-	"os"
-	"path"
 	"strings"
 )
 
@@ -56,26 +52,4 @@ func GetRemoteGoSignature(client *client.ScaleAPIV1, ctx context.Context, namesp
 		Name:    dependencyString[0],
 		Version: dependencyString[1],
 	}, nil
-}
-
-func CreateGoSignature(scaleFilePath string, directory string, signaturePath string) error {
-	g := generator.New()
-	err := os.MkdirAll(path.Join(path.Dir(scaleFilePath), directory), 0755)
-	if err != nil {
-		if !os.IsExist(err) {
-			return fmt.Errorf("error creating directory: %w", err)
-		}
-	}
-
-	signatureFile, err := os.OpenFile(fmt.Sprintf("%s/signature.go", path.Join(path.Dir(scaleFilePath), directory)), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-	if err != nil {
-		return fmt.Errorf("error creating signature go file: %w", err)
-	}
-
-	err = g.ExecuteGoSignatureGeneratorTemplate(signatureFile, "signature", signaturePath)
-	if err != nil {
-		return fmt.Errorf("error generating signature go file: %w", err)
-	}
-
-	return nil
 }
