@@ -22,7 +22,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-       "github.com/loopholelabs/scale/scalefile"
+	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/signature"
 	"github.com/spf13/cobra"
 	"os"
@@ -38,7 +38,7 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		"go": "go",
+		"go":   "go",
 		"rust": "rs",
 	}
 )
@@ -101,10 +101,10 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 
 			switch language {
 			case "go":
-        tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
-        if err != nil {
-          return fmt.Errorf("error parsing dependency template: %w", err)
-        }
+				tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+				if err != nil {
+					return fmt.Errorf("error parsing dependency template: %w", err)
+				}
 
 				dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
 				if err != nil {
@@ -131,6 +131,44 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				}
 
 			case "rust":
+				tmpl, err := textTemplate.New("dependencies").Parse(template.RustTemplate)
+				if err != nil {
+					return fmt.Errorf("error parsing dependency template: %w", err)
+				}
+
+				dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+				if err != nil {
+					return fmt.Errorf("error creating dependencies file: %w", err)
+				}
+
+				dependency := &scalefile.Dependency{}
+				//dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, "", defaultSignatureName, defaultSignatureVersion)
+				//if err != nil {
+				//return err
+				//}
+
+				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
+				copy(dependencies, scaleFile.Dependencies)
+				dependencies[len(dependencies)-1] = *dependency
+				err = tmpl.Execute(dependencyFile, dependencies)
+				if err != nil {
+					_ = dependencyFile.Close()
+					return fmt.Errorf("error writing dependencies file: %w", err)
+				}
+
+				err = signature.CreateGoSignature(scaleFilePath, "signature", "github.com/loopholelabs/scale-signature-http")
+				if err != nil {
+					return err
+				}
+
+			default:
+				return fmt.Errorf("language %s is not supported", language)
+			}
+
+			if ch.Printer.Format() == printer.Human {
+				ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
+				return nil
+			}
 
 			return ch.Printer.PrintResource(map[string]string{
 				"Name":     name,
