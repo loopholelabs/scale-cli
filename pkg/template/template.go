@@ -19,6 +19,7 @@ package template
 var (
 	LUT = map[string]func() []byte{
 		"go": Go,
+		"rust": Rust,
 	}
 )
 
@@ -42,5 +43,14 @@ import (
 func Scale(ctx *signature.Context) *signature.Context {
 	ctx.Response().SetBody("Hello, World!")
 	return ctx
+}`)
+}
+
+func Rust() []byte {
+	return []byte(`#![allow(unused_mut)]
+use signature::Context;
+
+pub fn scale (mut context: Context) -> Context {
+    return context
 }`)
 }

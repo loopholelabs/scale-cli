@@ -22,7 +22,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-	"github.com/loopholelabs/scale/scalefile"
+       "github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/signature"
 	"github.com/spf13/cobra"
 	"os"
@@ -39,6 +39,7 @@ const (
 var (
 	extensionLUT = map[string]string{
 		"go": "go",
+		"rust": "rs",
 	}
 )
 
@@ -98,13 +99,13 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error writing source file: %w", err)
 			}
 
-			tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
-			if err != nil {
-				return fmt.Errorf("error parsing dependency template: %w", err)
-			}
-
 			switch language {
 			case "go":
+        tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+        if err != nil {
+          return fmt.Errorf("error parsing dependency template: %w", err)
+        }
+
 				dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
 				if err != nil {
 					return fmt.Errorf("error creating dependencies file: %w", err)
@@ -129,14 +130,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return err
 				}
 
-			default:
-				return fmt.Errorf("language %s is not supported", language)
-			}
-
-			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
-				return nil
-			}
+			case "rust":
 
 			return ch.Printer.PrintResource(map[string]string{
 				"Name":     name,
