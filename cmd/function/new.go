@@ -156,7 +156,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error writing dependencies file: %w", err)
 				}
 
-				err = signature.CreateGoSignature(scaleFilePath, "signature", "github.com/loopholelabs/scale-signature-http")
+				err = signature.CreateRustSignature(scaleFilePath, "signature", "github.com/loopholelabs/scale-signature-http")
 				if err != nil {
 					return err
 				}
