@@ -18,7 +18,7 @@ package template
 
 var (
 	LUT = map[string]func() []byte{
-		"go": Go,
+		"go":   Go,
 		"rust": Rust,
 	}
 )
@@ -30,6 +30,19 @@ go 1.18
 {{range .}}
 require {{.Name}} {{.Version}}
 {{end}}
+`
+	//TODO: chg to pass in path from name before .Execute
+	RustTemplate = `[package]
+name = "scale"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+signature = { git = "https://github.com/loopholelabs/scale-signature-http-rs" }
+
+[lib]
+crate-type = ["cdylib"]
+path = "example.rs"
 `
 )
 

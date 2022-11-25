@@ -141,11 +141,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error creating dependencies file: %w", err)
 				}
 
-				dependency := &scalefile.Dependency{}
-				//dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, "", defaultSignatureName, defaultSignatureVersion)
-				//if err != nil {
-				//return err
-				//}
+				dependency := &scalefile.Dependency{Name: "github.com/loopholelabs/scale-signature-http-rs", Version: "v0.0.1"}
 
 				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
 				copy(dependencies, scaleFile.Dependencies)
@@ -156,7 +152,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error writing dependencies file: %w", err)
 				}
 
-				err = signature.CreateRustSignature(scaleFilePath, "signature", "github.com/loopholelabs/scale-signature-http")
+				err = signature.CreateRustSignature(scaleFilePath, "signature", dependency.Name)
 				if err != nil {
 					return err
 				}
