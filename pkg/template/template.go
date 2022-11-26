@@ -31,14 +31,14 @@ go 1.18
 require {{.Name}} {{.Version}}
 {{end}}
 `
-	//TODO: chg to pass in path from name before .Execute
+	//TODO: chg to pass in path from name before .Execute. also actual dependencies
 	RustTemplate = `[package]
 name = "scale"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-signature = { git = "https://github.com/loopholelabs/scale-signature-http-rs" }
+scale_signature_http = { git = "https://github.com/loopholelabs/scale-signature-http-rs" }
 
 [lib]
 crate-type = ["cdylib"]
