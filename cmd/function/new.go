@@ -141,6 +141,8 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error creating dependencies file: %w", err)
 				}
 
+				// TODO: after confirming api for rust sigs on registry
+				//dependency, err := remoteSignature.GetRemoteRustSignature(client, ctx, "", defaultSignatureName, defaultSignatureVersion)
 				dependency := &scalefile.Dependency{Name: "github.com/loopholelabs/scale-signature-http-rs", Version: "v0.0.1"}
 
 				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
