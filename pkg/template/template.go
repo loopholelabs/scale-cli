@@ -61,6 +61,10 @@ func Scale(ctx *signature.Context) *signature.Context {
 
 func Rust() []byte {
 	return []byte(`#![allow(unused_mut)]
+
+#[path = "signature/signature.rs"]
+mod signature
+
 use signature::Context;
 
 pub fn scale (mut context: Context) -> Context {
