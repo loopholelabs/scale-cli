@@ -37,7 +37,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-scale_signature_http = { git = {{.Name}} }
+scale_signature_http = "{{.Version}}"
 
 [lib]
 crate-type = ["cdylib"]
