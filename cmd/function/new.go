@@ -22,8 +22,8 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-	"github.com/loopholelabs/scale/scalefile"
-	"github.com/loopholelabs/scale/signature"
+	"github.com/loopholelabs/scale-signature"
+	"github.com/loopholelabs/scalefile"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
@@ -31,9 +31,9 @@ import (
 )
 
 const (
-	defaultSignature        = "http@v0.0.1"
+	defaultSignature        = "http@v0.0.2"
 	defaultSignatureName    = "http"
-	defaultSignatureVersion = "v0.0.1"
+	defaultSignatureVersion = "v0.0.2"
 )
 
 var (

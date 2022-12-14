@@ -17,7 +17,7 @@
 package protoc
 
 import (
-	"github.com/loopholelabs/scale/signature/generator"
+	"github.com/loopholelabs/scale-signature/generator"
 	"github.com/spf13/cobra"
 	"io"
 	"os"

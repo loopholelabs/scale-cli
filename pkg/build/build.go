@@ -26,8 +26,8 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/rpc/build"
-	"github.com/loopholelabs/scale/scalefile"
-	"github.com/loopholelabs/scale/scalefunc"
+	"github.com/loopholelabs/scalefile"
+	"github.com/loopholelabs/scalefile/scalefunc"
 	"time"
 )
 

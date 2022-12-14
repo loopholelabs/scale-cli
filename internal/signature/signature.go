@@ -22,7 +22,7 @@ import (
 	"github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/client/models"
 	"github.com/loopholelabs/scale-cli/pkg/client/registry"
-	"github.com/loopholelabs/scale/scalefile"
+	"github.com/loopholelabs/scalefile"
 	"strings"
 )
 
