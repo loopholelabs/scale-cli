@@ -23,9 +23,13 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/pkg/client/models"
 	"github.com/loopholelabs/scale-cli/pkg/client/registry"
-	"github.com/loopholelabs/scale/signature"
+	"github.com/loopholelabs/scale-signature"
 	"github.com/spf13/cobra"
 	"path"
+)
+
+const (
+	DefaultSignatureDirectory = "signature"
 )
 
 func PushCmd(ch *cmdutil.Helper) *cobra.Command {
@@ -48,7 +52,10 @@ func PushCmd(ch *cmdutil.Helper) *cobra.Command {
 			}
 
 			end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing Signature %s...", signatureName))
-			signatureDefinition, err := signature.Read(path.Join(directory, signatureName, "signature.yaml"))
+			if directory == "" {
+				directory = path.Join(DefaultSignatureDirectory, signatureName)
+			}
+			signatureDefinition, err := signature.Read(path.Join(directory, "signature.yaml"))
 			if err != nil {
 				end()
 				return fmt.Errorf("failed to read signature definition: %w", err)
@@ -89,7 +96,7 @@ func PushCmd(ch *cmdutil.Helper) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&namespace, "namespace", "n", "", "the namespace to push the signature to (defaults to the user's namespace)")
-	cmd.Flags().StringVarP(&directory, "directory", "d", "signature", "the directory where the scale signatures are located")
+	cmd.Flags().StringVarP(&directory, "directory", "d", "", "the directory where the scale signature is located")
 	cmd.Flags().BoolVarP(&public, "public", "p", false, "make the signature public")
 	return cmd
 }

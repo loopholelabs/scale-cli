@@ -36,7 +36,7 @@ const (
 	defaultConfigPath = "~/.config/scale"
 	projectConfigName = ".scale.yml"
 	configName        = "scale.yml"
-	TokenFileMode     = 0o600
+	TokenFileMode     = 0600
 )
 
 type Token struct {

@@ -31,9 +31,9 @@ import (
 )
 
 const (
-	defaultSignature        = "http@v0.0.1"
+	defaultSignature        = "http@v0.0.2"
 	defaultSignatureName    = "http"
-	defaultSignatureVersion = "v0.0.1"
+	defaultSignatureVersion = "v0.0.2"
 )
 
 var (
