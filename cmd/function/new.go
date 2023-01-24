@@ -141,12 +141,13 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 					return fmt.Errorf("error creating dependencies file: %w", err)
 				}
 
-				dependency := &scalefile.Dependency{Name: "github.com/loopholelabs/scale-signature-http-rs", Version: "v0.0.1"}
-
-				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
-				copy(dependencies, scaleFile.Dependencies)
+				// if we only allow default signatures, eventually be set at scalefile level
+				dependency := &scalefile.Dependency{Name: "scale_signature_http", Version: "0.0.4"}
+				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies))
 				dependencies[len(dependencies)-1] = *dependency
+
 				err = tmpl.Execute(dependencyFile, dependencies)
+
 				if err != nil {
 					_ = dependencyFile.Close()
 					return fmt.Errorf("error writing dependencies file: %w", err)

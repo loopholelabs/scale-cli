@@ -37,7 +37,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-scale_signature_http = "{{.Version}}"
+{{range .}}
+{{.Name}} = "{{.Version}}"
+{{end}}
 
 [lib]
 crate-type = ["cdylib"]
