@@ -1,0 +1,9 @@
+version: v1alpha
+name: example
+signature: http@v0.0.2
+language: rust
+dependencies:
+  - name: github.com/loopholelabs/scale
+    version: v0.0.10-0.20221120082504-7d637f71676c
+extensions: []
+source: example.rs

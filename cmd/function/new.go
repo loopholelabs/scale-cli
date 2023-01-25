@@ -38,7 +38,8 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		"go": "go",
+		"go":   "go",
+		"rust": "rs",
 	}
 )
 
@@ -98,13 +99,13 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("error writing source file: %w", err)
 			}
 
-			tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
-			if err != nil {
-				return fmt.Errorf("error parsing dependency template: %w", err)
-			}
-
 			switch language {
 			case "go":
+				tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+				if err != nil {
+					return fmt.Errorf("error parsing dependency template: %w", err)
+				}
+
 				dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
 				if err != nil {
 					return fmt.Errorf("error creating dependencies file: %w", err)
@@ -125,6 +126,34 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 				}
 
 				err = signature.CreateGoSignature(scaleFilePath, "signature", dependency.Name)
+				if err != nil {
+					return err
+				}
+
+			case "rust":
+				tmpl, err := textTemplate.New("dependencies").Parse(template.RustTemplate)
+				if err != nil {
+					return fmt.Errorf("error parsing dependency template: %w", err)
+				}
+
+				dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+				if err != nil {
+					return fmt.Errorf("error creating dependencies file: %w", err)
+				}
+
+				// if we only allow default signatures, eventually be set at scalefile level
+				dependency := &scalefile.Dependency{Name: "scale_signature_http", Version: "0.0.4"}
+				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies))
+				dependencies[len(dependencies)-1] = *dependency
+
+				err = tmpl.Execute(dependencyFile, dependencies)
+
+				if err != nil {
+					_ = dependencyFile.Close()
+					return fmt.Errorf("error writing dependencies file: %w", err)
+				}
+
+				err = signature.CreateRustSignature(scaleFilePath, "signature", dependency.Name)
 				if err != nil {
 					return err
 				}

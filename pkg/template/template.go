@@ -18,7 +18,8 @@ package template
 
 var (
 	LUT = map[string]func() []byte{
-		"go": Go,
+		"go":   Go,
+		"rust": Rust,
 	}
 )
 
@@ -29,6 +30,20 @@ go 1.18
 {{range .}}
 require {{.Name}} {{.Version}}
 {{end}}
+`
+	RustTemplate = `[package]
+name = "scale"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+{{range .}}
+{{.Name}} = "{{.Version}}"
+{{end}}
+
+[lib]
+crate-type = ["cdylib"]
+path = "lib.rs"
 `
 )
 
@@ -42,5 +57,18 @@ import (
 func Scale(ctx *signature.Context) *signature.Context {
 	ctx.Response().SetBody("Hello, World!")
 	return ctx
+}`)
+}
+
+func Rust() []byte {
+	return []byte(`#![allow(unused_mut)]
+
+#[path = "signature/signature.rs"]
+mod signature
+
+use signature::Context;
+
+pub fn scale (mut context: Context) -> Context {
+    return context
 }`)
 }
