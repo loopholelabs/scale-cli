@@ -83,7 +83,11 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 				ch.Config.Token.Expiry = t.Expiry
 			}
 
-			scaleFunc, err := build.Build(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
+			// pending build service
+			//scaleFunc, err := build.RemoteBuild(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
+
+			scaleFunc, err := build.LocalBuild(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
+
 			if err != nil {
 				return err
 			}
