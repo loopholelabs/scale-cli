@@ -253,30 +253,58 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 		cargoFile, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "Cargo.toml"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		dependencies := []*scalefile.Dependency{}
 		err = g.GenerateCargoTomlfile(cargoFile, dependencies)
+		if err != nil {
+			return nil, errors.New("failed to generate toml file for scale function")
+		}
 
 		err = file.Close()
+		if err != nil {
+			return nil, errors.New("failed to close TOML for scale function")
+		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale"), 0755)
 		if !os.IsExist(err) {
+			return nil, err
 		}
 
 		scale, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "scale.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to create lib.rs for scale function")
+		}
 
 		file, err = os.Open(module.Path)
+		if err != nil {
+			return nil, errors.New("failed to open new scale file for scale function")
+		}
 
 		_, err = io.Copy(scale, file)
+		if err != nil {
+			return nil, errors.New("failed to copy scale function")
+		}
 
 		err = scale.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
+		}
 
 		err = file.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
+		}
 
 		wd, err := os.Getwd()
+		if err != nil {
+			return nil, errors.New("failed to get working directory for scale function")
+		}
 
 		cmd := exec.Command(cargo, "build", "--target", "wasm32-unknown-unknown", "--manifest-path", "Cargo.toml")
 
 		cmd.Dir = path.Join(wd, moduleDir, fmt.Sprintf("%s-build", module.Name))
 
 		err = cmd.Run()
+		if err != nil {
+			return nil, errors.New("failed to build module")
+		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, "target/wasm32-unknown-unknown/debug/compile.wasm"))
 		if err == nil {
