@@ -128,8 +128,7 @@ type Module struct {
 	Dependencies []*scalefile.Dependency
 }
 
-func LocalBuild(ctx context.Context, endpoint string, name string, input []byte, token string, scaleFile *scalefile.ScaleFile, tlsConfig *tls.Config, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
-
+func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scalefile.ScaleFile, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
 	importPath := "./" //TODO
 
 	scaleFunc := &scalefunc.ScaleFunc{
@@ -151,6 +150,9 @@ func LocalBuild(ctx context.Context, endpoint string, name string, input []byte,
 	if scaleFunc.Language == "go" {
 
 		tinygo, err := exec.LookPath("tinygo")
+		if err != nil {
+			return nil, errors.New("Error: Please make sure tinygo is installed and available in your $PATH")
+		}
 
 		g := compile.NewGenerator()
 
@@ -160,42 +162,79 @@ func LocalBuild(ctx context.Context, endpoint string, name string, input []byte,
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name)), 0755)
 		if !os.IsExist(err) {
+			return nil, err
 		}
 
 		file, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "main.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to create main.go for scale function")
+		}
 
 		err = g.GenerateGoMain(file, module.Signature, fmt.Sprintf("%s/%s/%s-build/scale", importPath, module.Name, module.Name))
+		if err != nil {
+			return nil, errors.New("failed to generate main.go for scale function")
+		}
 
 		err = file.Close()
+		if err != nil {
+			return nil, errors.New("failed to close main.go for scale function")
+		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale"), 0755)
 		if !os.IsExist(err) {
+			return nil, err
 		}
 
 		scale, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "scale.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to create scale.go for scale function")
+		}
 
 		file, err = os.Open(module.Path)
+		if err != nil {
+			return nil, errors.New("failed to open scale function")
+		}
 
 		_, err = io.Copy(scale, file)
+		if err != nil {
+			return nil, errors.New("failed to copy scale function")
+		}
 
 		err = scale.Close()
+		if err != nil {
+			return nil, errors.New("failed to close scale.go for scale function")
+		}
 
 		err = file.Close()
+		if err != nil {
+			return nil, errors.New("failed to close scale function")
+		}
 
 		wd, err := os.Getwd()
+		if err != nil {
+			return nil, errors.New("failed to get working directory for scale function")
+		}
 
 		cmd := exec.Command(tinygo, "build", "-o", fmt.Sprintf("%s.wasm", module.Name), "-scheduler=none", "-target=wasi", "--no-debug", "main.go")
 		cmd.Dir = path.Join(wd, moduleDir, fmt.Sprintf("%s-build", module.Name))
 
 		err = cmd.Run()
+		if err != nil {
+			return nil, errors.New("failed to build module")
+		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, fmt.Sprintf("%s.wasm", module.Name)))
-		scaleFunc.Function = data
-		isErr = false
+		if err == nil {
+			scaleFunc.Function = data
+			isErr = false
+		}
 	}
 	if scaleFunc.Language == "rust" {
 
 		cargo, err := exec.LookPath("cargo")
+		if err != nil {
+			return nil, errors.New("Error: Please make sure cargo is installed and available in your $PATH")
+		}
 
 		g := rustCompile.NewGenerator()
 
@@ -240,11 +279,14 @@ func LocalBuild(ctx context.Context, endpoint string, name string, input []byte,
 		err = cmd.Run()
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, "target/wasm32-unknown-unknown/debug/compile.wasm"))
-		scaleFunc.Function = data
-		isErr = false
+		if err == nil {
+			scaleFunc.Function = data
+			isErr = false
+		}
 	}
 
 	//if scaleFunc.Language == "typescript" {
+	//   say "not implemented for now?" or use jimmy's work? or get clarification here
 
 	//}
 
