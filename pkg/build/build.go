@@ -50,10 +50,6 @@ func RemoteBuild(ctx context.Context, endpoint string, name string, input []byte
 		Language:  scalefunc.Language(scaleFile.Language),
 	}
 
-	//for _, f := range scaleFile.Extensions {
-	//scaleFunc.Extensions = append(scaleFunc.Extensions, scalefunc.Extension(f))
-	//}
-
 	isErr := true
 	streamDone := make(chan struct{})
 	err = client.Connect(endpoint, func(stream *frisbee.Stream) {

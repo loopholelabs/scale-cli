@@ -77,8 +77,7 @@ func NewCmd(ch *cmdutil.Helper) *cobra.Command {
 						Version: "v0.0.10-0.20221120082504-7d637f71676c",
 					},
 				},
-				Extensions: nil,
-				Source:     fmt.Sprintf("%s.%s", name, extension),
+				Source: fmt.Sprintf("%s.%s", name, extension),
 			}
 
 			if _, err := os.Stat(directory); os.IsNotExist(err) {
