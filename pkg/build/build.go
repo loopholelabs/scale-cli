@@ -50,9 +50,9 @@ func RemoteBuild(ctx context.Context, endpoint string, name string, input []byte
 		Language:  scalefunc.Language(scaleFile.Language),
 	}
 
-	for _, f := range scaleFile.Extensions {
-		scaleFunc.Extensions = append(scaleFunc.Extensions, scalefunc.Extension(f))
-	}
+	//for _, f := range scaleFile.Extensions {
+	//scaleFunc.Extensions = append(scaleFunc.Extensions, scalefunc.Extension(f))
+	//}
 
 	isErr := true
 	streamDone := make(chan struct{})
@@ -129,7 +129,6 @@ type Module struct {
 }
 
 func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scalefile.ScaleFile, ch *cmdutil.Helper) (*scalefunc.ScaleFunc, error) {
-	importPath := "./" //TODO
 
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
@@ -139,10 +138,10 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 	}
 
 	module := &Module{
-		Path:         name,
+		Path:         "scale",
 		Name:         scaleFile.Name,
 		Signature:    scaleFile.Signature,
-		Dependencies: []*scalefile.Dependency{}, //TODO
+		Dependencies: []*scalefile.Dependency{},
 	}
 
 	isErr := true
@@ -170,7 +169,8 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 			return nil, errors.New("failed to create main.go for scale function")
 		}
 
-		err = g.GenerateGoMain(file, module.Signature, fmt.Sprintf("%s/%s/%s-build/scale", importPath, module.Name, module.Name))
+		importPath := "github.com/loopholelabs/scale-cli"
+		err = g.GenerateGoMain(file, module.Signature, fmt.Sprintf("%s/%s-build/scale", importPath, module.Name))
 		if err != nil {
 			return nil, errors.New("failed to generate main.go for scale function")
 		}
@@ -190,7 +190,7 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 			return nil, errors.New("failed to create scale.go for scale function")
 		}
 
-		file, err = os.Open(module.Path)
+		file, err = os.Open(fmt.Sprintf("%s.go", scaleFile.Name))
 		if err != nil {
 			return nil, errors.New("failed to open scale function")
 		}
@@ -208,6 +208,36 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 		err = file.Close()
 		if err != nil {
 			return nil, errors.New("failed to close scale function")
+		}
+
+		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature"), 0755)
+		if !os.IsExist(err) {
+			return nil, err
+		}
+
+		copiedSignature, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature", "signature.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to create signature.rs for scale function")
+		}
+
+		signature, err := os.Open("/Users/danielphillips/loophole/scale-cli/signature/signature.go")
+		if err != nil {
+			return nil, errors.New("failed to open signature file")
+		}
+
+		_, err = io.Copy(copiedSignature, signature)
+		if err != nil {
+			return nil, errors.New("failed to copy scale function")
+		}
+
+		err = signature.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
+		}
+
+		err = copiedSignature.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
 		}
 
 		wd, err := os.Getwd()
@@ -248,6 +278,7 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 
 		file, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "lib.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 
+		importPath := "scale/scale.rs"
 		err = g.GenerateLibRs(file, module.Signature, importPath)
 
 		cargoFile, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "Cargo.toml"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
@@ -272,7 +303,7 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 			return nil, errors.New("failed to create lib.rs for scale function")
 		}
 
-		file, err = os.Open(module.Path)
+		file, err = os.Open(fmt.Sprintf("%s.rs", scaleFile.Name))
 		if err != nil {
 			return nil, errors.New("failed to open new scale file for scale function")
 		}
@@ -292,6 +323,36 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 			return nil, errors.New("failed to close file for scale function")
 		}
 
+		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature"), 0755)
+		if !os.IsExist(err) {
+			return nil, err
+		}
+
+		copiedSignature, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature", "signature.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to create signature.rs for scale function")
+		}
+
+		signature, err := os.Open("/Users/danielphillips/loophole/scale-cli/signature/signature.rs")
+		if err != nil {
+			return nil, errors.New("failed to open signature file")
+		}
+
+		_, err = io.Copy(copiedSignature, signature)
+		if err != nil {
+			return nil, errors.New("failed to copy scale function")
+		}
+
+		err = signature.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
+		}
+
+		err = copiedSignature.Close()
+		if err != nil {
+			return nil, errors.New("failed to close file for scale function")
+		}
+
 		wd, err := os.Getwd()
 		if err != nil {
 			return nil, errors.New("failed to get working directory for scale function")
@@ -307,16 +368,16 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, "target/wasm32-unknown-unknown/debug/compile.wasm"))
+
 		if err == nil {
 			scaleFunc.Function = data
 			isErr = false
 		}
 	}
 
-	//if scaleFunc.Language == "typescript" {
-	//   say "not implemented for now?" or use jimmy's work? or get clarification here
-
-	//}
+	if scaleFunc.Language == "typescript" {
+		return nil, errors.New("TypeScript builder current not implemented - please review docs to use a pre-compiled binary, here: https://scale.sh/docs/introduction")
+	}
 
 	if isErr {
 		return nil, errors.New("error occured during build")
