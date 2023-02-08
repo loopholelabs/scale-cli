@@ -152,6 +152,9 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 		g := compile.NewGenerator()
 
 		_, err = os.Stat(module.Path)
+		if err != nil {
+			return nil, err
+		}
 
 		moduleDir := path.Dir(module.Path)
 
@@ -265,14 +268,21 @@ func LocalBuild(ctx context.Context, name string, input []byte, scaleFile *scale
 		g := rustCompile.NewGenerator()
 
 		_, err = os.Stat(module.Path)
+		if err != nil {
+			return nil, err
+		}
 
 		moduleDir := path.Dir(module.Path)
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name)), 0755)
 		if !os.IsExist(err) {
+			return nil, err
 		}
 
 		file, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "lib.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, errors.New("failed to open new scale file for scale function")
+		}
 
 		importPath := "scale/scale.rs"
 		err = g.GenerateLibRs(file, module.Signature, importPath)
