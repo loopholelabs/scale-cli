@@ -17,20 +17,21 @@
 package function
 
 import (
-	"crypto/tls"
+	//"crypto/tls"
+	//"github.com/loopholelabs/auth/pkg/client"
+	//"github.com/loopholelabs/scale-cli/internal/auth"
+	//apiClient "github.com/loopholelabs/scale-cli/pkg/client"
 	"errors"
 	"fmt"
-	"github.com/loopholelabs/auth/pkg/client"
-	"github.com/loopholelabs/scale-cli/internal/auth"
 	"github.com/loopholelabs/scale-cli/internal/cmdutil"
 	"github.com/loopholelabs/scale-cli/internal/printer"
 	"github.com/loopholelabs/scale-cli/pkg/build"
-	apiClient "github.com/loopholelabs/scale-cli/pkg/client"
 	"github.com/loopholelabs/scale-cli/pkg/storage"
 	"github.com/loopholelabs/scalefile"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
+	//"os"
+	//"path"
+	"github.com/loopholelabs/scalefile/scalefunc"
 )
 
 func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
@@ -55,37 +56,41 @@ func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
 				return fmt.Errorf("failed to read scalefile: %w", err)
 			}
 
-			directory := path.Dir(scaleFilePath)
-			sourcePath := path.Join(directory, scaleFile.Source)
+			// Following commented, pending remote build service
 
-			source, err := os.ReadFile(sourcePath)
-			if err != nil {
-				return fmt.Errorf("failed to read source file: %w", err)
-			}
+			//directory := path.Dir(scaleFilePath)
+			//sourcePath := path.Join(directory, scaleFile.Source)
 
-			expired, err := auth.Expired(ch.Config.Token.AccessToken)
-			if err != nil {
-				return fmt.Errorf("failed to check token expiration: %w", err)
-			}
+			//source, err := os.ReadFile(sourcePath)
+			//if err != nil {
+			//return fmt.Errorf("failed to read source file: %w", err)
+			//}
 
-			if expired {
-				ts, _, err := client.AuthenticatedClient(ch.Config.Endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, path.Join(ch.Config.Token.Endpoint, ch.Config.Token.BasePath), ch.Config.Token.ClientID, ch.Config.Token.Kind, client.NewToken(ch.Config.Token.AccessToken, ch.Config.Token.TokenType, ch.Config.Token.RefreshToken, ch.Config.Token.Expiry))
-				if err != nil {
-					return fmt.Errorf("failed to create authenticated client: %w", err)
-				}
-				t, err := ts.Token()
-				if err != nil {
-					return fmt.Errorf("failed to get refreshed token: %w", err)
-				}
-				ch.Config.Token.AccessToken = t.AccessToken
-				ch.Config.Token.TokenType = t.TokenType
-				ch.Config.Token.RefreshToken = t.RefreshToken
-				ch.Config.Token.Expiry = t.Expiry
-			}
+			//expired, err := auth.Expired(ch.Config.Token.AccessToken)
+			//if err != nil {
+			//return fmt.Errorf("failed to check token expiration: %w", err)
+			//}
 
-			// pending build service
+			//if expired {
+			//ts, _, err := client.AuthenticatedClient(ch.Config.Endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, path.Join(ch.Config.Token.Endpoint, ch.Config.Token.BasePath), ch.Config.Token.ClientID, ch.Config.Token.Kind, client.NewToken(ch.Config.Token.AccessToken, ch.Config.Token.TokenType, ch.Config.Token.RefreshToken, ch.Config.Token.Expiry))
+			//if err != nil {
+			//return fmt.Errorf("failed to create authenticated client: %w", err)
+			//}
+			//t, err := ts.Token()
+			//if err != nil {
+			//return fmt.Errorf("failed to get refreshed token: %w", err)
+			//}
+			//ch.Config.Token.AccessToken = t.AccessToken
+			//ch.Config.Token.TokenType = t.TokenType
+			//ch.Config.Token.RefreshToken = t.RefreshToken
+			//ch.Config.Token.Expiry = t.Expiry
+			//}
+
 			// scaleFunc, err := build.RemoteBuild(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
-			scaleFunc, err := build.LocalBuild(ctx, name, source, scaleFile, ch)
+
+			c := make(chan *scalefunc.ScaleFunc)
+			go build.LocalBuild(ctx, scaleFile, c)
+			scaleFunc := <-c
 
 			if err != nil {
 				return err
