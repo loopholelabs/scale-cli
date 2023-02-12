@@ -123,7 +123,7 @@ type Module struct {
 	Signature string
 }
 
-func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *scalefunc.ScaleFunc) error {
+func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *scalefunc.ScaleFunc) {
 
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
@@ -144,83 +144,102 @@ func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *s
 
 		tinygo, err := exec.LookPath("tinygo")
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		g := compile.NewGenerator()
 
 		_, err = os.Stat(module.Path)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		moduleDir := path.Dir(module.Path)
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name)), 0755)
-		if !os.IsExist(err) {
+		if !os.IsExist(err) && err != nil {
+			fmt.Println(err)
 		}
 
 		file, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "main.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		importPath := "github.com/loopholelabs/scale-cli"
 		err = g.GenerateGoMain(file, module.Signature, fmt.Sprintf("%s/%s-build/scale", importPath, module.Name))
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = file.Close()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale"), 0755)
-		if !os.IsExist(err) {
+		if !os.IsExist(err) && err != nil {
+			fmt.Println(err)
 		}
 
 		scale, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "scale.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		file, err = os.Open(fmt.Sprintf("%s.go", scaleFile.Name))
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		_, err = io.Copy(scale, file)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = scale.Close()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = file.Close()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature"), 0755)
-		if !os.IsExist(err) {
+		if !os.IsExist(err) && err != nil {
+			fmt.Println(err)
 		}
 
 		copiedSignature, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature", "signature.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		signature, err := os.Open(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature", "signature.go"))
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		_, err = io.Copy(copiedSignature, signature)
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = signature.Close()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		err = copiedSignature.Close()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		wd, err := os.Getwd()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		cmd := exec.Command(tinygo, "build", "-o", fmt.Sprintf("%s.wasm", module.Name), "-scheduler=none", "-target=wasi", "--no-debug", "main.go")
@@ -228,6 +247,7 @@ func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *s
 
 		err = cmd.Run()
 		if err != nil {
+			fmt.Println(err)
 		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, fmt.Sprintf("%s.wasm", module.Name)))
@@ -259,41 +279,40 @@ func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *s
 		moduleDir := path.Dir(module.Path)
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name)), 0755)
-		if !os.IsExist(err) {
+		if !os.IsExist(err) && err != nil {
 			fmt.Println(err)
 		}
 
-		//thing, err := os.Create(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "lib.rs"))
 		file, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "lib.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-		//file, err := os.Open(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "lib.rs"))
-		fmt.Println(file, "file 1")
+		fmt.Println(err)
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		importPath := "scale/scale.rs"
 		err = g.GenerateLibRs(file, module.Signature, importPath)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-		//os.Create(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "Cargo.toml"))
 		cargoFile, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "Cargo.toml"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
-		fmt.Println(cargoFile, "file 2")
+		fmt.Println(err)
 		dependencies := []*scalefile.Dependency{}
 		err = g.GenerateCargoTomlfile(cargoFile, dependencies)
 		if err != nil {
-			fmt.Println(err, "1")
+			fmt.Println(err)
 		}
 
 		err = file.Close()
 		if err != nil {
-			fmt.Println(err, "2")
+			fmt.Println(err)
 		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale"), 0755)
 		if err != nil {
-			fmt.Println(err, "3")
+			fmt.Println(err)
 		}
 
-		os.Create(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "scale.rs"))
 		scale, err := os.OpenFile(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "scale.rs"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			fmt.Println(err)
@@ -320,7 +339,7 @@ func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *s
 		}
 
 		err = os.Mkdir(path.Join(moduleDir, fmt.Sprintf("%s-build", module.Name), "scale", "signature"), 0755)
-		if !os.IsExist(err) {
+		if !os.IsExist(err) && err != nil {
 			fmt.Println(err)
 		}
 
@@ -371,13 +390,14 @@ func LocalBuild(ctx context.Context, scaleFile *scalefile.ScaleFile, c chan<- *s
 	}
 
 	if scaleFunc.Language == "typescript" {
-		errors.New("TypeScript support not implemented")
+		err := errors.New("TypeScript support not implemented")
+		fmt.Println(err)
 	}
 
 	if isErr {
-		errors.New("problem with build")
+		err := errors.New("problem with build")
+		fmt.Println(err)
 	}
 
 	c <- scaleFunc
-	return nil
 }
