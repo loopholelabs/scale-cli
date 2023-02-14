@@ -28,39 +28,42 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ModelsCreateAPIKeyResponse models create API key response
+// ModelsGetFunctionResponse models get function response
 //
-// swagger:model models.CreateAPIKeyResponse
-type ModelsCreateAPIKeyResponse struct {
+// swagger:model models.GetFunctionResponse
+type ModelsGetFunctionResponse struct {
 
-	// apikey
-	Apikey string `json:"apikey,omitempty"`
-
-	// created at
-	CreatedAt string `json:"created_at,omitempty"`
-
-	// id
-	ID string `json:"id,omitempty"`
+	// hash
+	Hash string `json:"hash,omitempty"`
 
 	// name
 	Name string `json:"name,omitempty"`
 
 	// organization
 	Organization string `json:"organization,omitempty"`
+
+	// presigned url
+	PresignedURL string `json:"presigned_url,omitempty"`
+
+	// public
+	Public bool `json:"public,omitempty"`
+
+	// tag
+	Tag string `json:"tag,omitempty"`
 }
 
-// Validate validates this models create API key response
-func (m *ModelsCreateAPIKeyResponse) Validate(formats strfmt.Registry) error {
+// Validate validates this models get function response
+func (m *ModelsGetFunctionResponse) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-// ContextValidate validates this models create API key response based on context it is used
-func (m *ModelsCreateAPIKeyResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
+// ContextValidate validates this models get function response based on context it is used
+func (m *ModelsGetFunctionResponse) ContextValidate(ctx context.Context, formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *ModelsCreateAPIKeyResponse) MarshalBinary() ([]byte, error) {
+func (m *ModelsGetFunctionResponse) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -68,8 +71,8 @@ func (m *ModelsCreateAPIKeyResponse) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *ModelsCreateAPIKeyResponse) UnmarshalBinary(b []byte) error {
-	var res ModelsCreateAPIKeyResponse
+func (m *ModelsGetFunctionResponse) UnmarshalBinary(b []byte) error {
+	var res ModelsGetFunctionResponse
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
