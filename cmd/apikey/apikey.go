@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@
 package apikey
 
 import (
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -34,18 +37,28 @@ type apiKeyRedacted struct {
 	Created string `header:"created" json:"created"`
 }
 
-// Cmd encapsulates the command for interacting with API Keys.
-func Cmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:                "api-key <action>",
-		Short:              "Create, list, and manage API Keys",
-		PersistentPreRunE:  cmdutil.CheckAuthentication(ch.Config),
-		PersistentPostRunE: cmdutil.UpdateToken(ch.Config),
-	}
+// Cmd encapsulates the commands for authentication.
+func Cmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		apikeyCmd := &cobra.Command{
+			Use:                "apikey",
+			Short:              "Create, list, and manage API Keys",
+			PersistentPreRunE:  utils.PreRunAuthenticatedAPI(ch),
+			PersistentPostRunE: utils.PostRunAuthenticatedAPI(ch),
+		}
 
-	cmd.AddCommand(CreateCmd(ch))
-	cmd.AddCommand(ListCmd(ch))
-	cmd.AddCommand(GetCmd(ch))
-	cmd.AddCommand(DeleteCmd(ch))
-	return cmd
+		listSetup := ListCmd()
+		listSetup(apikeyCmd, ch)
+
+		getSetup := GetCmd()
+		getSetup(apikeyCmd, ch)
+
+		createSetup := CreateCmd()
+		createSetup(apikeyCmd, ch)
+
+		deleteSetup := DeleteCmd()
+		deleteSetup(apikeyCmd, ch)
+
+		cmd.AddCommand(apikeyCmd)
+	}
 }

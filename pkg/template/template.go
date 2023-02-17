@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -43,32 +43,29 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib"]
-path = "lib.rs"
+path = "scale.rs"
 `
 )
 
 func Go() []byte {
-	return []byte(`package scale
+	return []byte(`//go:build tinygo || js || wasm
+package scale
 
 import (
-	"scale/signature"
+	signature "github.com/loopholelabs/scale-signature-http"
 )
 
-func Scale(ctx *signature.Context) *signature.Context {
+func Scale(ctx *signature.Context) (*signature.Context, error) {
 	ctx.Response().SetBody("Hello, World!")
-	return ctx
+	return ctx.Next()
 }`)
 }
 
 func Rust() []byte {
-	return []byte(`#![allow(unused_mut)]
+	return []byte(`use scale_signature_http::context::Context;
 
-#[path = "signature/signature.rs"]
-mod signature
-
-use signature::Context;
-
-pub fn scale (mut context: Context) -> Context {
-    return context
+pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Error>> {
+    ctx.response().set_body("Hello, World!".to_string());
+    Ok(ctx)
 }`)
 }

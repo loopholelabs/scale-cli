@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -14,25 +14,21 @@
 	limitations under the License.
 */
 
-package signature
+package main
 
 import (
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/spf13/cobra"
+	"context"
+	"os"
+	"os/signal"
 )
 
-// Cmd returns the base command for signature.
-func Cmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "signature <command>",
-		Aliases: []string{"sig"},
-		Short:   "Create, list, and manage Scale Signatures",
-	}
+func main() {
+	os.Exit(realMain())
+}
 
-	cmd.AddCommand(NewCmd(ch))
-	cmd.AddCommand(GenerateCmd(ch))
-	cmd.AddCommand(AddCmd(ch))
-	cmd.AddCommand(PushCmd(ch))
+func realMain() int {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
 
-	return cmd
+	return Cmd.Execute(ctx)
 }

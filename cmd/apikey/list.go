@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,47 +17,49 @@
 package apikey
 
 import (
-	"github.com/loopholelabs/auth/pkg/utils"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/internal/printer"
-	"github.com/loopholelabs/scale-cli/pkg/client/access"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/client/access"
 	"github.com/spf13/cobra"
 )
 
-func ListCmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "list API Keys",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			client, err := ch.Client()
-			if err != nil {
-				return err
-			}
-
-			end := ch.Printer.PrintProgress("Retrieving API Keys...")
-			res, err := client.Access.GetAccessApikey(access.NewGetAccessApikeyParamsWithContext(ctx))
-			end()
-			if err != nil {
-				return err
-			}
-
-			if len(res.Payload) == 0 && ch.Printer.Format() == printer.Human {
-				ch.Printer.Println("No API Keys have been created yet.")
-				return nil
-			}
-
-			keys := make([]apiKeyRedacted, len(res.Payload))
-			for i, key := range res.Payload {
-				keys[i] = apiKeyRedacted{
-					Name:    key.Name,
-					Created: utils.Int64ToTime(key.CreatedAt).String(),
-					ID:      key.ID,
+// ListCmd encapsulates the commands for listing API Keys
+func ListCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		listCmd := &cobra.Command{
+			Use:   "list",
+			Short: "list API Keys",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+				end := ch.Printer.PrintProgress("Retrieving API Keys...")
+				res, err := client.Access.GetAccessApikey(access.NewGetAccessApikeyParamsWithContext(ctx))
+				end()
+				if err != nil {
+					return err
 				}
-			}
-			return ch.Printer.PrintResource(keys)
-		},
-	}
 
-	return cmd
+				if len(res.Payload) == 0 && ch.Printer.Format() == printer.Human {
+					ch.Printer.Println("No API Keys have been created yet.")
+					return nil
+				}
+
+				keys := make([]apiKeyRedacted, 0, len(res.Payload))
+				for _, key := range res.Payload {
+					keys = append(keys, apiKeyRedacted{
+						Created: key.CreatedAt,
+						ID:      key.ID,
+						Name:    key.Name,
+					})
+				}
+
+				return ch.Printer.PrintResource(keys)
+			},
+		}
+
+		cmd.AddCommand(listCmd)
+	}
 }

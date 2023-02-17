@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,19 +17,36 @@
 package auth
 
 import (
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale-cli/internal/log"
 	"github.com/spf13/cobra"
 )
 
-// Cmd returns the base command for authentication.
-func Cmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "auth <command>",
-		Short: "Login and logout via the Scale API",
-		Long:  "Manage authentication",
-	}
+// Cmd encapsulates the commands for authentication.
+func Cmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		authCmd := &cobra.Command{
+			Use:   "auth",
+			Short: "Login and Logout using the Scale Authentication API",
+			Long:  "Manage access to the Scale API using the Scale Authentication API",
+			PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+				log.Init(ch.Config.GetLogFile())
+				err := ch.Config.GlobalRequiredFlags(cmd)
+				if err != nil {
+					return err
+				}
+				return ch.Config.Validate()
+			},
+		}
 
-	cmd.AddCommand(LoginCmd(ch))
-	cmd.AddCommand(LogoutCmd(ch))
-	return cmd
+		loginSetup := LoginCmd()
+		loginSetup(authCmd, ch)
+
+		logoutSetup := LogoutCmd()
+		logoutSetup(authCmd, ch)
+
+		cmd.AddCommand(authCmd)
+	}
 }

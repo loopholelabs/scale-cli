@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package version
 
 import (
-	"fmt"
+	"github.com/loopholelabs/cmdutils/pkg/version"
+	"github.com/loopholelabs/scale-cli/internal/config"
 )
 
 var (
@@ -37,10 +38,4 @@ var (
 	BuildDate = ""
 )
 
-func Format() string {
-	if GitCommit == "" && GoVersion == "" && Platform == "" || Version == "" || BuildDate == "" {
-		return "scale cli version (built from source)"
-	}
-
-	return fmt.Sprintf("scale cli version %s (build date: %s git commit: %s go version: %s build platform: %s)\n", Version, BuildDate, GitCommit, GoVersion, Platform)
-}
+var V = version.New[*config.Config](GitCommit, GoVersion, Platform, Version, BuildDate)

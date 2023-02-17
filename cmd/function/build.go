@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,109 +17,139 @@
 package function
 
 import (
-	//"crypto/tls"
-	//"github.com/loopholelabs/auth/pkg/client"
-	//"github.com/loopholelabs/scale-cli/internal/auth"
-	//apiClient "github.com/loopholelabs/scale-cli/pkg/client"
-	"errors"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/internal/printer"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/build"
-	"github.com/loopholelabs/scale-cli/pkg/storage"
+	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile"
-	"github.com/spf13/cobra"
-	//"os"
-	//"path"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/spf13/cobra"
+	"path"
 )
 
-func BuildCmd(ch *cmdutil.Helper) *cobra.Command {
-	var scaleFilePath string
+const (
+	DefaultOrganization = "local"
+)
+
+// BuildCmd encapsulates the commands for building Functions
+func BuildCmd() command.SetupCommand[*config.Config] {
 	var name string
+	var tag string
+	var directory string
+	var organization string
 
-	cmd := &cobra.Command{
-		Use:      "build [flags]",
-		Args:     cobra.ExactArgs(0),
-		Short:    "build a scale function",
-		PreRunE:  cmdutil.CheckAuthentication(ch.Config),
-		PostRunE: cmdutil.UpdateToken(ch.Config),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
+	var goBin string
+	var tinygo string
+	var cargo string
 
-			if scaleFilePath == "" {
-				return errors.New("scalefile path is required")
-			}
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		buildCmd := &cobra.Command{
+			Use:   "build [flags]",
+			Args:  cobra.ExactArgs(0),
+			Short: "build a scale function",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				scaleFilePath := path.Join(directory, "scalefile")
+				scaleFile, err := scalefile.Read(scaleFilePath)
+				if err != nil {
+					return fmt.Errorf("failed to read scalefile at %s: %w", scaleFilePath, err)
+				}
 
-			scaleFile, err := scalefile.Read(scaleFilePath)
-			if err != nil {
-				return fmt.Errorf("failed to read scalefile: %w", err)
-			}
+				if scaleFile.Name == "" || !scalefunc.ValidString(scaleFile.Name) {
+					return fmt.Errorf("invalid name %s", scaleFile.Name)
+				}
 
-			// Following commented, pending remote build service
+				if scaleFile.Tag == "" || !scalefunc.ValidString(scaleFile.Tag) {
+					return fmt.Errorf("invalid tag %s", scaleFile.Tag)
+				}
 
-			//directory := path.Dir(scaleFilePath)
-			//sourcePath := path.Join(directory, scaleFile.Source)
+				if organization == "" {
+					organization = DefaultOrganization
+				}
 
-			//source, err := os.ReadFile(sourcePath)
-			//if err != nil {
-			//return fmt.Errorf("failed to read source file: %w", err)
-			//}
+				if !scalefunc.ValidString(organization) {
+					return fmt.Errorf("invalid organization %s", organization)
+				}
 
-			//expired, err := auth.Expired(ch.Config.Token.AccessToken)
-			//if err != nil {
-			//return fmt.Errorf("failed to check token expiration: %w", err)
-			//}
+				if name == "" {
+					name = scaleFile.Name
+				} else {
+					scaleFile.Name = name
+				}
 
-			//if expired {
-			//ts, _, err := client.AuthenticatedClient(ch.Config.Endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, path.Join(ch.Config.Token.Endpoint, ch.Config.Token.BasePath), ch.Config.Token.ClientID, ch.Config.Token.Kind, client.NewToken(ch.Config.Token.AccessToken, ch.Config.Token.TokenType, ch.Config.Token.RefreshToken, ch.Config.Token.Expiry))
-			//if err != nil {
-			//return fmt.Errorf("failed to create authenticated client: %w", err)
-			//}
-			//t, err := ts.Token()
-			//if err != nil {
-			//return fmt.Errorf("failed to get refreshed token: %w", err)
-			//}
-			//ch.Config.Token.AccessToken = t.AccessToken
-			//ch.Config.Token.TokenType = t.TokenType
-			//ch.Config.Token.RefreshToken = t.RefreshToken
-			//ch.Config.Token.Expiry = t.Expiry
-			//}
+				if tag == "" {
+					tag = scaleFile.Tag
+				} else {
+					scaleFile.Tag = tag
+				}
 
-			// scaleFunc, err := build.RemoteBuild(ctx, ch.Config.Build, name, source, ch.Config.Token.AccessToken, scaleFile, new(tls.Config), ch)
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, directory)
+				end()
+				if err != nil {
+					return fmt.Errorf("failed to build scale function: %w", err)
+				}
 
-			c := make(chan *scalefunc.ScaleFunc)
-			go build.LocalBuild(ctx, scaleFile, c)
-			scaleFunc := <-c
+				hash := sha256.New()
+				hash.Write(scaleFunc.Encode())
+				checksum := hex.EncodeToString(hash.Sum(nil))
 
-			if err != nil {
-				return err
-			}
-			if name != "" {
-				scaleFunc.Name = name
-			} else {
-				name = scaleFunc.Name
-			}
-			err = storage.Default.Put(scaleFunc.Name, scaleFunc)
-			if err != nil {
-				return err
-			}
+				st := storage.Default
+				if ch.Config.CacheDirectory != "" {
+					st, err = storage.New(ch.Config.CacheDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.CacheDirectory, err)
+					}
+				}
 
-			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(name))
-				return nil
-			}
+				oldEntry, err := st.Get(scaleFunc.Name, scaleFunc.Tag, organization, "")
+				if err != nil {
+					return fmt.Errorf("failed to check if scale function already exists: %w", err)
+				}
 
-			return ch.Printer.PrintResource(map[string]string{
-				"Name": name,
-			})
-		},
+				if oldEntry != nil {
+					err = st.Delete(name, tag, oldEntry.Organization, oldEntry.Hash)
+					if err != nil {
+						return fmt.Errorf("failed to delete existing scale function %s:%s: %w", name, tag, err)
+					}
+				}
+
+				err = st.Put(scaleFunc.Name, scaleFunc.Tag, organization, checksum, scaleFunc)
+				if err != nil {
+					return fmt.Errorf("failed to store scale function: %w", err)
+				}
+
+				if ch.Printer.Format() == printer.Human {
+					if organization != DefaultOrganization {
+						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", organization, scaleFunc.Name, scaleFunc.Tag)))
+					} else {
+						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", scaleFunc.Name, scaleFunc.Tag)))
+					}
+					return nil
+				}
+
+				return ch.Printer.PrintResource(map[string]string{
+					"Name":         name,
+					"Tag":          tag,
+					"Organization": organization,
+					"Directory":    directory,
+				})
+			},
+		}
+
+		buildCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory containing the scalefile")
+		buildCmd.Flags().StringVarP(&name, "name", "n", "", "the (optional) name of this scale function")
+		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
+		buildCmd.Flags().StringVarP(&organization, "organization", "o", DefaultOrganization, "the (optional) organization of this scale function")
+
+		buildCmd.Flags().StringVar(&tinygo, "tinygo", "", "the (optional) path to the tinygo binary")
+		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
+		buildCmd.Flags().StringVar(&cargo, "cargo", "", "the (optional) path to the cargo binary")
+
+		cmd.AddCommand(buildCmd)
 	}
-
-	cmd.Flags().StringVar(&ch.Config.Build, "build-service", "build.scale.sh:8192", "The endpoint for the Scale Build Service.")
-
-	cmd.Flags().StringVarP(&scaleFilePath, "scalefile", "s", "scalefile", "the scalefile to use")
-	cmd.Flags().StringVarP(&name, "name", "n", "", "the (optional) name of this scale function")
-
-	return cmd
 }

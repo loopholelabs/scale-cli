@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,77 +18,82 @@ package auth
 
 import (
 	"bufio"
-	"io"
-	"os"
-
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"fmt"
+	"github.com/loopholelabs/auth/pkg/client/logout"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/internal/printer"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"io"
+	"os"
 )
 
-func LogoutCmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "logout",
-		Args:  cobra.NoArgs,
-		Short: "Log out of the Scale API",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if ch.Config.IsAuthenticated() != nil {
-				ch.Printer.Println("Already logged out. Exiting...")
+// LogoutCmd encapsulates the commands for logging out
+func LogoutCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		logoutCmd := &cobra.Command{
+			Use:   "logout",
+			Args:  cobra.NoArgs,
+			Short: "Log out of the Scale API",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if !ch.Config.IsAuthenticated() {
+					ch.Printer.Println("Already logged out. Exiting...")
+					return nil
+				}
+
+				if printer.IsTTY && ch.Printer.Format() == printer.Human {
+					ch.Printer.Println("Press Enter to log out of the Scale API.")
+					_ = waitForEnter(cmd.InOrStdin())
+				}
+
+				ctx := cmd.Context()
+
+				end := ch.Printer.PrintProgress("Logging out...")
+				defer end()
+
+				c, err := ch.Config.NewAuthenticatedAuthClient()
+				if err != nil {
+					return fmt.Errorf("error creating authenticated auth client: %w", err)
+				}
+
+				_, err = c.Logout.PostLogout(logout.NewPostLogoutParamsWithContext(ctx))
+				if err != nil {
+					return fmt.Errorf("error logging out: %w", err)
+				}
+
+				err = deleteSession(ch.Config)
+				if err != nil {
+					return err
+				}
+
+				end()
+				ch.Printer.Println("Successfully logged out.")
+
 				return nil
-			}
+			},
+		}
 
-			if printer.IsTTY {
-				ch.Printer.Println("Press Enter to log out of the Scale API.")
-				_ = waitForEnter(cmd.InOrStdin())
-			}
-
-			end := ch.Printer.PrintProgress("Logging out...")
-			defer end()
-
-			err := deleteToken()
-			if err != nil {
-				return err
-			}
-			end()
-			ch.Printer.Println("Successfully logged out.")
-
-			return nil
-		},
+		cmd.AddCommand(logoutCmd)
 	}
-	return cmd
 }
 
-func deleteToken() error {
-	tokenPath, err := config.TokenPath()
+func deleteSession(c *config.Config) error {
+	sessionPath, err := c.SessionPath()
 	if err != nil {
 		return err
 	}
 
-	err = os.Remove(tokenPath)
+	err = os.Remove(sessionPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return errors.Wrap(err, "error removing access token file")
-		}
-	}
-
-	configFile, err := config.DefaultConfigPath()
-	if err != nil {
-		return err
-	}
-
-	err = os.Remove(configFile)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return errors.Wrap(err, "error removing default config file")
+			return errors.Wrap(err, "error removing session file")
 		}
 	}
 
 	return nil
 }
-
 func waitForEnter(r io.Reader) error {
 	scanner := bufio.NewScanner(r)
 	scanner.Scan()

@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,43 +18,80 @@ package apikey
 
 import (
 	"fmt"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/internal/printer"
-	"github.com/loopholelabs/scale-cli/pkg/client/access"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/client/access"
 	"github.com/spf13/cobra"
 )
 
-func DeleteCmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "delete <id>",
-		Args:  cobra.ExactArgs(1),
-		Short: "delete an API Key with the given ID",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			client, err := ch.Client()
-			if err != nil {
-				return err
-			}
+// DeleteCmd encapsulates the commands for deleting API Keys
+func DeleteCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		deleteCmd := &cobra.Command{
+			Use:   "delete <id>",
+			Args:  cobra.ExactArgs(1),
+			Short: "delete an API Key with the given ID",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+				id := args[0]
 
-			id := args[0]
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting API Key %s...", id))
+				_, err := client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
+				end()
+				if err != nil {
+					return err
+				}
 
-			end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting API Key %s...", id))
-			_, err = client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
-			end()
-			if err != nil {
-				return err
-			}
+				if ch.Printer.Format() == printer.Human {
+					ch.Printer.Printf("%s %s %s\n", printer.BoldRed("API Key"), printer.BoldGreen(id), printer.BoldRed("deleted"))
+					return nil
+				}
 
-			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("API Key %s %s\n", printer.BoldGreen(id), printer.BoldRed("deleted"))
-				return nil
-			}
+				return ch.Printer.PrintResource(map[string]string{
+					"deleted": id,
+				})
+			},
+		}
 
-			return ch.Printer.PrintResource(map[string]string{
-				"deleted": id,
-			})
-		},
+		cmd.AddCommand(deleteCmd)
 	}
-
-	return cmd
 }
+
+//
+//func DeleteCmd(ch *cmdutil.Helper) *cobra.Command {
+//	cmd := &cobra.Command{
+//		Use:   "delete <id>",
+//		Args:  cobra.ExactArgs(1),
+//		Short: "delete an API Key with the given ID",
+//		RunE: func(cmd *cobra.Command, args []string) error {
+//			ctx := cmd.Context()
+//			client, err := ch.Client()
+//			if err != nil {
+//				return err
+//			}
+//
+//			id := args[0]
+//
+//			end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting API Key %s...", id))
+//			_, err = client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
+//			end()
+//			if err != nil {
+//				return err
+//			}
+//
+//			if ch.Printer.Format() == printer.Human {
+//				ch.Printer.Printf("API Key %s %s\n", printer.BoldGreen(id), printer.BoldRed("deleted"))
+//				return nil
+//			}
+//
+//			return ch.Printer.PrintResource(map[string]string{
+//				"deleted": id,
+//			})
+//		},
+//	}
+//
+//	return cmd
+//}

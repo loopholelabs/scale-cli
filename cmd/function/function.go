@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,29 +17,40 @@
 package function
 
 import (
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/spf13/cobra"
 )
 
 type scaleFunction struct {
-	Name     string `header:"name" json:"name"`
-	Language string `header:"language" json:"language"`
-	Version  string `header:"version" json:"version"`
+	Name         string `header:"name" json:"name"`
+	Tag          string `header:"tag" json:"tag"`
+	Organization string `header:"organization" json:"organization"`
+	Language     string `header:"language" json:"language"`
+	Signature    string `header:"signature" json:"signature"`
+	Hash         string `header:"hash" json:"hash"`
+	Version      string `header:"version" json:"version"`
 }
 
-// Cmd returns the base command for function.
-func Cmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:     "function <command>",
-		Aliases: []string{"fn"},
-		Short:   "Create, list, and manage Scale Functions",
-	}
+// Cmd encapsulates the commands for functions.
+func Cmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		functionCmd := &cobra.Command{
+			Use:     "function <command>",
+			Aliases: []string{"fn"},
+			Short:   "Create, list, and manage Scale Functions",
+		}
 
-	cmd.AddCommand(BuildCmd(ch))
-	cmd.AddCommand(NewCmd(ch))
-	cmd.AddCommand(ListCmd(ch))
-	cmd.AddCommand(DeleteCmd(ch))
-	cmd.AddCommand(ExportCmd(ch))
-	//cmd.AddCommand(RunCmd(ch))
-	return cmd
+		listSetup := ListCmd()
+		listSetup(functionCmd, ch)
+
+		newSetup := NewCmd()
+		newSetup(functionCmd, ch)
+
+		buildSetup := BuildCmd()
+		buildSetup(functionCmd, ch)
+
+		cmd.AddCommand(functionCmd)
+	}
 }

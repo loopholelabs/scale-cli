@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -17,163 +17,160 @@
 package function
 
 import (
+	"errors"
 	"fmt"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/internal/printer"
-	remoteSignature "github.com/loopholelabs/scale-cli/internal/signature"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/template"
-	"github.com/loopholelabs/scale-signature"
 	"github.com/loopholelabs/scalefile"
+	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
 	textTemplate "text/template"
 )
 
+var (
+	ErrInvalidName = errors.New("invalid name")
+)
+
 const (
-	defaultSignature        = "http@v0.0.2"
-	defaultSignatureName    = "http"
-	defaultSignatureVersion = "v0.0.2"
+	defaultSignature = "http@v0.3.4"
 )
 
 var (
 	extensionLUT = map[string]string{
-		"go":   "go",
-		"rust": "rs",
+		string(scalefile.Go):   "go",
+		string(scalefile.Rust): "rs",
 	}
 )
 
-func NewCmd(ch *cmdutil.Helper) *cobra.Command {
+// NewCmd encapsulates the commands for creating new Functions
+func NewCmd() command.SetupCommand[*config.Config] {
 	var directory string
-
-	cmd := &cobra.Command{
-		Use:     "new <language> <name> [flags]",
-		Args:    cobra.ExactArgs(2),
-		Short:   "generate a new scale function with the given name and language",
-		PreRunE: cmdutil.CheckAuthentication(ch.Config),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			language := args[0]
-			name := args[1]
-
-			ctx := cmd.Context()
-			client, err := ch.Client()
-			if err != nil {
-				return err
-			}
-
-			extension, ok := extensionLUT[language]
-			if !ok {
-				return fmt.Errorf("language %s is not supported", language)
-			}
-
-			scaleFile := &scalefile.ScaleFile{
-				Version:   scalefile.V1Alpha,
-				Name:      name,
-				Signature: defaultSignature,
-				Language:  scalefile.Language(language),
-				Dependencies: []scalefile.Dependency{
-					{
-						Name:    "github.com/loopholelabs/scale",
-						Version: "v0.0.10-0.20221120082504-7d637f71676c",
-					},
-				},
-				Source: fmt.Sprintf("%s.%s", name, extension),
-			}
-
-			if _, err := os.Stat(directory); os.IsNotExist(err) {
-				err = os.MkdirAll(directory, 0755)
-				if err != nil {
-					return fmt.Errorf("error creating directory %s: %w", directory, err)
-				}
-			}
-
-			scaleFilePath := path.Join(directory, "scalefile")
-			err = scalefile.Write(scaleFilePath, scaleFile)
-			if err != nil {
-				return fmt.Errorf("error writing scalefile: %w", err)
-			}
-
-			err = os.WriteFile(fmt.Sprintf("%s/%s", directory, scaleFile.Source), template.LUT[language](), 0644)
-			if err != nil {
-				return fmt.Errorf("error writing source file: %w", err)
-			}
-
-			switch language {
-			case "go":
-				tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
-				if err != nil {
-					return fmt.Errorf("error parsing dependency template: %w", err)
+	var language string
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		listCmd := &cobra.Command{
+			Use:   "new <name> [flags]",
+			Args:  cobra.ExactArgs(1),
+			Short: "generate a new scale function with the given name",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				name := args[0]
+				if name == "" || !scalefunc.ValidString(name) {
+					return ErrInvalidName
 				}
 
-				dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
-				if err != nil {
-					return fmt.Errorf("error creating dependencies file: %w", err)
+				extension, ok := extensionLUT[language]
+				if !ok {
+					return fmt.Errorf("language %s is not supported", language)
 				}
 
-				dependency, err := remoteSignature.GetRemoteGoSignature(client, ctx, "", defaultSignatureName, defaultSignatureVersion)
-				if err != nil {
-					return err
+				scaleFile := &scalefile.ScaleFile{
+					Version:   scalefile.V1Alpha,
+					Name:      name,
+					Tag:       "v0.1.0",
+					Signature: defaultSignature,
+					Language:  scalefile.Language(language),
+					Source:    fmt.Sprintf("scale.%s", extension),
 				}
 
-				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies)+1)
-				copy(dependencies, scaleFile.Dependencies)
-				dependencies[len(dependencies)-1] = *dependency
-				err = tmpl.Execute(dependencyFile, dependencies)
-				if err != nil {
-					_ = dependencyFile.Close()
-					return fmt.Errorf("error writing dependencies file: %w", err)
+				if _, err := os.Stat(directory); os.IsNotExist(err) {
+					err = os.MkdirAll(directory, 0755)
+					if err != nil {
+						return fmt.Errorf("error creating directory %s: %w", directory, err)
+					}
 				}
 
-				err = signature.CreateGoSignature(scaleFilePath, "signature", dependency.Name)
-				if err != nil {
-					return err
+				scaleFilePath := path.Join(directory, "scalefile")
+
+				switch language {
+				case "go":
+					scaleFile.Dependencies = []scalefile.Dependency{
+						{
+							Name:    "github.com/loopholelabs/scale-signature",
+							Version: "v0.2.9",
+						},
+						{
+							Name:    "github.com/loopholelabs/scale-signature-http",
+							Version: "v0.3.4",
+						},
+					}
+
+					tmpl, err := textTemplate.New("dependencies").Parse(template.GoTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing dependency template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(fmt.Sprintf("%s/go.mod", directory))
+					if err != nil {
+						return fmt.Errorf("error creating dependencies file: %w", err)
+					}
+
+					err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing dependencies file: %w", err)
+					}
+				case "rust":
+					scaleFile.Dependencies = []scalefile.Dependency{
+						{
+							Name:    "scale_signature_http",
+							Version: "0.3.4",
+						},
+						{
+							Name:    "scale_signature",
+							Version: "0.2.9",
+						},
+					}
+
+					tmpl, err := textTemplate.New("dependencies").Parse(template.RustTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing dependency template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+					if err != nil {
+						return fmt.Errorf("error creating dependencies file: %w", err)
+					}
+
+					err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
+
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing dependencies file: %w", err)
+					}
+				default:
+					return fmt.Errorf("language %s is not supported", language)
 				}
 
-			case "rust":
-				tmpl, err := textTemplate.New("dependencies").Parse(template.RustTemplate)
+				err := scalefile.Write(scaleFilePath, scaleFile)
 				if err != nil {
-					return fmt.Errorf("error parsing dependency template: %w", err)
+					return fmt.Errorf("error writing scalefile: %w", err)
 				}
 
-				dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+				err = os.WriteFile(fmt.Sprintf("%s/%s", directory, scaleFile.Source), template.LUT[language](), 0644)
 				if err != nil {
-					return fmt.Errorf("error creating dependencies file: %w", err)
+					return fmt.Errorf("error writing source file: %w", err)
 				}
 
-				// if we only allow default signatures, eventually be set at scalefile level
-				dependency := &scalefile.Dependency{Name: "scale_signature_http", Version: "0.0.4"}
-				dependencies := make([]scalefile.Dependency, len(scaleFile.Dependencies))
-				dependencies[len(dependencies)-1] = *dependency
-
-				err = tmpl.Execute(dependencyFile, dependencies)
-
-				if err != nil {
-					_ = dependencyFile.Close()
-					return fmt.Errorf("error writing dependencies file: %w", err)
+				if ch.Printer.Format() == printer.Human {
+					ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
+					return nil
 				}
 
-				err = signature.CreateRustSignature(scaleFilePath, "signature", dependency.Name)
-				if err != nil {
-					return err
-				}
+				return ch.Printer.PrintResource(map[string]string{
+					"ScaleFile": scaleFilePath,
+					"Name":      name,
+					"Language":  language,
+				})
+			},
+		}
 
-			default:
-				return fmt.Errorf("language %s is not supported", language)
-			}
+		listCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
+		listCmd.Flags().StringVarP(&language, "language", "l", string(scalefile.Go), "the language to create the new scale function in (go, rust)")
 
-			if ch.Printer.Format() == printer.Human {
-				ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
-				return nil
-			}
-
-			return ch.Printer.PrintResource(map[string]string{
-				"Name":     name,
-				"Language": language,
-			})
-		},
+		cmd.AddCommand(listCmd)
 	}
-
-	cmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-
-	return cmd
 }
