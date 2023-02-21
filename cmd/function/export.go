@@ -34,7 +34,7 @@ import (
 func ExportCmd() command.SetupCommand[*config.Config] {
 	var outputName string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		listCmd := &cobra.Command{
+		exportCmd := &cobra.Command{
 			Use:   "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
 			Args:  cobra.ExactArgs(2),
 			Short: "export a compiled scale function to the given output path",
@@ -51,7 +51,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization == "" {
-					parsed.Organization = DefaultOrganization
+					parsed.Organization = utils.DefaultOrganization
 				}
 
 				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
@@ -110,7 +110,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		listCmd.Flags().StringVarP(&outputName, "output-name", "o", "", "the (optional) output name of the function to export")
-		cmd.AddCommand(listCmd)
+		exportCmd.Flags().StringVarP(&outputName, "output-name", "o", "", "the (optional) output name of the function to export")
+		cmd.AddCommand(exportCmd)
 	}
 }

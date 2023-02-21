@@ -23,6 +23,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/build"
 	"github.com/loopholelabs/scale/go/storage"
@@ -32,16 +33,12 @@ import (
 	"path"
 )
 
-const (
-	DefaultOrganization = "local"
-)
-
 // BuildCmd encapsulates the commands for building Functions
 func BuildCmd() command.SetupCommand[*config.Config] {
 	var name string
 	var tag string
-	var directory string
 	var org string
+	var directory string
 
 	var goBin string
 	var tinygo string
@@ -60,7 +57,7 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 				}
 
 				if org == "" {
-					org = DefaultOrganization
+					org = utils.DefaultOrganization
 				}
 
 				if name == "" {
@@ -124,7 +121,7 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					if org != DefaultOrganization {
+					if org != utils.DefaultOrganization {
 						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", org, scaleFunc.Name, scaleFunc.Tag)))
 					} else {
 						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", scaleFunc.Name, scaleFunc.Tag)))

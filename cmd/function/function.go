@@ -39,7 +39,7 @@ func Cmd() command.SetupCommand[*config.Config] {
 		functionCmd := &cobra.Command{
 			Use:     "function <command>",
 			Aliases: []string{"fn"},
-			Short:   "Create, list, and manage Scale Functions",
+			Short:   "Create, list, and manage local Scale Functions",
 		}
 
 		listSetup := ListCmd()

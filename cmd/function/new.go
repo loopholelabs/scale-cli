@@ -47,7 +47,7 @@ func NewCmd() command.SetupCommand[*config.Config] {
 	var directory string
 	var language string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		listCmd := &cobra.Command{
+		newCmd := &cobra.Command{
 			Use:   "new <name> [flags]",
 			Args:  cobra.ExactArgs(1),
 			Short: "generate a new scale function with the given name",
@@ -163,9 +163,9 @@ func NewCmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		listCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-		listCmd.Flags().StringVarP(&language, "language", "l", string(scalefile.Go), "the language to create the new scale function in (go, rust)")
+		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
+		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefile.Go), "the language to create the new scale function in (go, rust)")
 
-		cmd.AddCommand(listCmd)
+		cmd.AddCommand(newCmd)
 	}
 }

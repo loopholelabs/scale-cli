@@ -17,21 +17,31 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"github.com/go-openapi/runtime"
 	runtimeClient "github.com/go-openapi/runtime/client"
 	"github.com/loopholelabs/auth"
 	"github.com/loopholelabs/auth/pkg/client/session"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
+	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
+	"io"
 	"strings"
+)
+
+const (
+	DefaultOrganization = "local"
 )
 
 var (
 	ErrNotAuthenticated = errors.New("You must be authenticated to use this command. Please run 'scale auth login' to authenticate.")
 )
+
+var _ runtime.NamedReadCloser = (*ScaleFunctionNamedReadCloser)(nil)
 
 func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
@@ -98,4 +108,28 @@ func ParseFunction(fn string) *ParsedFunction {
 		Name:         tagSplit[0],
 		Tag:          tagSplit[1],
 	}
+}
+
+type ScaleFunctionNamedReadCloser struct {
+	reader io.ReadCloser
+	name   string
+}
+
+func NewScaleFunctionNamedReadCloser(sf *scalefunc.ScaleFunc) *ScaleFunctionNamedReadCloser {
+	return &ScaleFunctionNamedReadCloser{
+		reader: io.NopCloser(bytes.NewReader(sf.Encode())),
+		name:   sf.Name,
+	}
+}
+
+func (s *ScaleFunctionNamedReadCloser) Read(p []byte) (n int, err error) {
+	return s.reader.Read(p)
+}
+
+func (s *ScaleFunctionNamedReadCloser) Close() error {
+	return s.reader.Close()
+}
+
+func (s *ScaleFunctionNamedReadCloser) Name() string {
+	return s.name
 }

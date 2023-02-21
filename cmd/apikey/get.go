@@ -28,7 +28,7 @@ import (
 // GetCmd encapsulates the commands for getting API Keys
 func GetCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		listCmd := &cobra.Command{
+		getCmd := &cobra.Command{
 			Use:   "get <name>",
 			Args:  cobra.ExactArgs(1),
 			Short: "get information about an API Key with the given name",
@@ -52,6 +52,6 @@ func GetCmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		cmd.AddCommand(listCmd)
+		cmd.AddCommand(getCmd)
 	}
 }

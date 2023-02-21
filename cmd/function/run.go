@@ -60,7 +60,7 @@ func RunCmd() command.SetupCommand[*config.Config] {
 				for _, f := range functions {
 					parsed := utils.ParseFunction(f)
 					if parsed.Organization == "" {
-						parsed.Organization = DefaultOrganization
+						parsed.Organization = utils.DefaultOrganization
 					}
 
 					if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
