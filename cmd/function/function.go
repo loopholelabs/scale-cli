@@ -24,13 +24,13 @@ import (
 )
 
 type scaleFunction struct {
-	Name         string `header:"name" json:"name"`
-	Tag          string `header:"tag" json:"tag"`
-	Organization string `header:"organization" json:"organization"`
-	Language     string `header:"language" json:"language"`
-	Signature    string `header:"signature" json:"signature"`
-	Hash         string `header:"hash" json:"hash"`
-	Version      string `header:"version" json:"version"`
+	Name      string `header:"name" json:"name"`
+	Tag       string `header:"tag" json:"tag"`
+	Org       string `header:"org" json:"org"`
+	Language  string `header:"language" json:"language"`
+	Signature string `header:"signature" json:"signature"`
+	Hash      string `header:"hash" json:"hash"`
+	Version   string `header:"version" json:"version"`
 }
 
 // Cmd encapsulates the commands for functions.
@@ -50,6 +50,15 @@ func Cmd() command.SetupCommand[*config.Config] {
 
 		buildSetup := BuildCmd()
 		buildSetup(functionCmd, ch)
+
+		deleteSetup := DeleteCmd()
+		deleteSetup(functionCmd, ch)
+
+		exportSetup := ExportCmd()
+		exportSetup(functionCmd, ch)
+
+		runSetup := RunCmd()
+		runSetup(functionCmd, ch)
 
 		cmd.AddCommand(functionCmd)
 	}

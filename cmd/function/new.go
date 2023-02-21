@@ -17,7 +17,6 @@
 package function
 
 import (
-	"errors"
 	"fmt"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
@@ -30,10 +29,6 @@ import (
 	"os"
 	"path"
 	textTemplate "text/template"
-)
-
-var (
-	ErrInvalidName = errors.New("invalid name")
 )
 
 const (
@@ -59,7 +54,7 @@ func NewCmd() command.SetupCommand[*config.Config] {
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
 				if name == "" || !scalefunc.ValidString(name) {
-					return ErrInvalidName
+					return fmt.Errorf("invalid name %s", name)
 				}
 
 				extension, ok := extensionLUT[language]
@@ -161,9 +156,9 @@ func NewCmd() command.SetupCommand[*config.Config] {
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
-					"ScaleFile": scaleFilePath,
-					"Name":      name,
-					"Language":  language,
+					"path":     scaleFilePath,
+					"name":     name,
+					"language": language,
 				})
 			},
 		}

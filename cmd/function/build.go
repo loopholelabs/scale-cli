@@ -41,7 +41,7 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 	var name string
 	var tag string
 	var directory string
-	var organization string
+	var org string
 
 	var goBin string
 	var tinygo string
@@ -59,20 +59,8 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to read scalefile at %s: %w", scaleFilePath, err)
 				}
 
-				if scaleFile.Name == "" || !scalefunc.ValidString(scaleFile.Name) {
-					return fmt.Errorf("invalid name %s", scaleFile.Name)
-				}
-
-				if scaleFile.Tag == "" || !scalefunc.ValidString(scaleFile.Tag) {
-					return fmt.Errorf("invalid tag %s", scaleFile.Tag)
-				}
-
-				if organization == "" {
-					organization = DefaultOrganization
-				}
-
-				if !scalefunc.ValidString(organization) {
-					return fmt.Errorf("invalid organization %s", organization)
+				if org == "" {
+					org = DefaultOrganization
 				}
 
 				if name == "" {
@@ -85,6 +73,18 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 					tag = scaleFile.Tag
 				} else {
 					scaleFile.Tag = tag
+				}
+
+				if !scalefunc.ValidString(org) {
+					return fmt.Errorf("invalid organization %s", org)
+				}
+
+				if scaleFile.Name == "" || !scalefunc.ValidString(scaleFile.Name) {
+					return fmt.Errorf("invalid name %s", scaleFile.Name)
+				}
+
+				if scaleFile.Tag == "" || !scalefunc.ValidString(scaleFile.Tag) {
+					return fmt.Errorf("invalid tag %s", scaleFile.Tag)
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
@@ -106,7 +106,7 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 					}
 				}
 
-				oldEntry, err := st.Get(scaleFunc.Name, scaleFunc.Tag, organization, "")
+				oldEntry, err := st.Get(scaleFunc.Name, scaleFunc.Tag, org, "")
 				if err != nil {
 					return fmt.Errorf("failed to check if scale function already exists: %w", err)
 				}
@@ -118,14 +118,14 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 					}
 				}
 
-				err = st.Put(scaleFunc.Name, scaleFunc.Tag, organization, checksum, scaleFunc)
+				err = st.Put(scaleFunc.Name, scaleFunc.Tag, org, checksum, scaleFunc)
 				if err != nil {
 					return fmt.Errorf("failed to store scale function: %w", err)
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					if organization != DefaultOrganization {
-						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", organization, scaleFunc.Name, scaleFunc.Tag)))
+					if org != DefaultOrganization {
+						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", org, scaleFunc.Name, scaleFunc.Tag)))
 					} else {
 						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", scaleFunc.Name, scaleFunc.Tag)))
 					}
@@ -133,10 +133,10 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
-					"Name":         name,
-					"Tag":          tag,
-					"Organization": organization,
-					"Directory":    directory,
+					"name":      name,
+					"tag":       tag,
+					"org":       org,
+					"directory": directory,
 				})
 			},
 		}
@@ -144,7 +144,7 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory containing the scalefile")
 		buildCmd.Flags().StringVarP(&name, "name", "n", "", "the (optional) name of this scale function")
 		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
-		buildCmd.Flags().StringVarP(&organization, "organization", "o", DefaultOrganization, "the (optional) organization of this scale function")
+		buildCmd.Flags().StringVarP(&org, "org", "o", "", "the (optional) organization of this scale function")
 
 		buildCmd.Flags().StringVar(&tinygo, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")

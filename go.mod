@@ -7,7 +7,8 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.25
 	github.com/loopholelabs/cmdutils v0.1.1
-	github.com/loopholelabs/scale v0.3.5
+	github.com/loopholelabs/scale v0.3.7
+	github.com/loopholelabs/scale-http-adapters v0.3.1
 	github.com/loopholelabs/scale-signature v0.2.9
 	github.com/loopholelabs/scalefile v0.1.7
 	github.com/mitchellh/go-homedir v1.1.0
@@ -17,12 +18,14 @@ require (
 	github.com/rs/zerolog v1.29.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/pflag v1.0.5
+	github.com/valyala/fasthttp v1.44.0
 )
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.6 // indirect
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
+	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/briandowns/spinner v1.19.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
@@ -39,13 +42,16 @@ require (
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-openapi/validate v0.21.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20221105105431-c8ef78125b99 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/kataras/tablewriter v0.0.0-20180708051242-e063d29b7c23 // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
+	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot-go v0.5.1 // indirect
+	github.com/loopholelabs/scale-signature-http v0.3.4 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -63,6 +69,8 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.14.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
+	github.com/tetratelabs/wazero v1.0.0-pre.9 // indirect
+	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/yalue/merged_fs v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect

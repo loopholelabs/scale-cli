@@ -55,13 +55,13 @@ func ListCmd() command.SetupCommand[*config.Config] {
 				funcs := make([]scaleFunction, len(scaleFuncEntries))
 				for i, entry := range scaleFuncEntries {
 					funcs[i] = scaleFunction{
-						Name:         entry.ScaleFunc.Name,
-						Tag:          entry.ScaleFunc.Tag,
-						Signature:    entry.ScaleFunc.Signature,
-						Language:     string(entry.ScaleFunc.Language),
-						Version:      string(entry.ScaleFunc.Version),
-						Hash:         entry.Hash,
-						Organization: entry.Organization,
+						Name:      entry.ScaleFunc.Name,
+						Tag:       entry.ScaleFunc.Tag,
+						Signature: entry.ScaleFunc.Signature,
+						Language:  string(entry.ScaleFunc.Language),
+						Version:   string(entry.ScaleFunc.Version),
+						Hash:      entry.Hash,
+						Org:       entry.Organization,
 					}
 				}
 

@@ -26,6 +26,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 var (
@@ -74,5 +75,27 @@ func PostRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobr
 		}
 
 		return nil
+	}
+}
+
+type ParsedFunction struct {
+	Organization string
+	Name         string
+	Tag          string
+}
+
+func ParseFunction(fn string) *ParsedFunction {
+	orgSplit := strings.Split(fn, "/")
+	if len(orgSplit) == 1 {
+		orgSplit = []string{"", fn}
+	}
+	tagSplit := strings.Split(orgSplit[1], ":")
+	if len(tagSplit) == 1 {
+		tagSplit = []string{tagSplit[0], ""}
+	}
+	return &ParsedFunction{
+		Organization: orgSplit[0],
+		Name:         tagSplit[0],
+		Tag:          tagSplit[1],
 	}
 }

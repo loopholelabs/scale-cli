@@ -16,35 +16,101 @@
 
 package function
 
-//
-//func ExportCmd(ch *cmdutil.Helper) *cobra.Command {
-//	cmd := &cobra.Command{
-//		Use:   "export <function> <output>",
-//		Args:  cobra.ExactArgs(2),
-//		Short: "export a compiled scale function to the given output path",
-//		RunE: func(cmd *cobra.Command, args []string) error {
-//			name := args[0]
-//			output := args[1]
-//			names := strings.Split(name, ":")
-//			if len(names) != 2 {
-//				name = fmt.Sprintf("%s:latest", name)
-//			}
-//
-//			destination, err := storage.Default.Copy(name, output)
-//			if err != nil {
-//				return fmt.Errorf("failed to export scale function %s to %s: %w", name, destination, err)
-//			}
-//
-//			if ch.Printer.Format() == printer.Human {
-//				ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(name), printer.BoldBlue(destination))
-//				return nil
-//			}
-//
-//			return ch.Printer.PrintResource(map[string]string{
-//				"destination": destination,
-//			})
-//		},
-//	}
-//
-//	return cmd
-//}
+import (
+	"fmt"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/storage"
+	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/spf13/cobra"
+	"os"
+	"path"
+)
+
+// ExportCmd encapsulates the commands for exporting Functions
+func ExportCmd() command.SetupCommand[*config.Config] {
+	var outputName string
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		listCmd := &cobra.Command{
+			Use:   "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
+			Args:  cobra.ExactArgs(2),
+			Short: "export a compiled scale function to the given output path",
+			Long:  "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified, it will default to the local organization.",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				st := storage.Default
+				if ch.Config.CacheDirectory != "" {
+					var err error
+					st, err = storage.New(ch.Config.CacheDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.CacheDirectory, err)
+					}
+				}
+
+				parsed := utils.ParseFunction(args[0])
+				if parsed.Organization == "" {
+					parsed.Organization = DefaultOrganization
+				}
+
+				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
+					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+				}
+
+				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
+					return fmt.Errorf("invalid function name: %s", parsed.Name)
+				}
+
+				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
+					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+				}
+
+				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
+				if err != nil {
+					return fmt.Errorf("failed to delete function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+				}
+				if e == nil {
+					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
+				}
+
+				output := args[3]
+				oInfo, err := os.Stat(output)
+				if err != nil {
+					return fmt.Errorf("failed to stat output path %s: %w", output, err)
+				}
+
+				if !oInfo.IsDir() {
+					return fmt.Errorf("output path %s is not a directory", output)
+				}
+
+				if outputName == "" {
+					output = path.Join(output, fmt.Sprintf("%s-%s-%s.scale", parsed.Organization, parsed.Name, parsed.Tag))
+				} else {
+					output = path.Join(output, outputName)
+				}
+
+				err = os.WriteFile(output, e.ScaleFunc.Encode(), 0644)
+				if err != nil {
+					return fmt.Errorf("failed to write function to %s: %w", output, err)
+				}
+
+				if ch.Printer.Format() == printer.Human {
+					ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(output))
+					return nil
+				}
+
+				return ch.Printer.PrintResource(map[string]string{
+					"destination": output,
+					"org":         parsed.Organization,
+					"name":        parsed.Name,
+					"tag":         parsed.Tag,
+					"hash":        e.Hash,
+				})
+			},
+		}
+
+		listCmd.Flags().StringVarP(&outputName, "output-name", "o", "", "the (optional) output name of the function to export")
+		cmd.AddCommand(listCmd)
+	}
+}
