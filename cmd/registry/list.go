@@ -22,8 +22,8 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale/go/client/models"
 	"github.com/loopholelabs/scale/go/client/registry"
+	"github.com/loopholelabs/scale/go/client/userinfo"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
 )
@@ -34,50 +34,39 @@ func ListCmd() command.SetupCommand[*config.Config] {
 		listCmd := &cobra.Command{
 			Use:   "list [<org>] [flags]",
 			Short: "list all the scale function for an organization from the registry",
-			Long:  "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the official `scale` organization.",
+			Long:  "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the user's organization.",
 			Args:  cobra.RangeArgs(0, 1),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				org := ""
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+
+				infoRes, err := client.Userinfo.PostUserinfo(userinfo.NewPostUserinfoParamsWithContext(ctx))
+				if err != nil {
+					return err
+				}
+
+				org := infoRes.GetPayload().Organization
 				if len(args) > 0 {
 					org = args[0]
 				}
-				if org != "" && !scalefunc.ValidString(org) {
+				if org == "" || !scalefunc.ValidString(org) {
 					return fmt.Errorf("invalid organization name: %s", org)
 				}
 
-				ctx := cmd.Context()
-				client := ch.Config.APIClient()
-				var end func()
-				if org == "" {
-					end = ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))
-				} else {
-					end = ch.Printer.PrintProgress("Retrieving Scale Functions for the 'scale' organization from the Registry...")
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))
+				res, err := client.Registry.GetRegistryFunctionOrganization(registry.NewGetRegistryFunctionOrganizationParamsWithContext(ctx).WithOrganization(org))
+				end()
+				if err != nil {
+					return err
 				}
 
-				var fns []*models.ModelsGetFunctionResponse
-				if org == "" {
-					res, err := client.Registry.GetRegistryFunction(registry.NewGetRegistryFunctionParamsWithContext(ctx))
-					end()
-					if err != nil {
-						return err
-					}
-					fns = res.GetPayload()
-				} else {
-					res, err := client.Registry.GetRegistryFunctionOrganization(registry.NewGetRegistryFunctionOrganizationParamsWithContext(ctx).WithOrganization(org))
-					end()
-					if err != nil {
-						return err
-					}
-					fns = res.GetPayload()
-				}
-
-				if len(fns) == 0 && ch.Printer.Format() == printer.Human {
+				if len(res.GetPayload()) == 0 && ch.Printer.Format() == printer.Human {
 					ch.Printer.Println("No functions available in this organization yet.")
 					return nil
 				}
 
-				ret := make([]scaleFunction, 0, len(fns))
-				for _, fn := range fns {
+				ret := make([]scaleFunction, 0, len(res.GetPayload()))
+				for _, fn := range res.GetPayload() {
 					ret = append(ret, scaleFunction{
 						Name:   fn.Name,
 						Tag:    fn.Tag,

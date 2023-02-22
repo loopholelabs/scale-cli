@@ -35,7 +35,7 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 			Use:   "delete <org>/<name>:<tag> [flags]",
 			Short: "delete a scale function from the scale registry ",
 			Long:  "Delete a scale functions from an organization in the registry.",
-			Args:  cobra.RangeArgs(0, 1),
+			Args:  cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
