@@ -35,6 +35,7 @@ import (
 
 const (
 	DefaultOrganization = "local"
+	DefaultTag          = "latest"
 )
 
 var (
@@ -42,6 +43,30 @@ var (
 )
 
 var _ runtime.NamedReadCloser = (*ScaleFunctionNamedReadCloser)(nil)
+
+type ScaleFunctionNamedReadCloser struct {
+	reader io.ReadCloser
+	name   string
+}
+
+func NewScaleFunctionNamedReadCloser(sf *scalefunc.ScaleFunc) *ScaleFunctionNamedReadCloser {
+	return &ScaleFunctionNamedReadCloser{
+		reader: io.NopCloser(bytes.NewReader(sf.Encode())),
+		name:   sf.Name,
+	}
+}
+
+func (s *ScaleFunctionNamedReadCloser) Read(p []byte) (n int, err error) {
+	return s.reader.Read(p)
+}
+
+func (s *ScaleFunctionNamedReadCloser) Close() error {
+	return s.reader.Close()
+}
+
+func (s *ScaleFunctionNamedReadCloser) Name() string {
+	return s.name
+}
 
 func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
@@ -110,26 +135,6 @@ func ParseFunction(fn string) *ParsedFunction {
 	}
 }
 
-type ScaleFunctionNamedReadCloser struct {
-	reader io.ReadCloser
-	name   string
-}
-
-func NewScaleFunctionNamedReadCloser(sf *scalefunc.ScaleFunc) *ScaleFunctionNamedReadCloser {
-	return &ScaleFunctionNamedReadCloser{
-		reader: io.NopCloser(bytes.NewReader(sf.Encode())),
-		name:   sf.Name,
-	}
-}
-
-func (s *ScaleFunctionNamedReadCloser) Read(p []byte) (n int, err error) {
-	return s.reader.Read(p)
-}
-
-func (s *ScaleFunctionNamedReadCloser) Close() error {
-	return s.reader.Close()
-}
-
-func (s *ScaleFunctionNamedReadCloser) Name() string {
-	return s.name
+func InvalidStringError(kind string, str string) error {
+	return fmt.Errorf("invalid %s '%s', %ss can only include letters, numbers, periods (`.`), and dashes (`-`)", kind, str, kind)
 }

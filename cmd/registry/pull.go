@@ -51,15 +51,15 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				var end func()

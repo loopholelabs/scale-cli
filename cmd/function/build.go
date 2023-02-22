@@ -75,15 +75,15 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				if !scalefunc.ValidString(org) {
-					return fmt.Errorf("invalid organization %s", org)
+					return utils.InvalidStringError("organization", org)
 				}
 
 				if scaleFile.Name == "" || !scalefunc.ValidString(scaleFile.Name) {
-					return fmt.Errorf("invalid name %s", scaleFile.Name)
+					return utils.InvalidStringError("name", scaleFile.Name)
 				}
 
 				if scaleFile.Tag == "" || !scalefunc.ValidString(scaleFile.Tag) {
-					return fmt.Errorf("invalid tag %s", scaleFile.Tag)
+					return utils.InvalidStringError("tag", scaleFile.Tag)
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))

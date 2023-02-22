@@ -49,16 +49,16 @@ func TagCmd() command.SetupCommand[*config.Config] {
 					parsed.Organization = utils.DefaultOrganization
 				}
 
-				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
@@ -74,16 +74,16 @@ func TagCmd() command.SetupCommand[*config.Config] {
 					newParsed.Organization = utils.DefaultOrganization
 				}
 
-				if newParsed.Organization == "" || !scalefunc.ValidString(newParsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", newParsed.Organization)
+				if newParsed.Organization != "" && !scalefunc.ValidString(newParsed.Organization) {
+					return utils.InvalidStringError("organization name", newParsed.Organization)
 				}
 
 				if newParsed.Name == "" || !scalefunc.ValidString(newParsed.Name) {
-					return fmt.Errorf("invalid function name: %s", newParsed.Name)
+					return utils.InvalidStringError("function name", newParsed.Name)
 				}
 
 				if newParsed.Tag == "" || !scalefunc.ValidString(newParsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", newParsed.Tag)
+					return utils.InvalidStringError("function tag", newParsed.Tag)
 				}
 
 				e.ScaleFunc.Name = newParsed.Name

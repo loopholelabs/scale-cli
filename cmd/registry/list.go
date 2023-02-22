@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/registry"
 	"github.com/loopholelabs/scale/go/client/userinfo"
@@ -50,7 +51,7 @@ func ListCmd() command.SetupCommand[*config.Config] {
 					org = args[0]
 				}
 				if org == "" || !scalefunc.ValidString(org) {
-					return fmt.Errorf("invalid organization name: %s", org)
+					return utils.InvalidStringError("organization name", org)
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))
