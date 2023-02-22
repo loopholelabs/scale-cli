@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/spf13/cobra"
@@ -54,6 +55,9 @@ func ListCmd() command.SetupCommand[*config.Config] {
 
 				funcs := make([]scaleFunction, len(scaleFuncEntries))
 				for i, entry := range scaleFuncEntries {
+					if entry.Organization == utils.DefaultOrganization {
+						entry.Organization = ""
+					}
 					funcs[i] = scaleFunction{
 						Name:      entry.ScaleFunc.Name,
 						Tag:       entry.ScaleFunc.Tag,

@@ -24,6 +24,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type scaleFunction struct {
+	Name   string `header:"name" json:"name"`
+	Tag    string `header:"tag" json:"tag"`
+	Hash   string `header:"hash" json:"hash"`
+	Org    string `header:"org" json:"org"`
+	Public string `header:"public" json:"public"`
+}
+
 // Cmd encapsulates the commands for registry.
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
@@ -40,6 +48,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 
 		pullSetup := PullCmd()
 		pullSetup(registryCmd, ch)
+
+		listSetup := ListCmd()
+		listSetup(registryCmd, ch)
 
 		cmd.AddCommand(registryCmd)
 	}

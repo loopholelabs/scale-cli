@@ -48,7 +48,8 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 		buildCmd := &cobra.Command{
 			Use:   "build [flags]",
 			Args:  cobra.ExactArgs(0),
-			Short: "build a scale function",
+			Short: "build a scale function locally and store it in the cache",
+			Long:  "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				scaleFilePath := path.Join(directory, "scalefile")
 				scaleFile, err := scalefile.Read(scaleFilePath)
@@ -120,8 +121,12 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to store scale function: %w", err)
 				}
 
+				if org == utils.DefaultOrganization {
+					org = ""
+				}
+
 				if ch.Printer.Format() == printer.Human {
-					if org != utils.DefaultOrganization {
+					if org != "" {
 						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", org, scaleFunc.Name, scaleFunc.Tag)))
 					} else {
 						ch.Printer.Printf("Successfully built scale function %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", scaleFunc.Name, scaleFunc.Tag)))

@@ -35,7 +35,7 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 			Use:   "delete [<name>:<tag>] | [<org>/<name>:<tag>] [flags]",
 			Args:  cobra.ExactArgs(1),
 			Short: "delete a compiled scale function",
-			Long:  "Delete a compiled scale function. If no organization is provided, the local organization will be used.",
+			Long:  "Delete a compiled scale function.",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -76,8 +76,16 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to delete function %s: %w", parsed.Name, err)
 				}
 
+				if parsed.Organization == utils.DefaultOrganization {
+					parsed.Organization = ""
+				}
+
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Successfully deleted scale function %s\n", printer.BoldRed(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)))
+					if parsed.Organization != "" {
+						ch.Printer.Printf("Successfully deleted scale function %s\n", printer.BoldRed(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)))
+					} else {
+						ch.Printer.Printf("Successfully deleted scale function %s\n", printer.BoldRed(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)))
+					}
 					return nil
 				}
 

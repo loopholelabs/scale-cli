@@ -47,6 +47,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		logoutSetup := LogoutCmd()
 		logoutSetup(authCmd, ch)
 
+		statusSetup := StatusCmd()
+		statusSetup(authCmd, ch)
+
 		cmd.AddCommand(authCmd)
 	}
 }

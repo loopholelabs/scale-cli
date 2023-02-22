@@ -70,7 +70,7 @@ func PushCmd() command.SetupCommand[*config.Config] {
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
-					return fmt.Errorf("failed to delete function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					return fmt.Errorf("failed to push function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 				if e == nil {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)

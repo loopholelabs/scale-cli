@@ -60,6 +60,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		runSetup := RunCmd()
 		runSetup(functionCmd, ch)
 
+		renameSetup := RenameCmd()
+		renameSetup(functionCmd, ch)
+
 		cmd.AddCommand(functionCmd)
 	}
 }

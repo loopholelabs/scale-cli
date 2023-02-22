@@ -1,0 +1,97 @@
+/*
+	Copyright 2023 Loophole Labs
+
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
+
+		   http://www.apache.org/licenses/LICENSE-2.0
+
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+*/
+
+package registry
+
+import (
+	"fmt"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/client/models"
+	"github.com/loopholelabs/scale/go/client/registry"
+	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/spf13/cobra"
+)
+
+// ListCmd encapsulates the commands for listing Functions
+func ListCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		listCmd := &cobra.Command{
+			Use:   "list [<org>] [flags]",
+			Short: "list all the scale function for an organization from the registry",
+			Long:  "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the official `scale` organization.",
+			Args:  cobra.RangeArgs(0, 1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				org := ""
+				if len(args) > 0 {
+					org = args[0]
+				}
+				if org != "" && !scalefunc.ValidString(org) {
+					return fmt.Errorf("invalid organization name: %s", org)
+				}
+
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+				var end func()
+				if org == "" {
+					end = ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))
+				} else {
+					end = ch.Printer.PrintProgress("Retrieving Scale Functions for the 'scale' organization from the Registry...")
+				}
+
+				var fns []*models.ModelsGetFunctionResponse
+				if org == "" {
+					res, err := client.Registry.GetRegistryFunction(registry.NewGetRegistryFunctionParamsWithContext(ctx))
+					end()
+					if err != nil {
+						return err
+					}
+					fns = res.GetPayload()
+				} else {
+					res, err := client.Registry.GetRegistryFunctionOrganization(registry.NewGetRegistryFunctionOrganizationParamsWithContext(ctx).WithOrganization(org))
+					end()
+					if err != nil {
+						return err
+					}
+					fns = res.GetPayload()
+				}
+
+				if len(fns) == 0 && ch.Printer.Format() == printer.Human {
+					ch.Printer.Println("No functions available in this organization yet.")
+					return nil
+				}
+
+				ret := make([]scaleFunction, 0, len(fns))
+				for _, fn := range fns {
+					ret = append(ret, scaleFunction{
+						Name:   fn.Name,
+						Tag:    fn.Tag,
+						Hash:   fn.Hash,
+						Org:    fn.Organization,
+						Public: fmt.Sprintf("%t", fn.Public),
+					})
+				}
+
+				return ch.Printer.PrintResource(ret)
+
+			},
+		}
+
+		cmd.AddCommand(listCmd)
+	}
+}

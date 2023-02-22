@@ -45,7 +45,7 @@ func RunCmd() command.SetupCommand[*config.Config] {
 			Use:   "run --function=[ [ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
 			Args:  cobra.ExactArgs(0),
 			Short: "run a compiled scale function",
-			Long:  "Run a compiled scale function. If no organization is provided for any of the functions provided using the --function flag, the local organization will be used.",
+			Long:  "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain by specifying the --function flag multiple times. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -132,60 +132,3 @@ func RunCmd() command.SetupCommand[*config.Config] {
 		cmd.AddCommand(runCmd)
 	}
 }
-
-//
-//func RunCmd(ch *cmdutil.Helper) *cobra.Command {
-//	var listen string
-//	cmd := &cobra.Command{
-//		Use:   "run <function> [flags]",
-//		Args:  cobra.ExactArgs(1),
-//		Short: "run a compiled scale function",
-//		RunE: func(cmd *cobra.Command, args []string) error {
-//			ctx := cmd.Context()
-//			name := args[0]
-//			names := strings.Split(name, ":")
-//			if len(names) != 2 {
-//				name = fmt.Sprintf("%s:latest", name)
-//			}
-//			scaleFunc, err := storage.Default.Get(name)
-//			if err != nil {
-//				return fmt.Errorf("failed to get function %s: %w", name, err)
-//			}
-//			r, err := runtime.New(ctx, []scalefunc.ScaleFunc{*scaleFunc})
-//			if err != nil {
-//				return fmt.Errorf("failed to create runtime: %w", err)
-//			}
-//
-//			stop := make(chan os.Signal, 1)
-//			signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-//
-//			server := fasthttp.Server{
-//				Handler:         adapter.New(nil, r).Handle,
-//				CloseOnShutdown: true,
-//				IdleTimeout:     time.Second,
-//			}
-//
-//			var wg sync.WaitGroup
-//			wg.Add(1)
-//			go func() {
-//				defer wg.Done()
-//				ch.Printer.Printf("scale function %s listening at %s", printer.BoldGreen(name), printer.BoldGreen(listen))
-//				err = server.ListenAndServe(listen)
-//				if err != nil {
-//					ch.Printer.Printf("error starting server: %v", printer.BoldRed(err))
-//				}
-//			}()
-//			<-stop
-//			err = server.Shutdown()
-//			if err != nil {
-//				return fmt.Errorf("failed to shutdown server: %w", err)
-//			}
-//			wg.Wait()
-//			return nil
-//		},
-//	}
-//
-//	cmd.Flags().StringVarP(&listen, "listen", "l", "127.0.0.1:8080", "the address the scale function should listen on")
-//
-//	return cmd
-//}

@@ -38,7 +38,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 			Use:   "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
 			Args:  cobra.ExactArgs(2),
 			Short: "export a compiled scale function to the given output path",
-			Long:  "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified, it will default to the local organization.",
+			Long:  "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified or the function is not associated with an org, no organization will be used.",
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -68,7 +68,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
-					return fmt.Errorf("failed to delete function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					return fmt.Errorf("failed to export function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 				if e == nil {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
@@ -85,7 +85,11 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				}
 
 				if outputName == "" {
-					output = path.Join(output, fmt.Sprintf("%s-%s-%s.scale", parsed.Organization, parsed.Name, parsed.Tag))
+					if parsed.Organization != utils.DefaultOrganization {
+						output = path.Join(output, fmt.Sprintf("%s-%s-%s.scale", parsed.Organization, parsed.Name, parsed.Tag))
+					} else {
+						output = path.Join(output, fmt.Sprintf("%s-%s.scale", parsed.Name, parsed.Tag))
+					}
 				} else {
 					output = path.Join(output, outputName)
 				}
@@ -95,8 +99,16 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to write function to %s: %w", output, err)
 				}
 
+				if parsed.Organization == utils.DefaultOrganization {
+					parsed.Organization = ""
+				}
+
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(output))
+					if parsed.Organization != "" {
+						ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(output))
+					} else {
+						ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)), printer.BoldBlue(output))
+					}
 					return nil
 				}
 

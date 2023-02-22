@@ -69,7 +69,7 @@ func PullCmd() command.SetupCommand[*config.Config] {
 				}
 
 				var opts []registry.Option
-				opts = append(opts, registry.WithClient(ch.Config.APIClient()), registry.WithCacheDirectory(st.BaseDirectory))
+				opts = append(opts, registry.WithClient(ch.Config.APIClient()), registry.WithStorage(st))
 				if parsed.Organization != "" {
 					opts = append(opts, registry.WithOrganization(parsed.Organization))
 				}
