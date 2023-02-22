@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - v*
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -11,7 +13,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
+        with:
+          fetch-depth: 0
+      - run: git fetch --force --tags
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
@@ -19,21 +23,18 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Install GoReleaser
-        uses: goreleaser/goreleaser-action@v3
-        with:
-          distribution: goreleaser
-          version: latest
-          install-only: true
-
       - id: build-variables
         run: |
           echo "go-version=$(go version | cut -d' ' -f3)" >> $GITHUB_OUTPUT
           echo "go-platform=$(go version | cut -d' ' -f4)" >> $GITHUB_OUTPUT
           echo "build-date=$(date)" >> $GITHUB_OUTPUT
 
-      - name: Run GoReleaser
-        run: goreleaser release --rm-dist
+      - name: Install GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
         env:
           GO_VERSION: ${{ steps.build-variables.outputs.go-version }}
           GO_PLATFORM: ${{ steps.build-variables.outputs.go-platform }}
