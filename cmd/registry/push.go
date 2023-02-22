@@ -76,11 +76,6 @@ func PushCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
 				}
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s/%s:%s to Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
-
-				ctx := cmd.Context()
-				client := ch.Config.APIClient()
-
 				if org != "" {
 					parsed.Organization = org
 				}
@@ -107,6 +102,16 @@ func PushCmd() command.SetupCommand[*config.Config] {
 
 				e.ScaleFunc.Name = parsed.Name
 				e.ScaleFunc.Tag = parsed.Tag
+
+				var end func()
+				if parsed.Organization == utils.DefaultOrganization {
+					end = ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s:%s to Scale Registry...", parsed.Name, parsed.Tag))
+				} else {
+					end = ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s/%s:%s to Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
+				}
+
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
 
 				params := registry.NewPostRegistryFunctionParamsWithContext(ctx).WithFunction(utils.NewScaleFunctionNamedReadCloser(e.ScaleFunc)).WithPublic(&public)
 				if parsed.Organization != utils.DefaultOrganization {

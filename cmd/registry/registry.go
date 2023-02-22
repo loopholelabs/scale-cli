@@ -52,6 +52,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		listSetup := ListCmd()
 		listSetup(registryCmd, ch)
 
+		deleteSetup := DeleteCmd()
+		deleteSetup(registryCmd, ch)
+
 		cmd.AddCommand(registryCmd)
 	}
 }
