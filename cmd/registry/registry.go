@@ -43,10 +43,10 @@ func Cmd() command.SetupCommand[*config.Config] {
 			PersistentPostRunE: utils.PostRunAuthenticatedAPI(ch),
 		}
 
-		pushSetup := PushCmd()
+		pushSetup := PushCmd(false)
 		pushSetup(registryCmd, ch)
 
-		pullSetup := PullCmd()
+		pullSetup := PullCmd(false)
 		pullSetup(registryCmd, ch)
 
 		listSetup := ListCmd()
@@ -54,6 +54,12 @@ func Cmd() command.SetupCommand[*config.Config] {
 
 		deleteSetup := DeleteCmd()
 		deleteSetup(registryCmd, ch)
+
+		pullAliasSetup := PushCmd(true)
+		pullAliasSetup(cmd, ch)
+
+		pushAliasSetup := PullCmd(true)
+		pushAliasSetup(cmd, ch)
 
 		cmd.AddCommand(registryCmd)
 	}

@@ -19,14 +19,5 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Install swaggo
-        run: go install github.com/swaggo/swag/cmd/swag@v1.8.10
-
-      - name: Install swagger
-        run: go install github.com/go-swagger/go-swagger/cmd/swagger@v0.30.4
-
-      - name: Generate
-        run: go generate ./...
-
       - name: Build
         run: go build -v ./...
