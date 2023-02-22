@@ -20,12 +20,12 @@ out [the contribution guide](https://github.com/loopholelabs/scale-cli/blob/mast
 
 ## License
 
-The Scale HTTP Adapters project is available as open source under the terms of
+The Scale CLI project is available as open source under the terms of
 the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
 ## Code of Conduct
 
-Everyone interacting in the Scale HTTP Adapters project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+Everyone interacting in the Scale CLI project’s codebases, issue trackers, chat rooms and mailing lists is expected to follow the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
 
 ## Project Managed By:
 
