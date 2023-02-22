@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,40 +18,40 @@ package apikey
 
 import (
 	"fmt"
-	"github.com/loopholelabs/auth/pkg/utils"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/pkg/client/access"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/client/access"
 	"github.com/spf13/cobra"
 )
 
-func GetCmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "get <name>",
-		Args:  cobra.ExactArgs(1),
-		Short: "get information about an API Key with the given name",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			ctx := cmd.Context()
-			client, err := ch.Client()
-			if err != nil {
-				return err
-			}
+// GetCmd encapsulates the commands for getting API Keys
+func GetCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		getCmd := &cobra.Command{
+			Use:   "get <name>",
+			Args:  cobra.ExactArgs(1),
+			Short: "get information about an API Key with the given name",
+			RunE: func(cmd *cobra.Command, args []string) error {
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+				name := args[0]
 
-			name := args[0]
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving API Key %s...", name))
+				res, err := client.Access.GetAccessApikeyName(access.NewGetAccessApikeyNameParamsWithContext(ctx).WithName(name))
+				end()
+				if err != nil {
+					return err
+				}
 
-			end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving API Key %s...", name))
-			res, err := client.Access.GetAccessApikeyName(access.NewGetAccessApikeyNameParamsWithContext(ctx).WithName(name))
-			end()
-			if err != nil {
-				return err
-			}
+				return ch.Printer.PrintResource(apiKeyRedacted{
+					Name:    res.GetPayload().Name,
+					Created: res.GetPayload().CreatedAt,
+					ID:      res.GetPayload().ID,
+				})
+			},
+		}
 
-			return ch.Printer.PrintResource(apiKeyRedacted{
-				Name:    res.Payload.Name,
-				Created: utils.Int64ToTime(res.Payload.CreatedAt).String(),
-				ID:      res.Payload.ID,
-			})
-		},
+		cmd.AddCommand(getCmd)
 	}
-
-	return cmd
 }

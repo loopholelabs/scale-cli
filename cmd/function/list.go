@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,41 +18,61 @@ package function
 
 import (
 	"fmt"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
-	"github.com/loopholelabs/scale-cli/internal/printer"
-	"github.com/loopholelabs/scale-cli/pkg/storage"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
+	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale/go/storage"
 	"github.com/spf13/cobra"
 )
 
-func ListCmd(ch *cmdutil.Helper) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "list [flags]",
-		Short: "list compiled scale functions",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			scaleFuncEntries, err := storage.Default.List()
-			if err != nil {
-				return fmt.Errorf("failed to list scale functions: %w", err)
-			}
-
-			if len(scaleFuncEntries) == 0 && ch.Printer.Format() == printer.Human {
-				ch.Printer.Println("No Scale Functions have been compiled yet.")
-				return nil
-			}
-
-			funcs := make([]scaleFunction, len(scaleFuncEntries))
-			for i, entry := range scaleFuncEntries {
-				funcs[i] = scaleFunction{
-					Name:       entry.ScaleFile.Name,
-					Tag:        entry.Tag,
-					Language:   entry.ScaleFile.Build.Language,
-					Middleware: entry.ScaleFile.Middleware,
+// ListCmd encapsulates the commands for listing Functions
+func ListCmd() command.SetupCommand[*config.Config] {
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		listCmd := &cobra.Command{
+			Use:   "list",
+			Short: "list locally available scale functions",
+			Args:  cobra.NoArgs,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				st := storage.Default
+				if ch.Config.CacheDirectory != "" {
+					var err error
+					st, err = storage.New(ch.Config.CacheDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.CacheDirectory, err)
+					}
 				}
-			}
+				scaleFuncEntries, err := st.List()
+				if err != nil {
+					return fmt.Errorf("failed to list scale functions: %w", err)
+				}
 
-			return ch.Printer.PrintResource(funcs)
-		},
+				if len(scaleFuncEntries) == 0 && ch.Printer.Format() == printer.Human {
+					ch.Printer.Println("No Scale Functions available yet.")
+					return nil
+				}
+
+				funcs := make([]scaleFunction, len(scaleFuncEntries))
+				for i, entry := range scaleFuncEntries {
+					if entry.Organization == utils.DefaultOrganization {
+						entry.Organization = ""
+					}
+					funcs[i] = scaleFunction{
+						Name:      entry.ScaleFunc.Name,
+						Tag:       entry.ScaleFunc.Tag,
+						Signature: entry.ScaleFunc.Signature,
+						Language:  string(entry.ScaleFunc.Language),
+						Version:   string(entry.ScaleFunc.Version),
+						Hash:      entry.Hash,
+						Org:       entry.Organization,
+					}
+				}
+
+				return ch.Printer.PrintResource(funcs)
+			},
+		}
+
+		cmd.AddCommand(listCmd)
 	}
-
-	return cmd
 }

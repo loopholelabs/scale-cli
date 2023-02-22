@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,110 +18,151 @@ package auth
 
 import (
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/loopholelabs/auth/pkg/client"
-	"github.com/loopholelabs/auth/pkg/client/discover"
-	"github.com/loopholelabs/auth/pkg/token/tokenKind"
-	"github.com/loopholelabs/scale-cli/internal/auth"
-	"github.com/loopholelabs/scale-cli/internal/cmdutil"
+	runtimeClient "github.com/go-openapi/runtime/client"
+	"github.com/loopholelabs/auth"
+	"github.com/loopholelabs/auth/pkg/client/device"
+	"github.com/loopholelabs/auth/pkg/client/session"
+	"github.com/loopholelabs/auth/pkg/client/userinfo"
+	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/internal/printer"
+	"github.com/pkg/browser"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"os"
-	"path"
+	"time"
 )
 
-// LoginCmd is the command for logging into a Scale account.
-func LoginCmd(ch *cmdutil.Helper) *cobra.Command {
-	var clientID string
-	var authEndpoint string
-	var authBasePath string
+var (
+	ErrInteractive = errors.New("The 'login' command requires an interactive shell when the output format is not 'json'")
+	ErrNoSession   = errors.New("No session found")
+)
+
+// LoginCmd encapsulates the commands for logging in
+func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var apiKey string
-
-	cmd := &cobra.Command{
-		Use:   "login [flags]",
-		Args:  cobra.ExactArgs(0),
-		Short: "Authenticate with the Scale API",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if !printer.IsTTY {
-				return errors.New("The 'login' command requires an interactive shell")
-			}
-
-			ctx := cmd.Context()
-
-			_, c := client.UnauthenticatedClient(authEndpoint, authBasePath, auth.DefaultScheme, nil)
-
-			var token *client.Token
-			var err error
-			var kind tokenKind.Kind
-			if cmd.Flags().Changed("api-key") {
-				kind = tokenKind.APITokenKind
-				conf := oauth2.Config{
-					ClientID: clientID,
-					Endpoint: oauth2.Endpoint{
-						AuthURL:   fmt.Sprintf("https://%s", path.Join(authEndpoint, authBasePath, "refresh")),
-						TokenURL:  fmt.Sprintf("https://%s", path.Join(authEndpoint, authBasePath, "exchange")),
-						AuthStyle: oauth2.AuthStyleInParams,
-					},
+	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
+		loginCmd := &cobra.Command{
+			Use:    "login [flags]",
+			Short:  "Authenticate with the Scale Authentication API",
+			Hidden: hidden,
+			RunE: func(cmd *cobra.Command, args []string) error {
+				if !printer.IsTTY {
+					if ch.Printer.Format() == printer.Human {
+						return ErrInteractive
+					}
 				}
-				var exchangeToken *oauth2.Token
-				exchangeToken, err = conf.Exchange(ctx, apiKey)
-				if err == nil {
-					token = (*client.Token)(exchangeToken)
-				}
-			} else {
-				kind = tokenKind.OAuthKind
-				var d *discover.Discovery
-				d, err = discover.Discover(c.Transport, fmt.Sprintf("https://%s", path.Join(authEndpoint, authBasePath)))
-				if err != nil {
-					return fmt.Errorf("error discovering auth endpoint: %w", err)
-				}
+
+				ctx := cmd.Context()
+
+				c := ch.Config.NewUnauthenticatedAuthClient()
 
 				var end func()
-				go func() {
-					<-cmd.Context().Done()
-					if end != nil {
-						end()
+				if cmd.Flags().Changed("api-key") {
+					end = ch.Printer.PrintProgress("Authenticating... (press Ctrl+C to cancel)")
+					go func() {
+						<-ctx.Done()
+						if end != nil {
+							end()
+						}
+						os.Exit(0)
+					}()
+					ch.Config.Session = session.New(auth.KindAPIKey, apiKey, time.Time{})
+				} else {
+					flow, err := c.Device.PostDeviceFlow(device.NewPostDeviceFlowParamsWithContext(ctx))
+					if err != nil {
+						return fmt.Errorf("error getting device flow: %w", err)
 					}
-					os.Exit(0)
-				}()
 
-				flow := client.DeviceFlow(d.GetHosts(), client.NewCompatibleClient(c.Transport), d.GetScopes(), clientID, func(userCode string, verificationURI string) error {
-					bold := color.New(color.Bold)
-					_, _ = bold.Printf("\nConfirmation Code: ")
-					boldGreen := bold.Add(color.FgGreen)
-					_, _ = boldGreen.Fprintln(color.Output, userCode)
+					switch ch.Printer.Format() {
+					case printer.Human:
+						ch.Printer.Printf("\n%s%s\n", printer.Bold("Confirmation Code: "), printer.BoldGreen(flow.GetPayload().DeviceCode))
 
-					ch.Printer.Printf("\nIf something goes wrong, copy and paste this URL into your browser: %s\n\n", printer.Bold(verificationURI))
-					end = ch.Printer.PrintProgress("Waiting for confirmation...")
-					return nil
-				}, nil)
+						ch.Printer.Printf("Opening browser to %s\n", printer.Bold("https://scale.sh/device-auth?code="+flow.GetPayload().DeviceCode))
+						err = browser.OpenURL("https://scale.sh/device-auth?code=" + flow.GetPayload().DeviceCode)
+						if err != nil {
+							ch.Printer.Printf("Failed to open browser: %s\n", err)
+						}
 
-				token, err = client.GetToken(flow)
+						ch.Printer.Printf("\nIf something goes wrong, copy and paste this URL into your browser: %s\n\n", printer.Bold(fmt.Sprintf("https://scale.sh/device-auth?code=%s", flow.GetPayload().DeviceCode)))
+						end = ch.Printer.PrintProgress("Waiting for confirmation... (press Ctrl+C to cancel)")
+						go func() {
+							<-ctx.Done()
+							if end != nil {
+								end()
+							}
+							os.Exit(0)
+						}()
+					case printer.JSON, printer.CSV:
+						err = ch.Printer.PrintJSON(map[string]string{
+							"code": flow.GetPayload().DeviceCode,
+							"url":  "https://scale.sh/device-auth?code=" + flow.GetPayload().DeviceCode,
+						})
+						if err != nil {
+							return fmt.Errorf("error printing JSON: %w", err)
+						}
+					}
+
+					ticker := time.NewTicker(time.Duration(flow.GetPayload().PollingRate)*time.Second + time.Millisecond*500)
+					for {
+						select {
+						case <-ctx.Done():
+							return fmt.Errorf("error while waiting for confirmation: %w", cmd.Context().Err())
+						case <-ticker.C:
+							_, err := c.Device.PostDevicePoll(device.NewPostDevicePollParamsWithContext(ctx).WithCode(flow.GetPayload().UserCode))
+							if err != nil {
+								if _, ok := err.(*device.PostDevicePollForbidden); ok {
+									continue
+								}
+								return fmt.Errorf("error polling for confirmation: %w", err)
+							}
+							cookies := c.Transport.(*runtimeClient.Runtime).Jar.Cookies(config.DefaultCookieURL)
+							if len(cookies) == 0 {
+								return ErrNoSession
+							}
+							ch.Config.Session = session.New(auth.KindSession, cookies[0].Value, cookies[0].Expires)
+							goto DONE
+						}
+					}
+				}
+			DONE:
+				c, err := ch.Config.NewAuthenticatedAuthClient()
+				if err != nil {
+					return fmt.Errorf("error creating authenticated auth client: %w", err)
+				}
+
+				info, err := c.Userinfo.PostUserinfo(userinfo.NewPostUserinfoParamsWithContext(ctx))
+				if err != nil {
+					return fmt.Errorf("error getting user info: %w", err)
+				}
+
+				err = ch.Config.WriteSession()
+				if err != nil {
+					return fmt.Errorf("error writing session: %w", err)
+				}
+
 				if end != nil {
 					end()
+					end = nil
 				}
-			}
-			if err != nil {
-				return fmt.Errorf("error getting token: %w", err)
-			}
 
-			err = cmdutil.WriteToken(config.FromClientToken(token, kind, authEndpoint, authBasePath, clientID))
-			if err != nil {
-				return errors.Wrap(err, "error logging in")
-			}
-			ch.Printer.Println("Successfully logged in.")
-			return nil
-		},
+				switch ch.Printer.Format() {
+				case printer.JSON, printer.CSV:
+					return ch.Printer.PrintJSON(map[string]string{
+						"email":        info.GetPayload().Email,
+						"session":      string(info.GetPayload().Session),
+						"organization": info.GetPayload().Organization,
+					})
+				case printer.Human:
+					ch.Printer.Printf("Logged in as %s\n", printer.Bold(info.GetPayload().Email))
+				}
+				return nil
+			},
+		}
+
+		loginCmd.Flags().StringVarP(&apiKey, "api-key", "a", "", "The API Key to authenticate with the Scale API")
+
+		cmd.AddCommand(loginCmd)
 	}
-
-	cmd.Flags().StringVar(&clientID, "client-id", auth.OAuthClientID, "The client ID for the Scale Auth Service.")
-	cmd.Flags().StringVar(&authEndpoint, "auth", auth.DefaultEndpoint, "The Scale Auth Service Endpoint")
-	cmd.Flags().StringVar(&authBasePath, "base-path", auth.DefaultBasePath, "The Scale Auth Service Base Path")
-
-	cmd.Flags().StringVarP(&apiKey, "api-key", "a", "", "The API Key to authenticate with the Scale API")
-
-	return cmd
 }

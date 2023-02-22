@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
 	limitations under the License.
 */
 
-package cmdutil
+package main
 
-const ActionRequestedExitCode = 1
-const FatalErrExitCode = 2
+import (
+	"context"
+	"os"
+	"os/signal"
+)
 
-// Error can be used by a command to change the exit status of the CLI.
-type Error struct {
-	Msg string
-	// Status
-	ExitCode int
+func main() {
+	os.Exit(realMain())
 }
 
-func (e *Error) Error() string { return e.Msg }
+func realMain() int {
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	return Cmd.Execute(ctx)
+}

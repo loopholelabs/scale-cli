@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-package apikey
+package registry
 
 import (
 	"github.com/loopholelabs/cmdutils"
@@ -24,41 +24,43 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type apiKey struct {
-	Name    string `header:"name" json:"name"`
-	ID      string `header:"id" json:"id"`
-	Value   string `header:"value" json:"value"`
-	Created string `header:"created" json:"created"`
+type scaleFunction struct {
+	Name   string `header:"name" json:"name"`
+	Tag    string `header:"tag" json:"tag"`
+	Hash   string `header:"hash" json:"hash"`
+	Org    string `header:"org" json:"org"`
+	Public string `header:"public" json:"public"`
 }
 
-type apiKeyRedacted struct {
-	Name    string `header:"name" json:"name"`
-	ID      string `header:"id" json:"id"`
-	Created string `header:"created" json:"created"`
-}
-
-// Cmd encapsulates the commands for authentication.
+// Cmd encapsulates the commands for registry.
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		apikeyCmd := &cobra.Command{
-			Use:                "apikey",
-			Short:              "Create, list, and manage API Keys",
+		registryCmd := &cobra.Command{
+			Use:                "registry <command>",
+			Aliases:            []string{"reg"},
+			Short:              "Create, list, and manage Scale Functions in the registry",
 			PersistentPreRunE:  utils.PreRunAuthenticatedAPI(ch),
 			PersistentPostRunE: utils.PostRunAuthenticatedAPI(ch),
 		}
 
+		pushSetup := PushCmd(false)
+		pushSetup(registryCmd, ch)
+
+		pullSetup := PullCmd(false)
+		pullSetup(registryCmd, ch)
+
 		listSetup := ListCmd()
-		listSetup(apikeyCmd, ch)
-
-		getSetup := GetCmd()
-		getSetup(apikeyCmd, ch)
-
-		createSetup := CreateCmd()
-		createSetup(apikeyCmd, ch)
+		listSetup(registryCmd, ch)
 
 		deleteSetup := DeleteCmd()
-		deleteSetup(apikeyCmd, ch)
+		deleteSetup(registryCmd, ch)
 
-		cmd.AddCommand(apikeyCmd)
+		pullAliasSetup := PushCmd(true)
+		pullAliasSetup(cmd, ch)
+
+		pushAliasSetup := PullCmd(true)
+		pushAliasSetup(cmd, ch)
+
+		cmd.AddCommand(registryCmd)
 	}
 }
