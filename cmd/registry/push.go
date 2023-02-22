@@ -24,6 +24,7 @@ import (
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/registry"
+	"github.com/loopholelabs/scale/go/client/userinfo"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
@@ -89,30 +90,35 @@ func PushCmd(hidden bool) command.SetupCommand[*config.Config] {
 					parsed.Tag = tag
 				}
 
-				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				e.ScaleFunc.Name = parsed.Name
 				e.ScaleFunc.Tag = parsed.Tag
 
+				ctx := cmd.Context()
+				client := ch.Config.APIClient()
+
 				var end func()
 				if parsed.Organization == utils.DefaultOrganization {
-					end = ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s:%s to Scale Registry...", parsed.Name, parsed.Tag))
+					userInfoRes, err := client.Userinfo.PostUserinfo(userinfo.NewPostUserinfoParamsWithContext(ctx))
+					if err != nil {
+						return err
+					}
+					ch.Printer.Printf("No organization specified, using user's default organization %s\n", printer.BoldGreen(userInfoRes.GetPayload().Organization))
+					end = ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s/%s:%s to Scale Registry...", userInfoRes.GetPayload().Organization, parsed.Name, parsed.Tag))
 				} else {
 					end = ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s/%s:%s to Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
 				}
-
-				ctx := cmd.Context()
-				client := ch.Config.APIClient()
 
 				params := registry.NewPostRegistryFunctionParamsWithContext(ctx).WithFunction(utils.NewScaleFunctionNamedReadCloser(e.ScaleFunc)).WithPublic(&public)
 				if parsed.Organization != utils.DefaultOrganization {
