@@ -28,12 +28,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// RenameCmd encapsulates the commands for renaming Functions
-func RenameCmd() command.SetupCommand[*config.Config] {
+// TagCmd encapsulates the commands for tagging and renaming Functions
+func TagCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		listCmd := &cobra.Command{
-			Use:   "rename [<current_name>:<current_tag>] | [<current_org>/<current_name>:<current_tag>] [<new_name>:<new_tag>] | [<new_org>/<new_name>:<new_tag>]",
-			Short: "rename a locally available Scale Function",
+		tagCmd := &cobra.Command{
+			Use:   "tag [<current_name>:<current_tag>] | [<current_org>/<current_name>:<current_tag>] [<new_name>:<new_tag>] | [<new_org>/<new_name>:<new_tag>]",
+			Short: "tag a locally available Scale Function",
 			Args:  cobra.ExactArgs(2),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
@@ -63,7 +63,7 @@ func RenameCmd() command.SetupCommand[*config.Config] {
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
-					return fmt.Errorf("failed to rename function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					return fmt.Errorf("failed to tag function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 				if e == nil {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
@@ -86,32 +86,27 @@ func RenameCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("invalid tag: %s", newParsed.Tag)
 				}
 
-				err = st.Delete(parsed.Name, parsed.Tag, e.Organization, e.Hash)
-				if err != nil {
-					return fmt.Errorf("failed to rename function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
-				}
-
 				e.ScaleFunc.Name = newParsed.Name
 				e.ScaleFunc.Tag = newParsed.Tag
 				e.Organization = newParsed.Organization
 
 				err = st.Put(e.ScaleFunc.Name, e.ScaleFunc.Tag, e.Organization, e.Hash, e.ScaleFunc)
 				if err != nil {
-					return fmt.Errorf("failed to rename function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					return fmt.Errorf("failed to tag function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 
 				if ch.Printer.Format() == printer.Human {
 					if parsed.Organization != "" {
 						if newParsed.Organization != "" {
-							ch.Printer.Printf("Renamed scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s/%s:%s", newParsed.Organization, newParsed.Name, newParsed.Tag)))
+							ch.Printer.Printf("Tagged scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s/%s:%s", newParsed.Organization, newParsed.Name, newParsed.Tag)))
 						} else {
-							ch.Printer.Printf("Renamed scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s:%s", newParsed.Name, newParsed.Tag)))
+							ch.Printer.Printf("Tagged scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s:%s", newParsed.Name, newParsed.Tag)))
 						}
 					} else {
 						if newParsed.Organization != "" {
-							ch.Printer.Printf("Renamed scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s/%s:%s", newParsed.Organization, newParsed.Name, newParsed.Tag)))
+							ch.Printer.Printf("Tagged scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s/%s:%s", newParsed.Organization, newParsed.Name, newParsed.Tag)))
 						} else {
-							ch.Printer.Printf("Renamed scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s:%s", newParsed.Name, newParsed.Tag)))
+							ch.Printer.Printf("Tagged scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s:%s", parsed.Name, parsed.Tag)), printer.BoldBlue(fmt.Sprintf("%s:%s", newParsed.Name, newParsed.Tag)))
 						}
 					}
 					return nil
@@ -126,6 +121,6 @@ func RenameCmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		cmd.AddCommand(listCmd)
+		cmd.AddCommand(tagCmd)
 	}
 }

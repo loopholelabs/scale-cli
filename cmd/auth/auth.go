@@ -41,14 +41,20 @@ func Cmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		loginSetup := LoginCmd()
+		loginSetup := LoginCmd(false)
 		loginSetup(authCmd, ch)
 
-		logoutSetup := LogoutCmd()
+		logoutSetup := LogoutCmd(false)
 		logoutSetup(authCmd, ch)
 
 		statusSetup := StatusCmd()
 		statusSetup(authCmd, ch)
+
+		loginAliasSetup := LoginCmd(true)
+		loginAliasSetup(cmd, ch)
+
+		logoutAliasSetup := LogoutCmd(true)
+		logoutAliasSetup(cmd, ch)
 
 		cmd.AddCommand(authCmd)
 	}

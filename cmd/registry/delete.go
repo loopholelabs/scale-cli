@@ -31,7 +31,7 @@ import (
 // DeleteCmd encapsulates the commands for deleting Functions
 func DeleteCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		listCmd := &cobra.Command{
+		deleteCmd := &cobra.Command{
 			Use:   "delete <org>/<name>:<tag> [flags]",
 			Short: "delete a scale function from the scale registry ",
 			Long:  "Delete a scale functions from an organization in the registry.",
@@ -74,6 +74,6 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 			},
 		}
 
-		cmd.AddCommand(listCmd)
+		cmd.AddCommand(deleteCmd)
 	}
 }

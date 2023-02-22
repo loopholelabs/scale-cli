@@ -30,17 +30,18 @@ import (
 )
 
 // PushCmd encapsulates the commands for pushing Functions
-func PushCmd() command.SetupCommand[*config.Config] {
+func PushCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		var name string
 		var tag string
 		var org string
 		var public bool
 		pushCmd := &cobra.Command{
-			Use:   "push [<name>:<tag> | [<org>/<name>:<tag>]",
-			Short: "push a locally available scale function to the registry",
-			Long:  "Push a locally available scale function to the registry. The function must be available in the local cache directory. If no cache directory is specified, the default cache directory will be used. If the org is not specified, it will default to the local organization.",
-			Args:  cobra.ExactArgs(1),
+			Use:    "push [<name>:<tag> | [<org>/<name>:<tag>]",
+			Short:  "push a locally available scale function to the registry",
+			Long:   "Push a locally available scale function to the registry. The function must be available in the local cache directory. If no cache directory is specified, the default cache directory will be used. If the org is not specified, it will default to the local organization.",
+			Hidden: hidden,
+			Args:   cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {

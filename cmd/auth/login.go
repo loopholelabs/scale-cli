@@ -40,12 +40,13 @@ var (
 )
 
 // LoginCmd encapsulates the commands for logging in
-func LoginCmd() command.SetupCommand[*config.Config] {
+func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var apiKey string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		loginCmd := &cobra.Command{
-			Use:   "login [flags]",
-			Short: "Authenticate with the Scale Authentication API",
+			Use:    "login [flags]",
+			Short:  "Authenticate with the Scale Authentication API",
+			Hidden: hidden,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if !printer.IsTTY {
 					if ch.Printer.Format() == printer.Human {

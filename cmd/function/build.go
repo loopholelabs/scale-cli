@@ -34,7 +34,7 @@ import (
 )
 
 // BuildCmd encapsulates the commands for building Functions
-func BuildCmd() command.SetupCommand[*config.Config] {
+func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var name string
 	var tag string
 	var org string
@@ -46,10 +46,11 @@ func BuildCmd() command.SetupCommand[*config.Config] {
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
-			Use:   "build [flags]",
-			Args:  cobra.ExactArgs(0),
-			Short: "build a scale function locally and store it in the cache",
-			Long:  "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
+			Use:    "build [flags]",
+			Args:   cobra.ExactArgs(0),
+			Short:  "build a scale function locally and store it in the cache",
+			Long:   "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden: hidden,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				scaleFilePath := path.Join(directory, "scalefile")
 				scaleFile, err := scalefile.Read(scaleFilePath)

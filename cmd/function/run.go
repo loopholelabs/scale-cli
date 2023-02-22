@@ -37,15 +37,15 @@ import (
 )
 
 // RunCmd encapsulates the commands for running Functions
-func RunCmd() command.SetupCommand[*config.Config] {
+func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		var functions []string
 		var listen string
 		runCmd := &cobra.Command{
-			Use:   "run --function=[ [ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
-			Args:  cobra.ExactArgs(0),
-			Short: "run a compiled scale function",
-			Long:  "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain by specifying the --function flag multiple times. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
+			Use:    "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
+			Args:   cobra.MinimumNArgs(1),
+			Short:  "run a compiled scale function",
+			Long:   "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden: hidden,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -56,8 +56,8 @@ func RunCmd() command.SetupCommand[*config.Config] {
 					}
 				}
 
-				fns := make([]*scalefunc.ScaleFunc, 0, len(functions))
-				for _, f := range functions {
+				fns := make([]*scalefunc.ScaleFunc, 0, len(args))
+				for _, f := range args {
 					parsed := utils.ParseFunction(f)
 					if parsed.Organization == "" {
 						parsed.Organization = utils.DefaultOrganization
@@ -106,7 +106,7 @@ func RunCmd() command.SetupCommand[*config.Config] {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ch.Printer.Printf("scale functions %s listening at %s", printer.BoldGreen(functions), printer.BoldGreen(listen))
+					ch.Printer.Printf("scale functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
 					err = server.ListenAndServe(listen)
 					if err != nil {
 						ch.Printer.Printf("error starting server: %v", printer.BoldRed(err))
@@ -123,12 +123,6 @@ func RunCmd() command.SetupCommand[*config.Config] {
 		}
 
 		runCmd.Flags().StringVarP(&listen, "listen", "l", ":8080", "the address to listen on")
-		runCmd.Flags().StringArrayVar(&functions, "function", []string{}, "the functions to run (format: --function=[<name>:<tag> | <org>/<name>:<tag>])")
-		err := runCmd.MarkFlagRequired("function")
-		if err != nil {
-			ch.Printer.Printf("failed to mark function flag as required: %v\n", err)
-			os.Exit(1)
-		}
 		cmd.AddCommand(runCmd)
 	}
 }

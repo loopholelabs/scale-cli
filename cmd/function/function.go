@@ -45,10 +45,10 @@ func Cmd() command.SetupCommand[*config.Config] {
 		listSetup := ListCmd()
 		listSetup(functionCmd, ch)
 
-		newSetup := NewCmd()
+		newSetup := NewCmd(false)
 		newSetup(functionCmd, ch)
 
-		buildSetup := BuildCmd()
+		buildSetup := BuildCmd(false)
 		buildSetup(functionCmd, ch)
 
 		deleteSetup := DeleteCmd()
@@ -57,11 +57,20 @@ func Cmd() command.SetupCommand[*config.Config] {
 		exportSetup := ExportCmd()
 		exportSetup(functionCmd, ch)
 
-		runSetup := RunCmd()
+		runSetup := RunCmd(false)
 		runSetup(functionCmd, ch)
 
-		renameSetup := RenameCmd()
-		renameSetup(functionCmd, ch)
+		tagSetup := TagCmd()
+		tagSetup(functionCmd, ch)
+
+		newAliasSetup := NewCmd(true)
+		newAliasSetup(cmd, ch)
+
+		buildAliasSetup := BuildCmd(true)
+		buildAliasSetup(cmd, ch)
+
+		runAliasSetup := RunCmd(true)
+		runAliasSetup(cmd, ch)
 
 		cmd.AddCommand(functionCmd)
 	}

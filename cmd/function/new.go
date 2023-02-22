@@ -43,14 +43,15 @@ var (
 )
 
 // NewCmd encapsulates the commands for creating new Functions
-func NewCmd() command.SetupCommand[*config.Config] {
+func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 	var language string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
-			Use:   "new <name> [flags]",
-			Args:  cobra.ExactArgs(1),
-			Short: "generate a new scale function with the given name",
+			Use:    "new <name> [flags]",
+			Args:   cobra.ExactArgs(1),
+			Short:  "generate a new scale function with the given name",
+			Hidden: hidden,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
 				if name == "" || !scalefunc.ValidString(name) {

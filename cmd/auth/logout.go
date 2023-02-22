@@ -31,12 +31,13 @@ import (
 )
 
 // LogoutCmd encapsulates the commands for logging out
-func LogoutCmd() command.SetupCommand[*config.Config] {
+func LogoutCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		logoutCmd := &cobra.Command{
-			Use:   "logout",
-			Args:  cobra.NoArgs,
-			Short: "Log out of the Scale API",
+			Use:    "logout",
+			Args:   cobra.NoArgs,
+			Short:  "Log out of the Scale API",
+			Hidden: hidden,
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if !ch.Config.IsAuthenticated() {
 					ch.Printer.Println("Already logged out. Exiting...")
