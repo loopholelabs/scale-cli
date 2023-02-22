@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -20,129 +20,124 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/loopholelabs/auth/pkg/client"
-	"github.com/loopholelabs/auth/pkg/token/tokenKind"
-	apiClient "github.com/loopholelabs/scale-cli/pkg/client"
+	"github.com/go-openapi/strfmt"
+	"github.com/loopholelabs/auth"
+	authClient "github.com/loopholelabs/auth/pkg/client"
+	client "github.com/loopholelabs/auth/pkg/client/openapi"
+	"github.com/loopholelabs/auth/pkg/client/session"
+	"github.com/loopholelabs/cmdutils/pkg/config"
+	apiClient "github.com/loopholelabs/scale/go/client"
 	"github.com/mitchellh/go-homedir"
-	exec "golang.org/x/sys/execabs"
-	"log"
+	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"net/url"
 	"os"
 	"path"
-	"strings"
 	"time"
+)
+
+var _ config.Config = (*Config)(nil)
+
+var (
+	ErrAPIEndpointRequired  = errors.New("api endpoint is required")
+	ErrAuthEndpointRequired = errors.New("auth endpoint is required")
+	ErrNoSession            = errors.New("no session found")
+)
+
+var (
+	DefaultCookieURL = &url.URL{
+		Scheme: "https",
+		Host:   "scale.sh",
+	}
+)
+
+var (
+	configFile string
+	logFile    string
 )
 
 const (
 	defaultConfigPath = "~/.config/scale"
-	projectConfigName = ".scale.yml"
 	configName        = "scale.yml"
-	TokenFileMode     = 0o600
+	logName           = "scale.log"
+
+	DefaultAPIEndpoint  = "api.scale.sh"
+	DefaultAuthEndpoint = "auth.scale.sh"
+
+	sessionFileMode = 0600
 )
-
-type Token struct {
-	AccessToken  string         `yaml:"access_token"`
-	TokenType    string         `yaml:"token_type,omitempty"`
-	RefreshToken string         `yaml:"refresh_token,omitempty"`
-	Expiry       time.Time      `yaml:"expiry,omitempty"`
-	Kind         tokenKind.Kind `yaml:"kind"`
-	Endpoint     string         `yaml:"endpoint"`
-	BasePath     string         `yaml:"base_path"`
-	ClientID     string         `yaml:"client_id"`
-}
-
-func FromClientToken(t *client.Token, kind tokenKind.Kind, endpoint string, basePath string, clientID string) *Token {
-	return &Token{
-		AccessToken:  t.AccessToken,
-		TokenType:    t.TokenType,
-		RefreshToken: t.RefreshToken,
-		Expiry:       t.Expiry,
-		Kind:         kind,
-		Endpoint:     endpoint,
-		BasePath:     basePath,
-		ClientID:     clientID,
-	}
-}
 
 // Config is dynamically sourced from various files and environment variables.
 type Config struct {
-	Endpoint string `yaml:"endpoint"`
-	Build    string `yaml:"build"`
-	Token    *Token `yaml:"token"`
+	APIEndpoint    string                `yaml:"api_endpoint"`
+	AuthEndpoint   string                `yaml:"auth_endpoint"`
+	CacheDirectory string                `yaml:"cache_directory"`
+	Session        *session.Session      `yaml:"-"`
+	authClient     *authClient.AuthAPIV1 `yaml:"-"`
+	apiClient      *apiClient.ScaleAPIV1 `yaml:"-"`
 }
 
-func New() (*Config, error) {
-	var token Token
-	tokenPath, err := TokenPath()
-	if err != nil {
-		return nil, err
+func New() *Config {
+	return &Config{
+		APIEndpoint:  DefaultAPIEndpoint,
+		AuthEndpoint: DefaultAuthEndpoint,
+	}
+}
+
+func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
+	flags.StringVar(&c.APIEndpoint, "api-endpoint", DefaultAPIEndpoint, "The Scale API endpoint")
+	flags.StringVar(&c.AuthEndpoint, "auth-endpoint", DefaultAuthEndpoint, "The Scale Authentication API endpoint")
+	flags.StringVar(&c.CacheDirectory, "cache-directory", "", "The (optional) directory to store compiled scale functions")
+}
+
+func (c *Config) GlobalRequiredFlags(_ *cobra.Command) error {
+	return nil
+}
+
+func (c *Config) Validate() error {
+	if c.APIEndpoint == "" {
+		return ErrAPIEndpointRequired
 	}
 
-	stat, err := os.Stat(tokenPath)
+	if c.AuthEndpoint == "" {
+		return ErrAuthEndpointRequired
+	}
+
+	sessionPath, err := c.SessionPath()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			log.Fatal(err)
-		}
-	} else {
-		if stat.Mode()&^TokenFileMode != 0 {
-			err = os.Chmod(tokenPath, TokenFileMode)
+		return fmt.Errorf("unable to get session path: %w", err)
+	}
+
+	if !c.IsAuthenticated() {
+		stat, err := os.Stat(sessionPath)
+		if err != nil {
+			if !os.IsNotExist(err) {
+				return fmt.Errorf("unable to stat %s: %w", sessionPath, err)
+			}
+		} else {
+			if stat.Mode()&^sessionFileMode != 0 {
+				err = os.Chmod(sessionPath, sessionFileMode)
+				if err != nil {
+					return fmt.Errorf("unable to chmod %s: %w", sessionPath, err)
+				}
+			}
+			sessionData, err := os.ReadFile(sessionPath)
 			if err != nil {
-				log.Printf("Unable to change %v file mode to 0%o: %v", tokenPath, TokenFileMode, err)
+				return fmt.Errorf("unable to read %s: %w", sessionPath, err)
+			}
+
+			c.Session = new(session.Session)
+			err = json.Unmarshal(sessionData, c.Session)
+			if err != nil {
+				return fmt.Errorf("unable to unmarshal %s: %w", sessionPath, err)
 			}
 		}
-		tokenData, err := os.ReadFile(tokenPath)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = json.Unmarshal(tokenData, &token)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	return &Config{
-		Endpoint: "https://api.scale.sh",
-		Build:    "build.scale.sh:8192",
-		Token:    &token,
-	}, nil
-}
-
-func (c *Config) IsAuthenticated() error {
-	if c.Token == nil || c.Token.AccessToken == "" {
-		return errors.New("access token is empty")
 	}
 
 	return nil
 }
 
-// NewAuthenticatedClientFromConfig creates an Authenticated Scale API client from our configuration
-func (c *Config) NewAuthenticatedClientFromConfig(endpoint string, t *Token) (*apiClient.ScaleAPIV1, error) {
-	_, cl, err := client.AuthenticatedClient(endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, path.Join(t.Endpoint, t.BasePath), t.ClientID, t.Kind, client.NewToken(t.AccessToken, t.TokenType, t.RefreshToken, t.Expiry))
-	if err != nil {
-		return nil, err
-	}
-
-	return apiClient.New(cl, nil), nil
-}
-
-// NewUnauthenticatedClientFromConfig creates an Unauthenticated Scale API client from our configuration
-func (c *Config) NewUnauthenticatedClientFromConfig(endpoint string) (*apiClient.ScaleAPIV1, error) {
-	cl, _ := client.UnauthenticatedClient(endpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil)
-	return apiClient.New(cl, nil), nil
-}
-
-// TokenPath is the path for the access token file
-func TokenPath() (string, error) {
-	dir, err := Dir()
-	if err != nil {
-		return "", err
-	}
-
-	return path.Join(dir, "token"), nil
-}
-
-// Dir is the directory for Scale config.
-func Dir() (string, error) {
+func (c *Config) DefaultConfigDir() (string, error) {
 	dir, err := homedir.Expand(defaultConfigPath)
 	if err != nil {
 		return "", fmt.Errorf("can't expand path %q: %s", defaultConfigPath, err)
@@ -151,26 +146,151 @@ func Dir() (string, error) {
 	return dir, nil
 }
 
-func RootGitRepoDir() (string, error) {
-	tl := []string{"rev-parse", "--show-toplevel"}
-	out, err := exec.Command("git", tl...).CombinedOutput()
-	if err != nil {
-		return "", errors.New("unable to find git root directory")
-	}
-
-	return strings.TrimSuffix(string(out), "\n"), nil
+func (c *Config) DefaultConfigFile() string {
+	return configName
 }
 
-func ProjectConfigFile() string {
-	return projectConfigName
+func (c *Config) DefaultLogFile() string {
+	return logName
 }
 
-// DefaultConfigPath returns the default path for the config file.
-func DefaultConfigPath() (string, error) {
-	dir, err := Dir()
+func (c *Config) DefaultConfigPath() (string, error) {
+	configDir, err := c.DefaultConfigDir()
 	if err != nil {
 		return "", err
 	}
+	return path.Join(configDir, c.DefaultConfigFile()), nil
+}
 
-	return path.Join(dir, configName), nil
+func (c *Config) DefaultLogPath() (string, error) {
+	configDir, err := c.DefaultConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(configDir, c.DefaultLogFile()), nil
+}
+
+func (c *Config) GetConfigFile() string {
+	return configFile
+}
+
+func (c *Config) GetLogFile() string {
+	return logFile
+}
+
+func (c *Config) SetLogFile(file string) {
+	logFile = file
+}
+
+func (c *Config) SetConfigFile(file string) {
+	configFile = file
+}
+
+func (c *Config) IsAuthenticated() bool {
+	if c.Session == nil || c.Session.Value == "" {
+		return false
+	}
+	switch c.Session.Kind {
+	case auth.KindSession:
+		if c.Session.Expiry.After(time.Now()) {
+			return true
+		}
+		return false
+	case auth.KindServiceSession, auth.KindAPIKey:
+		return true
+	default:
+		return false
+	}
+}
+
+// SessionPath is the path for the session file
+func (c *Config) SessionPath() (string, error) {
+	dir, err := c.DefaultConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(dir, "session"), nil
+}
+
+// NewAuthenticatedAPIClient creates an Authenticated Scale API client from our configuration
+func (c *Config) NewAuthenticatedAPIClient() (*apiClient.ScaleAPIV1, error) {
+	if !c.IsAuthenticated() {
+		return nil, ErrNoSession
+	}
+	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
+	if err != nil {
+		return nil, err
+	}
+
+	return apiClient.New(cl, strfmt.Default), nil
+}
+
+// NewUnauthenticatedAPIClient creates an Unauthenticated Scale API client from our configuration
+func (c *Config) NewUnauthenticatedAPIClient() *apiClient.ScaleAPIV1 {
+	cl := client.UnauthenticatedClient(c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil)
+	return apiClient.New(cl, strfmt.Default)
+}
+
+func (c *Config) SetAPIClient(apiClient *apiClient.ScaleAPIV1) {
+	c.apiClient = apiClient
+}
+
+func (c *Config) APIClient() *apiClient.ScaleAPIV1 {
+	return c.apiClient
+}
+
+// NewUnauthenticatedAuthClient creates an Unauthenticated Scale Auth API client from our configuration
+func (c *Config) NewUnauthenticatedAuthClient() *authClient.AuthAPIV1 {
+	cl := client.UnauthenticatedClient(c.AuthEndpoint, authClient.DefaultBasePath, authClient.DefaultSchemes, nil)
+	return authClient.New(cl, strfmt.Default)
+}
+
+// NewAuthenticatedAuthClient creates an Authenticated Scale Auth API client from our configuration
+func (c *Config) NewAuthenticatedAuthClient() (*authClient.AuthAPIV1, error) {
+	if !c.IsAuthenticated() {
+		return nil, ErrNoSession
+	}
+	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.AuthEndpoint, authClient.DefaultBasePath, authClient.DefaultSchemes, nil, c.Session)
+	if err != nil {
+		return nil, err
+	}
+
+	return authClient.New(cl, strfmt.Default), nil
+}
+
+func (c *Config) SetAuthClient(authClient *authClient.AuthAPIV1) {
+	c.authClient = authClient
+}
+
+func (c *Config) AuthClient() *authClient.AuthAPIV1 {
+	return c.authClient
+}
+
+func (c *Config) WriteSession() error {
+	sessionPath, err := c.SessionPath()
+	if err != nil {
+		return err
+	}
+
+	_, err = os.Stat(sessionPath)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(path.Dir(sessionPath), 0771)
+		if err != nil {
+			return fmt.Errorf("unable to create directory %s: %w", path.Dir(sessionPath), err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("unable to stat %s: %w", sessionPath, err)
+	}
+
+	sessionData, err := json.Marshal(c.Session)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(sessionPath, sessionData, sessionFileMode)
+	if err != nil {
+		return fmt.Errorf("unable to write %s: %w", sessionPath, err)
+	}
+
+	return nil
 }

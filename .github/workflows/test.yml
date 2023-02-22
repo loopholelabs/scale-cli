@@ -1,4 +1,4 @@
-name: Build
+name: Test
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
       - "*"
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -19,5 +19,5 @@ jobs:
           check-latest: true
           cache: true
 
-      - name: Build
-        run: go build -v ./...
+      - name: Test
+        run: go test -v ./...

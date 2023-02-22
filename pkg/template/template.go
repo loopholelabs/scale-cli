@@ -1,5 +1,5 @@
 /*
-	Copyright 2022 Loophole Labs
+	Copyright 2023 Loophole Labs
 
 	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package template
 
 var (
 	LUT = map[string]func() []byte{
-		"go": Go,
+		"go":   Go,
+		"rust": Rust,
 	}
 )
 
@@ -30,17 +31,41 @@ go 1.18
 require {{.Name}} {{.Version}}
 {{end}}
 `
+	RustTemplate = `[package]
+name = "scale"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+{{range .}}
+{{.Name}} = "{{.Version}}"
+{{end}}
+
+[lib]
+crate-type = ["cdylib"]
+path = "scale.rs"
+`
 )
 
 func Go() []byte {
-	return []byte(`package scale
+	return []byte(`//go:build tinygo || js || wasm
+package scale
 
 import (
-	"github.com/loopholelabs/scale/go/context"
+	signature "github.com/loopholelabs/scale-signature-http"
 )
 
-func Scale(ctx *context.Context) *context.Context {
+func Scale(ctx *signature.Context) (*signature.Context, error) {
 	ctx.Response().SetBody("Hello, World!")
-	return ctx
+	return ctx.Next()
+}`)
+}
+
+func Rust() []byte {
+	return []byte(`use scale_signature_http::context::Context;
+
+pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Error>> {
+    ctx.response().set_body("Hello, World!".to_string());
+    Ok(ctx)
 }`)
 }
