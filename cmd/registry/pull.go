@@ -83,9 +83,9 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					if parsed.Organization == "" {
-						return fmt.Errorf("failed to instantiate function %s:%s: %w", parsed.Name, parsed.Tag, err)
+						return fmt.Errorf("failed to pull function %s:%s: %w", parsed.Name, parsed.Tag, err)
 					} else {
-						return fmt.Errorf("failed to instantiate function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+						return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 				}
 

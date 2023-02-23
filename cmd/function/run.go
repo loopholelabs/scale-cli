@@ -25,6 +25,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	adapter "github.com/loopholelabs/scale-http-adapters/fasthttp"
 	"github.com/loopholelabs/scale/go"
+	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
@@ -81,10 +82,47 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					if e == nil {
-						return fmt.Errorf("function %s not found", f)
-					}
+						end := ch.Printer.PrintProgress(fmt.Sprintf("Function %s was not found not found, pulling from the registry...\n", printer.BoldGreen(f)))
+						var opts []registry.Option
+						opts = append(opts, registry.WithClient(ch.Config.APIClient()), registry.WithStorage(st))
+						if parsed.Organization != "" && parsed.Organization != utils.DefaultOrganization {
+							opts = append(opts, registry.WithOrganization(parsed.Organization))
+						}
+						sf, err := registry.New(parsed.Name, parsed.Tag, opts...)
+						end()
+						if err != nil {
+							if parsed.Organization == "" {
+								return fmt.Errorf("failed to pull function %s:%s: %w", parsed.Name, parsed.Tag, err)
+							} else {
+								return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+							}
+						}
 
-					fns = append(fns, e.ScaleFunc)
+						if ch.Printer.Format() == printer.Human {
+							if parsed.Organization == "" {
+								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s:%s", sf.Name, sf.Tag)))
+							} else {
+								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, sf.Name, sf.Tag)))
+							}
+						}
+
+						if parsed.Organization == "" {
+							parsed.Organization = "scale"
+						}
+
+						err = ch.Printer.PrintResource(map[string]string{
+							"name": sf.Name,
+							"tag":  sf.Tag,
+							"org":  parsed.Organization,
+						})
+						if err != nil {
+							return err
+						}
+
+						fns = append(fns, sf)
+					} else {
+						fns = append(fns, e.ScaleFunc)
+					}
 				}
 
 				ctx := cmd.Context()
