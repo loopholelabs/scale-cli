@@ -42,11 +42,13 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		var listen string
 		runCmd := &cobra.Command{
-			Use:    "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
-			Args:   cobra.MinimumNArgs(1),
-			Short:  "run a compiled scale function",
-			Long:   "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
-			Hidden: hidden,
+			Use:      "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
+			Args:     cobra.MinimumNArgs(1),
+			Short:    "run a compiled scale function",
+			Long:     "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -82,7 +84,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					if e == nil {
-						end := ch.Printer.PrintProgress(fmt.Sprintf("Function %s was not found not found, pulling from the registry...\n", printer.BoldGreen(f)))
+						end := ch.Printer.PrintProgress(fmt.Sprintf("Function %s was not found not found, pulling from the registry...", printer.BoldGreen(f)))
 						var opts []registry.Option
 						opts = append(opts, registry.WithClient(ch.Config.APIClient()), registry.WithStorage(st))
 						if parsed.Organization != "" && parsed.Organization != utils.DefaultOrganization {
@@ -105,20 +107,6 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, sf.Name, sf.Tag)))
 							}
 						}
-
-						if parsed.Organization == "" {
-							parsed.Organization = "scale"
-						}
-
-						err = ch.Printer.PrintResource(map[string]string{
-							"name": sf.Name,
-							"tag":  sf.Tag,
-							"org":  parsed.Organization,
-						})
-						if err != nil {
-							return err
-						}
-
 						fns = append(fns, sf)
 					} else {
 						fns = append(fns, e.ScaleFunc)
@@ -144,7 +132,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ch.Printer.Printf("scale functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
+					ch.Printer.Printf("Scale Functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
 					err = server.ListenAndServe(listen)
 					if err != nil {
 						ch.Printer.Printf("error starting server: %v", printer.BoldRed(err))

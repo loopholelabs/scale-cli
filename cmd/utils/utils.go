@@ -95,6 +95,30 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 	}
 }
 
+func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		log.Init(ch.Config.GetLogFile())
+		err := ch.Config.GlobalRequiredFlags(cmd)
+		if err != nil {
+			return err
+		}
+
+		err = ch.Config.Validate()
+		if err != nil {
+			return err
+		}
+
+		if ch.Config.IsAuthenticated() {
+			c, err := ch.Config.NewAuthenticatedAPIClient()
+			if err == nil {
+				ch.Config.SetAPIClient(c)
+			}
+		}
+
+		return nil
+	}
+}
+
 func PostRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		c := ch.Config.APIClient()
