@@ -34,11 +34,13 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var force bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		pullCmd := &cobra.Command{
-			Use:    "pull [<name>:<tag> | [<org>/<name>:<tag>]",
-			Short:  "pull a scale function from the registry",
-			Long:   "Pull a scale function from the registry. If the org is not specified, it will default to the official `scale` organization.",
-			Hidden: hidden,
-			Args:   cobra.ExactArgs(1),
+			Use:      "pull [<name>:<tag> | [<org>/<name>:<tag>]",
+			Short:    "pull a scale function from the registry",
+			Long:     "Pull a scale function from the registry. If the org is not specified, it will default to the official `scale` organization.",
+			Hidden:   hidden,
+			Args:     cobra.ExactArgs(1),
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {

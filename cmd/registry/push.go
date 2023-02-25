@@ -38,11 +38,13 @@ func PushCmd(hidden bool) command.SetupCommand[*config.Config] {
 		var org string
 		var public bool
 		pushCmd := &cobra.Command{
-			Use:    "push [<name>:<tag> | [<org>/<name>:<tag>]",
-			Short:  "push a locally available scale function to the registry",
-			Long:   "Push a locally available scale function to the registry. The function must be available in the local cache directory. If no cache directory is specified, the default cache directory will be used. If the org is not specified, it will default to the local organization.",
-			Hidden: hidden,
-			Args:   cobra.ExactArgs(1),
+			Use:      "push [<name>:<tag> | [<org>/<name>:<tag>]",
+			Short:    "push a locally available scale function to the registry",
+			Long:     "Push a locally available scale function to the registry. The function must be available in the local cache directory. If no cache directory is specified, the default cache directory will be used. If the org is not specified, it will default to the local organization.",
+			Hidden:   hidden,
+			Args:     cobra.ExactArgs(1),
+			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
