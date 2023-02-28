@@ -7,8 +7,8 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.26
 	github.com/loopholelabs/cmdutils v0.1.1
-	github.com/loopholelabs/scale v0.3.11
-	github.com/loopholelabs/scale-http-adapters v0.3.5
+	github.com/loopholelabs/scale v0.3.12
+	github.com/loopholelabs/scale-http-adapters v0.3.6
 	github.com/loopholelabs/scale-signature v0.2.9
 	github.com/loopholelabs/scalefile v0.1.7
 	github.com/mitchellh/go-homedir v1.1.0

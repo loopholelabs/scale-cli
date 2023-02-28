@@ -33,6 +33,7 @@ import (
 // ExportCmd encapsulates the commands for exporting Functions
 func ExportCmd() command.SetupCommand[*config.Config] {
 	var outputName string
+	var raw bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		exportCmd := &cobra.Command{
 			Use:   "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
@@ -54,16 +55,16 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					parsed.Organization = utils.DefaultOrganization
 				}
 
-				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
@@ -74,7 +75,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
 				}
 
-				output := args[3]
+				output := args[1]
 				oInfo, err := os.Stat(output)
 				if err != nil {
 					return fmt.Errorf("failed to stat output path %s: %w", output, err)
@@ -85,16 +86,24 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				}
 
 				if outputName == "" {
+					suffix := "scale"
+					if raw {
+						suffix = "wasm"
+					}
 					if parsed.Organization != utils.DefaultOrganization {
-						output = path.Join(output, fmt.Sprintf("%s-%s-%s.scale", parsed.Organization, parsed.Name, parsed.Tag))
+						output = path.Join(output, fmt.Sprintf("%s-%s-%s.%s", parsed.Organization, parsed.Name, parsed.Tag, suffix))
 					} else {
-						output = path.Join(output, fmt.Sprintf("%s-%s.scale", parsed.Name, parsed.Tag))
+						output = path.Join(output, fmt.Sprintf("%s-%s.%s", parsed.Name, parsed.Tag, suffix))
 					}
 				} else {
 					output = path.Join(output, outputName)
 				}
 
-				err = os.WriteFile(output, e.ScaleFunc.Encode(), 0644)
+				if raw {
+					err = os.WriteFile(output, e.ScaleFunc.Function, 0644)
+				} else {
+					err = os.WriteFile(output, e.ScaleFunc.Encode(), 0644)
+				}
 				if err != nil {
 					return fmt.Errorf("failed to write function to %s: %w", output, err)
 				}
@@ -123,6 +132,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 		}
 
 		exportCmd.Flags().StringVarP(&outputName, "output-name", "o", "", "the (optional) output name of the function to export")
+		exportCmd.Flags().BoolVar(&raw, "raw", false, "export the raw wasm module instead of the compiled scale function")
 		cmd.AddCommand(exportCmd)
 	}
 }

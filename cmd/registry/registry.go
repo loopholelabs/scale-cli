@@ -19,7 +19,6 @@ package registry
 import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
-	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -36,11 +35,9 @@ type scaleFunction struct {
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		registryCmd := &cobra.Command{
-			Use:                "registry <command>",
-			Aliases:            []string{"reg"},
-			Short:              "Create, list, and manage Scale Functions in the registry",
-			PersistentPreRunE:  utils.PreRunAuthenticatedAPI(ch),
-			PersistentPostRunE: utils.PostRunAuthenticatedAPI(ch),
+			Use:     "registry <command>",
+			Aliases: []string{"reg"},
+			Short:   "Create, list, and manage Scale Functions in the registry",
 		}
 
 		pushSetup := PushCmd(false)
