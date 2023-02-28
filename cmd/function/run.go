@@ -90,7 +90,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 						if parsed.Organization != "" && parsed.Organization != utils.DefaultOrganization {
 							opts = append(opts, registry.WithOrganization(parsed.Organization))
 						}
-						sf, err := registry.New(parsed.Name, parsed.Tag, opts...)
+						sf, err := registry.Download(parsed.Name, parsed.Tag, opts...)
 						end()
 						if err != nil {
 							if parsed.Organization == "" {
