@@ -20,7 +20,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Dependencies
 
-
+- Bumping `golang.org/x/net` from `v0.5.0` to `v0.7.0`
+- Bumping `golang.org/x/sys` from `v0.4.0` to `v0.5.0`
+- Bumping `golang.org/x/term` from `v0.4.0` to `v0.5.0`
+- Bumping `golang.org/x/text` from `v0.6.0` to `v0.7.0`
+- Bumping `scale` from `v0.3.11` to `v0.3.12`
+- Bumping `scale-http-adapters` from `v0.3.5` to `v0.3.6`
 
 ## [v0.1.0-rc1] - 2023-02-20
 
