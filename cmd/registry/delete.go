@@ -32,27 +32,29 @@ import (
 func DeleteCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		deleteCmd := &cobra.Command{
-			Use:   "delete <org>/<name>:<tag> [flags]",
-			Short: "delete a scale function from the scale registry ",
-			Long:  "Delete a scale functions from an organization in the registry.",
-			Args:  cobra.ExactArgs(1),
+			Use:      "delete <org>/<name>:<tag> [flags]",
+			Short:    "delete a scale function from the scale registry ",
+			Long:     "Delete a scale functions from an organization in the registry.",
+			Args:     cobra.ExactArgs(1),
+			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				parsed := utils.ParseFunction(args[0])
-				if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				ctx := cmd.Context()
 				client := ch.Config.APIClient()
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing %s/%s:%s to Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting %s/%s:%s from the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
 
 				_, err := client.Registry.DeleteRegistryFunctionOrganizationNameTag(registry.NewDeleteRegistryFunctionOrganizationNameTagParamsWithContext(ctx).WithOrganization(parsed.Organization).WithName(parsed.Name).WithTag(parsed.Tag))
 				end()

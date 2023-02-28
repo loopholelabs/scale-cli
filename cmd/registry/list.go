@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/registry"
 	"github.com/loopholelabs/scale/go/client/userinfo"
@@ -32,10 +33,12 @@ import (
 func ListCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		listCmd := &cobra.Command{
-			Use:   "list [<org>] [flags]",
-			Short: "list all the scale function for an organization from the registry",
-			Long:  "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the user's organization.",
-			Args:  cobra.RangeArgs(0, 1),
+			Use:      "list [<org>] [flags]",
+			Short:    "list all the scale function for an organization from the registry",
+			Long:     "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the user's organization.",
+			Args:     cobra.RangeArgs(0, 1),
+			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				ctx := cmd.Context()
 				client := ch.Config.APIClient()
@@ -50,7 +53,7 @@ func ListCmd() command.SetupCommand[*config.Config] {
 					org = args[0]
 				}
 				if org == "" || !scalefunc.ValidString(org) {
-					return fmt.Errorf("invalid organization name: %s", org)
+					return utils.InvalidStringError("organization name", org)
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))

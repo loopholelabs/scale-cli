@@ -7,6 +7,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v0.1.0-rc2] - 2023-02-28
+
+### Features
+
+- Adding `--raw` flag for export function which will output scale functions as `wasm` files directly instead of encoded `.scale` files
+- Adding aliases for `scale push`, `scale run`, `scale new`, and `scale build` commands
+
+### Fixes
+
+- Returning clearer error messages when the names or tags of functions are invalid
+
+### Dependencies
+
+- Bumping `golang.org/x/net` from `v0.5.0` to `v0.7.0`
+- Bumping `golang.org/x/sys` from `v0.4.0` to `v0.5.0`
+- Bumping `golang.org/x/term` from `v0.4.0` to `v0.5.0`
+- Bumping `golang.org/x/text` from `v0.6.0` to `v0.7.0`
+- Bumping `scale` from `v0.3.11` to `v0.3.12`
+- Bumping `scale-http-adapters` from `v0.3.5` to `v0.3.6`
+
 ## [v0.1.0-rc1] - 2023-02-20
 
 ### Features
@@ -16,5 +36,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added support for running `http` functions locally
 - Added support for pushing and pulling functions from the scale registry
 
-[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc1...HEAD
+[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc2...HEAD
+[v0.1.0-rc2]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc2
 [v0.1.0-rc1]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc1

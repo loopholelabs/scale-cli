@@ -7,8 +7,8 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.26
 	github.com/loopholelabs/cmdutils v0.1.1
-	github.com/loopholelabs/scale v0.3.11
-	github.com/loopholelabs/scale-http-adapters v0.3.5
+	github.com/loopholelabs/scale v0.3.12
+	github.com/loopholelabs/scale-http-adapters v0.3.6
 	github.com/loopholelabs/scale-signature v0.2.9
 	github.com/loopholelabs/scalefile v0.1.7
 	github.com/mitchellh/go-homedir v1.1.0
@@ -75,10 +75,10 @@ require (
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
 	go.opentelemetry.io/otel v1.11.1 // indirect
 	go.opentelemetry.io/otel/trace v1.11.1 // indirect
-	golang.org/x/net v0.5.0 // indirect
-	golang.org/x/sys v0.4.0 // indirect
-	golang.org/x/term v0.4.0 // indirect
-	golang.org/x/text v0.6.0 // indirect
+	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/term v0.5.0 // indirect
+	golang.org/x/text v0.7.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect

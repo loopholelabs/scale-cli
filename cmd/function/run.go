@@ -25,6 +25,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	adapter "github.com/loopholelabs/scale-http-adapters/fasthttp"
 	"github.com/loopholelabs/scale/go"
+	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
@@ -41,11 +42,13 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		var listen string
 		runCmd := &cobra.Command{
-			Use:    "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
-			Args:   cobra.MinimumNArgs(1),
-			Short:  "run a compiled scale function",
-			Long:   "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
-			Hidden: hidden,
+			Use:      "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
+			Args:     cobra.MinimumNArgs(1),
+			Short:    "run a compiled scale function",
+			Long:     "Run a compiled scale function by starting an HTTP server that will listen for incoming requests and execute the specified functions in a chain. It's possible to specify multiple functions to be executed in a chain. The functions will be executed in the order they are specified. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -63,16 +66,16 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 						parsed.Organization = utils.DefaultOrganization
 					}
 
-					if parsed.Organization == "" || !scalefunc.ValidString(parsed.Organization) {
-						return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+					if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
+						return utils.InvalidStringError("organization name", parsed.Organization)
 					}
 
 					if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-						return fmt.Errorf("invalid function name: %s", parsed.Name)
+						return utils.InvalidStringError("function name", parsed.Name)
 					}
 
 					if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-						return fmt.Errorf("invalid tag: %s", parsed.Tag)
+						return utils.InvalidStringError("function tag", parsed.Tag)
 					}
 
 					e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
@@ -81,10 +84,33 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					if e == nil {
-						return fmt.Errorf("function %s not found", f)
-					}
+						end := ch.Printer.PrintProgress(fmt.Sprintf("Function %s was not found not found, pulling from the registry...", printer.BoldGreen(f)))
+						var opts []registry.Option
+						opts = append(opts, registry.WithClient(ch.Config.APIClient()), registry.WithStorage(st))
+						if parsed.Organization != "" && parsed.Organization != utils.DefaultOrganization {
+							opts = append(opts, registry.WithOrganization(parsed.Organization))
+						}
+						sf, err := registry.Download(parsed.Name, parsed.Tag, opts...)
+						end()
+						if err != nil {
+							if parsed.Organization == "" {
+								return fmt.Errorf("failed to pull function %s:%s: %w", parsed.Name, parsed.Tag, err)
+							} else {
+								return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+							}
+						}
 
-					fns = append(fns, e.ScaleFunc)
+						if ch.Printer.Format() == printer.Human {
+							if parsed.Organization == "" {
+								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s:%s", sf.Name, sf.Tag)))
+							} else {
+								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, sf.Name, sf.Tag)))
+							}
+						}
+						fns = append(fns, sf)
+					} else {
+						fns = append(fns, e.ScaleFunc)
+					}
 				}
 
 				ctx := cmd.Context()
@@ -106,7 +132,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-					ch.Printer.Printf("scale functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
+					ch.Printer.Printf("Scale Functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
 					err = server.ListenAndServe(listen)
 					if err != nil {
 						ch.Printer.Printf("error starting server: %v", printer.BoldRed(err))

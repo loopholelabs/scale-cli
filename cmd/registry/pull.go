@@ -34,11 +34,13 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var force bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		pullCmd := &cobra.Command{
-			Use:    "pull [<name>:<tag> | [<org>/<name>:<tag>]",
-			Short:  "pull a scale function from the registry",
-			Long:   "Pull a scale function from the registry. If the org is not specified, it will default to the official `scale` organization.",
-			Hidden: hidden,
-			Args:   cobra.ExactArgs(1),
+			Use:      "pull [<name>:<tag> | [<org>/<name>:<tag>]",
+			Short:    "pull a scale function from the registry",
+			Long:     "Pull a scale function from the registry. If the org is not specified, it will default to the official `scale` organization.",
+			Hidden:   hidden,
+			Args:     cobra.ExactArgs(1),
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -51,15 +53,15 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
-					return fmt.Errorf("invalid organization name: %s", parsed.Organization)
+					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return fmt.Errorf("invalid function name: %s", parsed.Name)
+					return utils.InvalidStringError("function name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return fmt.Errorf("invalid tag: %s", parsed.Tag)
+					return utils.InvalidStringError("function tag", parsed.Tag)
 				}
 
 				var end func()
@@ -79,13 +81,13 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 					opts = append(opts, registry.WithPullPolicy(registry.AlwaysPullPolicy))
 				}
 
-				sf, err := registry.New(parsed.Name, parsed.Tag, opts...)
+				sf, err := registry.Download(parsed.Name, parsed.Tag, opts...)
 				end()
 				if err != nil {
 					if parsed.Organization == "" {
-						return fmt.Errorf("failed to instantiate function %s:%s: %w", parsed.Name, parsed.Tag, err)
+						return fmt.Errorf("failed to pull function %s:%s: %w", parsed.Name, parsed.Tag, err)
 					} else {
-						return fmt.Errorf("failed to instantiate function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+						return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 				}
 

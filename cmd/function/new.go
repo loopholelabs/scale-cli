@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/loopholelabs/scalefile"
@@ -55,7 +56,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
 				if name == "" || !scalefunc.ValidString(name) {
-					return fmt.Errorf("invalid name %s", name)
+					return utils.InvalidStringError("function name", name)
 				}
 
 				extension, ok := extensionLUT[language]
@@ -66,7 +67,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				scaleFile := &scalefile.ScaleFile{
 					Version:   scalefile.V1Alpha,
 					Name:      name,
-					Tag:       "v0.1.0",
+					Tag:       utils.DefaultTag,
 					Signature: defaultSignature,
 					Language:  scalefile.Language(language),
 					Source:    fmt.Sprintf("scale.%s", extension),

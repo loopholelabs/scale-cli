@@ -189,9 +189,12 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 		cmd = exec.Command(tinygo, "build", "-o", "scale.wasm", "-scheduler=none", "-target=wasi", "--no-debug", "main.go")
 		cmd.Dir = path.Join(wd, buildDir)
 
-		err = cmd.Run()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return nil, fmt.Errorf("unable to compile scale function from dir %s: %w", cmd.Dir, err)
+			if _, ok := err.(*exec.ExitError); ok {
+				return nil, fmt.Errorf("unable to compile scale function: %s", output)
+			}
+			return nil, fmt.Errorf("unable to compile scale function: %w", err)
 		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, "scale.wasm"))
@@ -304,13 +307,12 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 		cmd := exec.Command(cargo, "build", "--target", "wasm32-unknown-unknown", "--manifest-path", "Cargo.toml", "--release")
 		cmd.Dir = buildDir
 
-		err = cmd.Run()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				return nil, fmt.Errorf("unable to compile rust module: %w", err)
+			if _, ok := err.(*exec.ExitError); ok {
+				return nil, fmt.Errorf("unable to compile scale function: %s", output)
 			}
-			return nil, fmt.Errorf("unable to compile rust module with error code %w: %s", err, string(output))
+			return nil, fmt.Errorf("unable to compile scale function: %w", err)
 		}
 
 		data, err := os.ReadFile(path.Join(cmd.Dir, "target/wasm32-unknown-unknown/release/compile.wasm"))
