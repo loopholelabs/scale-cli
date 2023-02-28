@@ -81,7 +81,7 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 					opts = append(opts, registry.WithPullPolicy(registry.AlwaysPullPolicy))
 				}
 
-				sf, err := registry.New(parsed.Name, parsed.Tag, opts...)
+				sf, err := registry.Download(parsed.Name, parsed.Tag, opts...)
 				end()
 				if err != nil {
 					if parsed.Organization == "" {
