@@ -253,10 +253,10 @@ github.com/loopholelabs/cmdutils v0.1.1 h1:VMcTw8LfSpcfMZ/GtoWBTwawmU1OZWhRDUupy
 github.com/loopholelabs/cmdutils v0.1.1/go.mod h1:rnVqMBoNGG1DDx+nU0y0n49VSQzLDFpUzAH3OIQA62A=
 github.com/loopholelabs/polyglot-go v0.5.1 h1:21QVDELp+EodPUAL+Aw8GNXLyt2BFj9gYQsGvHIFlcc=
 github.com/loopholelabs/polyglot-go v0.5.1/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
-github.com/loopholelabs/scale v0.3.11 h1:1Hwh5DO48egMPIWbb/K6cevnVixTxtpoQe775aoPF/0=
-github.com/loopholelabs/scale v0.3.11/go.mod h1:bN+2jEWRWdMUbPi+nn91/+sVQ6iP+PoT/to0eMDIK0o=
-github.com/loopholelabs/scale-http-adapters v0.3.5 h1:kjFbsH0My9tMd6RhYmUAM1JYmxdGif6IkSvirm4NwlY=
-github.com/loopholelabs/scale-http-adapters v0.3.5/go.mod h1:1r5RMDZjs3jhue3tUXcmSnkOGe3doYo8af22ntXVGjE=
+github.com/loopholelabs/scale v0.3.12 h1:EcoVzVx1ap+uypBHqfzgcXfF2dziAA9FfUNzY8fTHoY=
+github.com/loopholelabs/scale v0.3.12/go.mod h1:C3qE7QMxqPEqW4kw+BA7s2Innws/yGDk6JvB1BT5y8A=
+github.com/loopholelabs/scale-http-adapters v0.3.6 h1:41nREPIIhN7XXhQpz0EYdYhWh8/D0q6tl7rlj2Kf+HY=
+github.com/loopholelabs/scale-http-adapters v0.3.6/go.mod h1:/yMiO8wqk/RcYlPPbqWFbPWrnCjxXESdcFn9ZhAz+Z4=
 github.com/loopholelabs/scale-signature v0.2.9 h1:KGYslPu33VJ+MUQc6uWqiVW2u2On3Z1Tg6FUJeqfQ/4=
 github.com/loopholelabs/scale-signature v0.2.9/go.mod h1:4odernLaTjU6UPCkxG+TySEvpYaDtPJ6JvRJxh9d124=
 github.com/loopholelabs/scale-signature-http v0.3.4 h1:GBwh8+cFXmt90agABKx06vEkPsKQEWNwgV6Uh93HDvE=
