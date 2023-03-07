@@ -19,14 +19,16 @@ package build
 import (
 	"errors"
 	"fmt"
-	"github.com/loopholelabs/scale/go/compile"
-	rustCompile "github.com/loopholelabs/scale/rust/compile"
-	"github.com/loopholelabs/scalefile"
-	"github.com/loopholelabs/scalefile/scalefunc"
 	"io"
 	"os"
 	"os/exec"
 	"path"
+
+	"github.com/loopholelabs/scale/go/compile"
+	rustCompile "github.com/loopholelabs/scale/rust/compile"
+	tsCompile "github.com/loopholelabs/scale/ts/compile"
+	"github.com/loopholelabs/scalefile"
+	"github.com/loopholelabs/scalefile/scalefunc"
 )
 
 var (
@@ -320,6 +322,97 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 			return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 		}
 		scaleFunc.Function = data
+	case scalefunc.TypeScript:
+		module := &Module{
+			Name:      scaleFile.Name,
+			Source:    scaleFile.Source,
+			Signature: "scale-signature-http",
+		}
+
+		if cargo != "" {
+			stat, err := os.Stat(cargo)
+			if err != nil {
+				return nil, fmt.Errorf("unable to find cargo binary %s: %w", cargo, err)
+			}
+			if !(stat.Mode()&0111 != 0) {
+				return nil, fmt.Errorf("cargo binary %s is not executable", cargo)
+			}
+		} else {
+			var err error
+			cargo, err = exec.LookPath("cargo")
+			if err != nil {
+				return nil, ErrNoCargo
+			}
+		}
+
+		g := tsCompile.NewGenerator()
+
+		moduleSourcePath := path.Join(baseDir, module.Source)
+		_, err := os.Stat(moduleSourcePath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to find module %s: %w", moduleSourcePath, err)
+		}
+
+		buildDir := path.Join(baseDir, "build")
+		defer func() {
+			_ = os.RemoveAll(buildDir)
+		}()
+
+		err = os.Mkdir(buildDir, 0755)
+		if !os.IsExist(err) && err != nil {
+			return nil, fmt.Errorf("unable to create build %s directory: %w", buildDir, err)
+		}
+
+		file, err := os.OpenFile(path.Join(buildDir, "runner.ts"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create runner.ts file: %w", err)
+		}
+
+		err = g.GenerateRunner(file, "", module.Signature)
+		if err != nil {
+			return nil, fmt.Errorf("unable to generate runner.ts file: %w", err)
+		}
+
+		err = file.Close()
+		if err != nil {
+			return nil, fmt.Errorf("unable to close runner.ts file: %w", err)
+		}
+
+		scalePath := path.Join(buildDir, "scale")
+		err = os.Mkdir(scalePath, 0755)
+		if !os.IsExist(err) && err != nil {
+			return nil, fmt.Errorf("unable to create scale source directory %s: %w", scalePath, err)
+		}
+
+		scale, err := os.OpenFile(path.Join(scalePath, "scale.ts"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("unable to create scale.ts file: %w", err)
+		}
+
+		file, err = os.Open(moduleSourcePath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to open scale source file: %w", err)
+		}
+
+		_, err = io.Copy(scale, file)
+		if err != nil {
+			return nil, fmt.Errorf("unable to copy scale source file: %w", err)
+		}
+
+		err = scale.Close()
+		if err != nil {
+			return nil, fmt.Errorf("unable to close scale.ts file: %w", err)
+		}
+
+		err = file.Close()
+		if err != nil {
+			return nil, fmt.Errorf("unable to close scale source file: %w", err)
+		}
+
+		// TODO: Now we need to use the jsbuilder bits in scale repo here.
+
+		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		//		scaleFunc.Function = data
 	default:
 		return nil, fmt.Errorf("%s support not implemented", scaleFile.Language)
 	}
