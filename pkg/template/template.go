@@ -18,8 +18,9 @@ package template
 
 var (
 	LUT = map[string]func() []byte{
-		"go":   Go,
-		"rust": Rust,
+		"go":         Go,
+		"rust":       Rust,
+		"typescript": TypeScript,
 	}
 )
 
@@ -45,6 +46,16 @@ edition = "2021"
 crate-type = ["cdylib"]
 path = "scale.rs"
 `
+	TypeScriptTemplate = `
+{
+	"name": "scale",
+	"version": "0.1.0",
+	"description": "scale",
+	"dependencies": { {{$first := true}}{{range .}}{{if $first}}{{$first = false}}{{else}},{{end}}
+		"{{.Name}}": "{{.Version}}"{{end}}
+	}
+}
+`
 )
 
 func Go() []byte {
@@ -68,4 +79,13 @@ pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Erro
     ctx.response().set_body("Hello, World!".to_string());
     ctx.next()
 }`)
+}
+
+func TypeScript() []byte {
+	return []byte(`import { GuestContext } from "@loopholelabs/scale-signature-http";
+
+function scale(ctx: GuestContext) {
+    ctx.Response.SetBody("Hello, World!");
+}
+`)
 }

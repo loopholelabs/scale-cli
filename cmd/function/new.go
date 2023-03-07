@@ -18,6 +18,10 @@ package function
 
 import (
 	"fmt"
+	"os"
+	"path"
+	textTemplate "text/template"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -27,9 +31,6 @@ import (
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
-	textTemplate "text/template"
 )
 
 const (
@@ -38,8 +39,9 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		string(scalefunc.Go):   "go",
-		string(scalefunc.Rust): "rs",
+		string(scalefile.Go):         "go",
+		string(scalefile.Rust):       "rs",
+		string(scalefile.TypeScript): "ts",
 	}
 )
 
@@ -128,6 +130,34 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+					if err != nil {
+						return fmt.Errorf("error creating dependencies file: %w", err)
+					}
+
+					err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
+
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing dependencies file: %w", err)
+					}
+				case "typescript":
+					scaleFile.Dependencies = []scalefile.Dependency{
+						{
+							Name:    "scale_signature_http",
+							Version: "0.3.4",
+						},
+						{
+							Name:    "scale_signature",
+							Version: "0.2.9",
+						},
+					}
+
+					tmpl, err := textTemplate.New("dependencies").Parse(template.TypeScriptTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing dependency template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(fmt.Sprintf("%s/package.json", directory))
 					if err != nil {
 						return fmt.Errorf("error creating dependencies file: %w", err)
 					}
