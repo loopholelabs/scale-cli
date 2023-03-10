@@ -84,7 +84,7 @@ pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Erro
 func TypeScript() []byte {
 	return []byte(`import { GuestContext } from "@loopholelabs/scale-signature-http";
 
-function scale(ctx: GuestContext) {
+export function scale(ctx: GuestContext) {
     ctx.Response.SetBody("Hello, World!");
 }
 `)

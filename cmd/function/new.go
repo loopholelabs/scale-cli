@@ -143,11 +143,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				case "typescript":
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
-							Name:    "scale_signature_http",
+							Name:    "@loopholelabs/scale-signature-http",
 							Version: "0.3.4",
 						},
 						{
-							Name:    "scale_signature",
+							Name:    "@loopholelabs/scale-signature",
 							Version: "0.2.9",
 						},
 					}

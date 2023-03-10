@@ -20,6 +20,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"path"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -30,7 +32,6 @@ import (
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
-	"path"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -43,6 +44,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var goBin string
 	var tinygo string
 	var cargo string
+	var npmBin string
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
@@ -87,7 +89,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
-				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, directory)
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, npmBin, directory)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
@@ -152,6 +154,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVar(&tinygo, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
 		buildCmd.Flags().StringVar(&cargo, "cargo", "", "the (optional) path to the cargo binary")
+		buildCmd.Flags().StringVar(&npmBin, "npm", "", "the (optional) path to the npm binary")
 
 		cmd.AddCommand(buildCmd)
 	}
