@@ -6,7 +6,7 @@ require (
 	github.com/go-openapi/runtime v0.25.0
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.26
-	github.com/loopholelabs/cmdutils v0.1.1
+	github.com/loopholelabs/cmdutils v0.1.2
 	github.com/loopholelabs/scale v0.3.14
 	github.com/loopholelabs/scale-http-adapters v0.3.7
 	github.com/loopholelabs/scale-signature v0.2.11
