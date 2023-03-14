@@ -7,10 +7,10 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.26
 	github.com/loopholelabs/cmdutils v0.1.1
-	github.com/loopholelabs/scale v0.3.12
-	github.com/loopholelabs/scale-http-adapters v0.3.6
-	github.com/loopholelabs/scale-signature v0.2.9
-	github.com/loopholelabs/scalefile v0.1.7
+	github.com/loopholelabs/scale v0.3.14
+	github.com/loopholelabs/scale-http-adapters v0.3.7
+	github.com/loopholelabs/scale-signature v0.2.11
+	github.com/loopholelabs/scalefile v0.1.9
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
@@ -51,7 +51,7 @@ require (
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot-go v0.5.1 // indirect
-	github.com/loopholelabs/scale-signature-http v0.3.4 // indirect
+	github.com/loopholelabs/scale-signature-http v0.3.7 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -69,7 +69,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.14.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	github.com/tetratelabs/wazero v1.0.0-pre.9 // indirect
+	github.com/tetratelabs/wazero v1.0.0-rc.1 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/yalue/merged_fs v1.2.2 // indirect
 	go.mongodb.org/mongo-driver v1.10.0 // indirect
