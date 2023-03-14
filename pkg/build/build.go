@@ -35,7 +35,7 @@ import (
 	_ "embed"
 )
 
-var jsbuilderBin []byte
+//var jsbuilderBin []byte
 
 var (
 	ErrNoGo     = errors.New("go not found in PATH. Please install go: https://golang.org/doc/install")
@@ -410,27 +410,31 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 			return nil, fmt.Errorf("unable to close scale source file: %w", err)
 		}
 
+		if len(jsbuilderBin) == 0 {
+			return nil, fmt.Errorf("No jsbuilder was included for this architecture")
+		}
+
 		reader := bytes.NewReader(jsbuilderBin)
 		gzr, err := gzip.NewReader(reader)
 		if err != nil {
-			return nil, fmt.Errorf("unable to extract jsbuilder binary.")
+			return nil, fmt.Errorf("unable to create gzip reader for jsbuilder binary: %w", err)
 		}
 
 		jsf, err := os.Create(path.Join(buildDir, "jsbuilder"))
 
 		_, err = io.Copy(jsf, gzr)
 		if err != nil {
-			return nil, fmt.Errorf("unable to extract jsbuilder binary.")
+			return nil, fmt.Errorf("unable to extract jsbuilder binary: %w", err)
 		}
 
 		err = jsf.Close()
 		if err != nil {
-			return nil, fmt.Errorf("unable to close jsbuilder binary.")
+			return nil, fmt.Errorf("unable to close jsbuilder binary: %w", err)
 		}
 
 		err = os.Chmod(path.Join(buildDir, "jsbuilder"), 0770)
 		if err != nil {
-			return nil, fmt.Errorf("unable to set permissions on jsbuilder binary.")
+			return nil, fmt.Errorf("unable to set permissions on jsbuilder binary: %w", err)
 		}
 
 		/*
