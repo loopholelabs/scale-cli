@@ -38,7 +38,7 @@ func GetCmd() command.SetupCommand[*config.Config] {
 				name := args[0]
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving API Key %s...", name))
-				res, err := client.Access.GetAccessApikeyName(access.NewGetAccessApikeyNameParamsWithContext(ctx).WithName(name))
+				res, err := client.Access.GetAccessApikeyNameorid(access.NewGetAccessApikeyNameoridParamsWithContext(ctx).WithNameorid(name))
 				end()
 				if err != nil {
 					return err

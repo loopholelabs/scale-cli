@@ -66,6 +66,6 @@ func Rust() []byte {
 
 pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Error>> {
     ctx.response().set_body("Hello, World!".to_string());
-    Ok(ctx)
+    ctx.next()
 }`)
 }

@@ -33,13 +33,13 @@ import (
 )
 
 const (
-	defaultSignature = "http@v0.3.4"
+	defaultSignature = "http@v0.3.7"
 )
 
 var (
 	extensionLUT = map[string]string{
-		string(scalefile.Go):   "go",
-		string(scalefile.Rust): "rs",
+		string(scalefunc.Go):   "go",
+		string(scalefunc.Rust): "rs",
 	}
 )
 
@@ -69,7 +69,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					Name:      name,
 					Tag:       utils.DefaultTag,
 					Signature: defaultSignature,
-					Language:  scalefile.Language(language),
+					Language:  scalefunc.Language(language),
 					Source:    fmt.Sprintf("scale.%s", extension),
 				}
 
@@ -87,11 +87,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "github.com/loopholelabs/scale-signature",
-							Version: "v0.2.9",
+							Version: "v0.2.11",
 						},
 						{
 							Name:    "github.com/loopholelabs/scale-signature-http",
-							Version: "v0.3.4",
+							Version: "v0.3.7",
 						},
 					}
 
@@ -114,11 +114,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "scale_signature_http",
-							Version: "0.3.4",
+							Version: "0.3.7",
 						},
 						{
 							Name:    "scale_signature",
-							Version: "0.2.9",
+							Version: "0.2.11",
 						},
 					}
 
@@ -166,7 +166,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefile.Go), "the language to create the new scale function in (go, rust)")
+		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language to create the new scale function in (go, rust)")
 
 		cmd.AddCommand(newCmd)
 	}

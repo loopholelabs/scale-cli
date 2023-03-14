@@ -23,6 +23,7 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/access"
+	"github.com/loopholelabs/scale/go/client/models"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,10 @@ func CreateCmd() command.SetupCommand[*config.Config] {
 				name := args[0]
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Creating API Key %s...", name))
-				res, err := client.Access.PostAccessApikeyName(access.NewPostAccessApikeyNameParamsWithContext(ctx).WithName(name))
+				req := &models.ModelsCreateAPIKeyRequest{
+					Name: name,
+				}
+				res, err := client.Access.PostAccessApikey(access.NewPostAccessApikeyParamsWithContext(ctx).WithRequest(req))
 				end()
 				if err != nil {
 					return err

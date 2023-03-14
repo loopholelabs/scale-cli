@@ -93,15 +93,15 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 						sf, err := registry.Download(parsed.Name, parsed.Tag, opts...)
 						end()
 						if err != nil {
-							if parsed.Organization == "" {
-								return fmt.Errorf("failed to pull function %s:%s: %w", parsed.Name, parsed.Tag, err)
+							if parsed.Organization == "" || parsed.Organization == utils.DefaultOrganization {
+								return fmt.Errorf("scale function %s:%s not found", parsed.Name, parsed.Tag)
 							} else {
-								return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+								return fmt.Errorf("scale function %s/%s:%s: not found", parsed.Organization, parsed.Name, parsed.Tag)
 							}
 						}
 
 						if ch.Printer.Format() == printer.Human {
-							if parsed.Organization == "" {
+							if parsed.Organization == "" || parsed.Organization == utils.DefaultOrganization {
 								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s:%s", sf.Name, sf.Tag)))
 							} else {
 								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, sf.Name, sf.Tag)))

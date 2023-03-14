@@ -39,7 +39,7 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 				id := args[0]
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting API Key %s...", id))
-				_, err := client.Access.DeleteAccessApikeyID(access.NewDeleteAccessApikeyIDParamsWithContext(ctx).WithID(id))
+				_, err := client.Access.DeleteAccessApikeyNameorid(access.NewDeleteAccessApikeyNameoridParamsWithContext(ctx).WithNameorid(id))
 				end()
 				if err != nil {
 					return err
