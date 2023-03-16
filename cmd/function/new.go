@@ -39,11 +39,8 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		string(scalefunc.Go):         "go",
-		string(scalefunc.Rust):       "rs",
-		string(scalefunc.TypeScript): "ts",
-
-		// TODO
+		"go":         "go",
+		"rust":       "rs",
 		"typescript": "ts",
 	}
 )
@@ -88,7 +85,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				switch language {
 				case "go":
-					scaleFile.Language = scalefunc.Language(language)
+					scaleFile.Language = scalefunc.Go
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "github.com/loopholelabs/scale-signature",
@@ -116,7 +113,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
 				case "rust":
-					scaleFile.Language = scalefunc.Language(language)
+					scaleFile.Language = scalefunc.Rust
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "scale_signature_http",
@@ -145,15 +142,15 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
 				case "typescript":
-					scaleFile.Language = scalefunc.Language("ts")
+					scaleFile.Language = scalefunc.TypeScript
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "@loopholelabs/scale-signature-http",
-							Version: "0.3.4",
+							Version: "0.3.7",
 						},
 						{
 							Name:    "@loopholelabs/scale-signature",
-							Version: "0.2.9",
+							Version: "0.2.11",
 						},
 					}
 
