@@ -71,7 +71,6 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					Name:      name,
 					Tag:       utils.DefaultTag,
 					Signature: defaultSignature,
-					Language:  scalefunc.Language(language),
 					Source:    fmt.Sprintf("scale.%s", extension),
 				}
 
@@ -86,6 +85,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				switch language {
 				case "go":
+					scaleFile.Language = scalefunc.Language(language)
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "github.com/loopholelabs/scale-signature",
@@ -113,6 +113,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
 				case "rust":
+					scaleFile.Language = scalefunc.Language(language)
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "scale_signature_http",
@@ -141,6 +142,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
 				case "typescript":
+					scaleFile.Language = scalefunc.Language("ts")
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "@loopholelabs/scale-signature-http",
