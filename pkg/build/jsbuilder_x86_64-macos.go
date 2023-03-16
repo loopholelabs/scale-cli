@@ -23,5 +23,5 @@ import (
 	_ "embed"
 )
 
-//go:embed jsbuilder-x86_64-macos-v0.3.14-jm-test.gz
+//go:embed jsbuilder-x86_64-macos-*.gz
 var jsbuilderBin []byte
