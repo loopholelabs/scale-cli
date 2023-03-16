@@ -362,7 +362,7 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 
 		buildDir := path.Join(baseDir, "build")
 		defer func() {
-			//			_ = os.RemoveAll(buildDir)
+			_ = os.RemoveAll(buildDir)
 		}()
 
 		err = os.Mkdir(buildDir, 0755)

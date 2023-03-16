@@ -39,9 +39,12 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		string(scalefile.Go):         "go",
-		string(scalefile.Rust):       "rs",
-		string(scalefile.TypeScript): "ts",
+		string(scalefunc.Go):         "go",
+		string(scalefunc.Rust):       "rs",
+		string(scalefunc.TypeScript): "ts",
+
+		// TODO
+		"typescript": "ts",
 	}
 )
 
