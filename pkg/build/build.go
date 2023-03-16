@@ -437,13 +437,6 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 			return nil, fmt.Errorf("unable to set permissions on jsbuilder binary: %w", err)
 		}
 
-		/*
-			// TODO: Extract from gz
-			err = os.WriteFile(path.Join(buildDir, "jsbuilder"), jsbuilderBin, 0770)
-			if err != nil {
-				return nil, fmt.Errorf("unable to create jsbuilder binary: %w", err)
-			}
-		*/
 		packageFile, err := os.OpenFile(path.Join(buildDir, "package.json"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 		if err != nil {
 			return nil, fmt.Errorf("unable to create package.json file: %w", err)
