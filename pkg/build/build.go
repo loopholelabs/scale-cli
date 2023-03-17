@@ -181,15 +181,18 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 
 		cmd := exec.Command(goBin, "mod", "tidy")
 		cmd.Dir = path.Join(wd, buildDir)
-		err = cmd.Run()
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			return nil, fmt.Errorf("unable to compile scale function from dir %s: %w", cmd.Dir, err)
+			if _, ok := err.(*exec.ExitError); ok {
+				return nil, fmt.Errorf("unable to compile scale function: %s", output)
+			}
+			return nil, fmt.Errorf("unable to compile scale function: %w", err)
 		}
 
 		cmd = exec.Command(tinygo, "build", "-o", "scale.wasm", "-scheduler=none", "-target=wasi", "--no-debug", "main.go")
 		cmd.Dir = path.Join(wd, buildDir)
 
-		output, err := cmd.CombinedOutput()
+		output, err = cmd.CombinedOutput()
 		if err != nil {
 			if _, ok := err.(*exec.ExitError); ok {
 				return nil, fmt.Errorf("unable to compile scale function: %s", output)

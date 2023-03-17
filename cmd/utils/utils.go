@@ -122,7 +122,7 @@ func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cm
 func PostRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		c := ch.Config.APIClient()
-		if c.Transport != nil {
+		if c != nil && c.Transport != nil {
 			cookies := c.Transport.(*runtimeClient.Runtime).Jar.Cookies(config.DefaultCookieURL)
 			if len(cookies) == 0 {
 				return nil
