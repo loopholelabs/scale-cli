@@ -24,14 +24,18 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/releaser/pkg/client"
+	"github.com/loopholelabs/scale-cli/analytics"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
 	"github.com/loopholelabs/scale-cli/version"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 )
 
 // Cmd encapsulates the commands for updating the CLI.
@@ -49,6 +53,7 @@ func Cmd() command.SetupCommand[*config.Config] {
 				}
 				return ch.Config.Validate()
 			},
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				c := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
 				latest, err := c.GetLatest()
@@ -128,6 +133,15 @@ func Cmd() command.SetupCommand[*config.Config] {
 				_ = os.Remove(tarExecutable)
 				_ = os.Remove(previousExecutable)
 				end()
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "update",
+						Timestamp:  time.Now(),
+					})
+				}
+
 				ch.Printer.Printf("Scale CLI updated to version %s\n", printer.BoldGreen(latest))
 				return nil
 			},
