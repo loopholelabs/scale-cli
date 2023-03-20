@@ -88,7 +88,7 @@ func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comm
 			latest, err := updateClient.GetLatest()
 			if err == nil {
 				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
 				}
 			}
 		}
@@ -125,7 +125,7 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 			latest, err := updateClient.GetLatest()
 			if err == nil {
 				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
 				}
 			}
 		}
@@ -159,7 +159,7 @@ func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cm
 			latest, err := updateClient.GetLatest()
 			if err == nil {
 				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
 				}
 			}
 		}
