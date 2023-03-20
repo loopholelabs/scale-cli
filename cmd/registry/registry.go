@@ -36,10 +36,10 @@ type scaleFunction struct {
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		registryCmd := &cobra.Command{
-			Use:      "registry <command>",
-			Aliases:  []string{"reg"},
-			Short:    "Create, list, and manage Scale Functions in the registry",
-			PostRunE: utils.PostRunAnalytics(ch),
+			Use:                "registry <command>",
+			Aliases:            []string{"reg"},
+			Short:              "Create, list, and manage Scale Functions in the registry",
+			PersistentPostRunE: utils.PostRunAnalytics(ch),
 		}
 
 		pushSetup := PushCmd(false)

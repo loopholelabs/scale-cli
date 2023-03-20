@@ -38,10 +38,10 @@ type scaleFunction struct {
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		functionCmd := &cobra.Command{
-			Use:      "function <command>",
-			Aliases:  []string{"fn"},
-			Short:    "Create, list, and manage local Scale Functions",
-			PostRunE: utils.PostRunAnalytics(ch),
+			Use:                "function <command>",
+			Aliases:            []string{"fn"},
+			Short:              "Create, list, and manage local Scale Functions",
+			PersistentPostRunE: utils.PostRunAnalytics(ch),
 		}
 
 		listSetup := ListCmd()
