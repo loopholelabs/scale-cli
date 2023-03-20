@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/access"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // GetCmd encapsulates the commands for getting API Keys
@@ -42,6 +45,14 @@ func GetCmd() command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					return err
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "get-apikey",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				return ch.Printer.PrintResource(apiKeyRedacted{

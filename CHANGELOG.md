@@ -7,6 +7,31 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v0.1.2] - 2023-03-19
+
+### Features
+
+- Adding update check and auto update functionality to the CLI
+- Adding --no-telemetry flag to disable telemetry collection (using PostHog)
+
+### Dependencies
+
+- Bumping `scale` version to `v0.3.15`
+- Bumping `scale-http-adapters` version to `v0.3.8`
+- Bumping `scale-signature-http` version to `v0.3.8`
+
+## [v0.1.1] - 2023-03-12
+
+### Fixes
+
+- Fixing bugs where panics would occur if the user was not logged in 
+
+## [v0.1.0] - 2023-03-10
+
+### Features
+
+- Various bug fixes and improvements for release
+
 ## [v0.1.0-rc2] - 2023-02-28
 
 ### Features
@@ -36,6 +61,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added support for running `http` functions locally
 - Added support for pushing and pulling functions from the scale registry
 
-[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc2...HEAD
+[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.2...HEAD
+[v0.1.2]: https://github.com/loopholelabs/scale-cli/compare/v0.1.2
+[v0.1.1]: https://github.com/loopholelabs/scale-cli/compare/v0.1.1
+[v0.1.0]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0
 [v0.1.0-rc2]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc2
 [v0.1.0-rc1]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0-rc1

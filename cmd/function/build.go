@@ -23,14 +23,17 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/build"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"path"
+	"time"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -46,11 +49,12 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
-			Use:    "build [flags]",
-			Args:   cobra.ExactArgs(0),
-			Short:  "build a scale function locally and store it in the cache",
-			Long:   "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
-			Hidden: hidden,
+			Use:     "build [flags]",
+			Args:    cobra.ExactArgs(0),
+			Short:   "build a scale function locally and store it in the cache",
+			Long:    "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden:  hidden,
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				scaleFilePath := path.Join(directory, "scalefile")
 				scaleFile, err := scalefile.Read(scaleFilePath)
@@ -84,6 +88,15 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				if scaleFile.Tag == "" || !scalefunc.ValidString(scaleFile.Tag) {
 					return utils.InvalidStringError("tag", scaleFile.Tag)
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "build-function",
+						Timestamp:  time.Now(),
+						Properties: posthog.NewProperties().Set("language", scaleFile.Language),
+					})
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))

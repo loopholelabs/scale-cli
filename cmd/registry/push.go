@@ -21,13 +21,16 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/registry"
 	"github.com/loopholelabs/scale/go/client/userinfo"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // PushCmd encapsulates the commands for pushing Functions
@@ -131,6 +134,14 @@ func PushCmd(hidden bool) command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					return err
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "push-registry",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				if ch.Printer.Format() == printer.Human {

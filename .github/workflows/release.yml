@@ -39,4 +39,7 @@ jobs:
           GO_VERSION: ${{ steps.build-variables.outputs.go-version }}
           GO_PLATFORM: ${{ steps.build-variables.outputs.go-platform }}
           BUILD_DATE: ${{ steps.build-variables.outputs.build-date }}
+          ANALYTICS_API_KEY: ${{ secrets.ANALYTICS_API_KEY }}
+          ANALYTICS_APP_ID: ${{ vars.ANALYTICS_APP_ID }}
+          ANALYTICS_API_HOST: ${{ vars.ANALYTICS_API_HOST }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
