@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v0.1.3] - 2023-03-19
+
+### Fixes
+
+- Fixing a bug where Analytics events would not be properly pushed
+- Fixing a bug where update analytics events would not be recorded
+
 ## [v0.1.2] - 2023-03-19
 
 ### Features
@@ -61,7 +68,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added support for running `http` functions locally
 - Added support for pushing and pulling functions from the scale registry
 
-[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.2...HEAD
+[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.3...HEAD
+[v0.1.3]: https://github.com/loopholelabs/scale-cli/compare/v0.1.3
 [v0.1.2]: https://github.com/loopholelabs/scale-cli/compare/v0.1.2
 [v0.1.1]: https://github.com/loopholelabs/scale-cli/compare/v0.1.1
 [v0.1.0]: https://github.com/loopholelabs/scale-cli/compare/v0.1.0

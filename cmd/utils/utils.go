@@ -26,6 +26,7 @@ import (
 	"github.com/loopholelabs/auth/pkg/client/session"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/releaser/pkg/client"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
 	"github.com/loopholelabs/scale-cli/version"
@@ -182,6 +183,20 @@ func PostRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobr
 				return fmt.Errorf("error updating session: %w", err)
 			}
 
+		}
+		if analytics.Client != nil {
+			_ = analytics.Client.Close()
+			analytics.Client = nil
+		}
+		return nil
+	}
+}
+
+func PostRunAnalytics(_ *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		if analytics.Client != nil {
+			_ = analytics.Client.Close()
+			analytics.Client = nil
 		}
 		return nil
 	}
