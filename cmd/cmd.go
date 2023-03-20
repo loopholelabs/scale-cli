@@ -22,6 +22,7 @@ import (
 	"github.com/loopholelabs/scale-cli/cmd/auth"
 	"github.com/loopholelabs/scale-cli/cmd/function"
 	"github.com/loopholelabs/scale-cli/cmd/registry"
+	"github.com/loopholelabs/scale-cli/cmd/update"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/version"
 )
@@ -33,5 +34,5 @@ var Cmd = command.New[*config.Config](
 	true,
 	version.V,
 	config.New,
-	[]command.SetupCommand[*config.Config]{auth.Cmd(), apikey.Cmd(), function.Cmd(), registry.Cmd()},
+	[]command.SetupCommand[*config.Config]{auth.Cmd(), apikey.Cmd(), function.Cmd(), registry.Cmd(), update.Cmd()},
 )

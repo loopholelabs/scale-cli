@@ -25,8 +25,10 @@ import (
 	"github.com/loopholelabs/auth"
 	"github.com/loopholelabs/auth/pkg/client/session"
 	"github.com/loopholelabs/cmdutils"
+	"github.com/loopholelabs/releaser/pkg/client"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
+	"github.com/loopholelabs/scale-cli/version"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
 	"io"
@@ -68,6 +70,32 @@ func (s *ScaleFunctionNamedReadCloser) Name() string {
 	return s.name
 }
 
+func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		log.Init(ch.Config.GetLogFile())
+		err := ch.Config.GlobalRequiredFlags(cmd)
+		if err != nil {
+			return err
+		}
+		err = ch.Config.Validate()
+		if err != nil {
+			return err
+		}
+
+		if !ch.Config.DisableAutoUpdate {
+			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
+			latest, err := updateClient.GetLatest()
+			if err == nil {
+				if latest != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+				}
+			}
+		}
+
+		return nil
+	}
+}
+
 func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		log.Init(ch.Config.GetLogFile())
@@ -91,6 +119,16 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 
 		ch.Config.SetAPIClient(c)
 
+		if !ch.Config.DisableAutoUpdate {
+			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
+			latest, err := updateClient.GetLatest()
+			if err == nil {
+				if latest != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+				}
+			}
+		}
+
 		return nil
 	}
 }
@@ -112,6 +150,16 @@ func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cm
 			c, err := ch.Config.NewAuthenticatedAPIClient()
 			if err == nil {
 				ch.Config.SetAPIClient(c)
+			}
+		}
+
+		if !ch.Config.DisableAutoUpdate {
+			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
+			latest, err := updateClient.GetLatest()
+			if err == nil {
+				if latest != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n", latest)
+				}
 			}
 		}
 

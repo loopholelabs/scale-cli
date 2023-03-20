@@ -21,9 +21,12 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/access"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // DeleteCmd encapsulates the commands for deleting API Keys
@@ -43,6 +46,14 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					return err
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "delete-apikey",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				if ch.Printer.Format() == printer.Human {

@@ -39,9 +39,10 @@ import (
 var _ config.Config = (*Config)(nil)
 
 var (
-	ErrAPIEndpointRequired  = errors.New("api endpoint is required")
-	ErrAuthEndpointRequired = errors.New("auth endpoint is required")
-	ErrNoSession            = errors.New("no session found")
+	ErrAPIEndpointRequired    = errors.New("api endpoint is required")
+	ErrAuthEndpointRequired   = errors.New("auth endpoint is required")
+	ErrUpdateEndpointRequired = errors.New("update endpoint is required")
+	ErrNoSession              = errors.New("no session found")
 )
 
 var (
@@ -61,32 +62,40 @@ const (
 	configName        = "scale.yml"
 	logName           = "scale.log"
 
-	DefaultAPIEndpoint  = "api.scale.sh"
-	DefaultAuthEndpoint = "auth.scale.sh"
+	DefaultAPIEndpoint    = "api.scale.sh"
+	DefaultAuthEndpoint   = "auth.scale.sh"
+	DefaultUpdateEndpoint = "dl.scale.sh"
 
 	sessionFileMode = 0600
 )
 
 // Config is dynamically sourced from various files and environment variables.
 type Config struct {
-	APIEndpoint    string                `yaml:"api_endpoint"`
-	AuthEndpoint   string                `yaml:"auth_endpoint"`
-	CacheDirectory string                `yaml:"cache_directory"`
-	Session        *session.Session      `yaml:"-"`
-	authClient     *authClient.AuthAPIV1 `yaml:"-"`
-	apiClient      *apiClient.ScaleAPIV1 `yaml:"-"`
+	APIEndpoint       string                `yaml:"api_endpoint"`
+	AuthEndpoint      string                `yaml:"auth_endpoint"`
+	UpdateEndpoint    string                `yaml:"update_endpoint"`
+	DisableAutoUpdate bool                  `yaml:"disable_auto_update"`
+	NoTelemetry       bool                  `yaml:"no_telemetry"`
+	CacheDirectory    string                `yaml:"cache_directory"`
+	Session           *session.Session      `yaml:"-"`
+	authClient        *authClient.AuthAPIV1 `yaml:"-"`
+	apiClient         *apiClient.ScaleAPIV1 `yaml:"-"`
 }
 
 func New() *Config {
 	return &Config{
-		APIEndpoint:  DefaultAPIEndpoint,
-		AuthEndpoint: DefaultAuthEndpoint,
+		APIEndpoint:    DefaultAPIEndpoint,
+		AuthEndpoint:   DefaultAuthEndpoint,
+		UpdateEndpoint: DefaultUpdateEndpoint,
 	}
 }
 
 func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&c.APIEndpoint, "api-endpoint", DefaultAPIEndpoint, "The Scale API endpoint")
 	flags.StringVar(&c.AuthEndpoint, "auth-endpoint", DefaultAuthEndpoint, "The Scale Authentication API endpoint")
+	flags.StringVar(&c.UpdateEndpoint, "update-endpoint", DefaultUpdateEndpoint, "The Scale Update API endpoint")
+	flags.BoolVar(&c.DisableAutoUpdate, "disable-auto-update", false, "Disable automatic update checks")
+	flags.BoolVar(&c.NoTelemetry, "no-telemetry", false, "Opt out of telemetry tracking")
 	flags.StringVar(&c.CacheDirectory, "cache-directory", "", "The (optional) directory to store compiled scale functions")
 }
 
@@ -101,6 +110,10 @@ func (c *Config) Validate() error {
 
 	if c.AuthEndpoint == "" {
 		return ErrAuthEndpointRequired
+	}
+
+	if c.UpdateEndpoint == "" {
+		return ErrUpdateEndpointRequired
 	}
 
 	sessionPath, err := c.SessionPath()

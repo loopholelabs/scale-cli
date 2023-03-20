@@ -10,7 +10,7 @@ builds:
       - darwin
       - freebsd
     ldflags:
-      - -s -w -X "github.com/loopholelabs/scale-cli/version.GitCommit={{.FullCommit}}" -X "github.com/loopholelabs/scale-cli/version.GoVersion={{.Env.GO_VERSION}}" -X "github.com/loopholelabs/scale-cli/version.Platform={{.Env.GO_PLATFORM}}" -X "github.com/loopholelabs/scale-cli/version.Version={{.Tag}}" -X "github.com/loopholelabs/scale-cli/version.BuildDate={{.Env.BUILD_DATE}}"
+      - -s -w -X "github.com/loopholelabs/scale-cli/version.GitCommit={{.FullCommit}}" -X "github.com/loopholelabs/scale-cli/version.GoVersion={{.Env.GO_VERSION}}" -X "github.com/loopholelabs/scale-cli/version.Platform={{.Env.GO_PLATFORM}}" -X "github.com/loopholelabs/scale-cli/version.Version={{.Tag}}" -X "github.com/loopholelabs/scale-cli/version.BuildDate={{.Env.BUILD_DATE}}" -X "github.com/loopholelabs/scale-cli/analytics.AppID={{.Env.ANALYTICS_APP_ID}}" -X "github.com/loopholelabs/scale-cli/analytics.APIKey={{.Env.ANALYTICS_API_KEY}}" -X "github.com/loopholelabs/scale-cli/analytics.APIHost={{.Env.ANALYTICS_API_HOST}}"
     main: ./cmd
 archives:
   - files:

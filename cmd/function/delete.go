@@ -21,21 +21,25 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // DeleteCmd encapsulates the commands for deleting Functions
 func DeleteCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		deleteCmd := &cobra.Command{
-			Use:   "delete [<name>:<tag>] | [<org>/<name>:<tag>] [flags]",
-			Args:  cobra.ExactArgs(1),
-			Short: "delete a compiled scale function",
-			Long:  "Delete a compiled scale function.",
+			Use:     "delete [<name>:<tag>] | [<org>/<name>:<tag>] [flags]",
+			Args:    cobra.ExactArgs(1),
+			Short:   "delete a compiled scale function",
+			Long:    "Delete a compiled scale function.",
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -69,6 +73,15 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 				}
 				if e == nil {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "delete-function",
+						Timestamp:  time.Now(),
+						Properties: posthog.NewProperties().Set("language", e.ScaleFunc.Language),
+					})
 				}
 
 				err = st.Delete(parsed.Name, parsed.Tag, parsed.Organization, e.Hash)

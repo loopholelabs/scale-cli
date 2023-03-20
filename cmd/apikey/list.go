@@ -20,9 +20,12 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/access"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // ListCmd encapsulates the commands for listing API Keys
@@ -40,6 +43,14 @@ func ListCmd() command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					return err
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "get-apikey",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				if len(res.Payload) == 0 && ch.Printer.Format() == printer.Human {

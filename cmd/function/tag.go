@@ -32,9 +32,10 @@ import (
 func TagCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		tagCmd := &cobra.Command{
-			Use:   "tag [<current_name>:<current_tag>] | [<current_org>/<current_name>:<current_tag>] [<new_name>:<new_tag>] | [<new_org>/<new_name>:<new_tag>]",
-			Short: "tag a locally available Scale Function",
-			Args:  cobra.ExactArgs(2),
+			Use:     "tag [<current_name>:<current_tag>] | [<current_org>/<current_name>:<current_tag>] [<new_name>:<new_tag>] | [<new_org>/<new_name>:<new_tag>]",
+			Short:   "tag a locally available Scale Function",
+			Args:    cobra.ExactArgs(2),
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {

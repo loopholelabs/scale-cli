@@ -31,9 +31,10 @@ import (
 func ListCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		listCmd := &cobra.Command{
-			Use:   "list",
-			Short: "list locally available scale functions",
-			Args:  cobra.NoArgs,
+			Use:     "list",
+			Short:   "list locally available scale functions",
+			Args:    cobra.NoArgs,
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {

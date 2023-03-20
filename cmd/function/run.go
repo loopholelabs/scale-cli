@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	adapter "github.com/loopholelabs/scale-http-adapters/fasthttp"
@@ -28,6 +29,7 @@ import (
 	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -100,6 +102,14 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 							}
 						}
 
+						if analytics.Client != nil {
+							_ = analytics.Client.Enqueue(posthog.Capture{
+								DistinctId: analytics.MachineID,
+								Event:      "pull-registry",
+								Timestamp:  time.Now(),
+							})
+						}
+
 						if ch.Printer.Format() == printer.Human {
 							if parsed.Organization == "" || parsed.Organization == utils.DefaultOrganization {
 								ch.Printer.Printf("Pulled %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s:%s", sf.Name, sf.Tag)))
@@ -111,6 +121,15 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					} else {
 						fns = append(fns, e.ScaleFunc)
 					}
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "run-function",
+						Timestamp:  time.Now(),
+						Properties: posthog.NewProperties().Set("chain-size", len(fns)),
+					})
 				}
 
 				ctx := cmd.Context()

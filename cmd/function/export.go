@@ -21,13 +21,16 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
+	"time"
 )
 
 // ExportCmd encapsulates the commands for exporting Functions
@@ -36,10 +39,11 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 	var raw bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		exportCmd := &cobra.Command{
-			Use:   "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
-			Args:  cobra.ExactArgs(2),
-			Short: "export a compiled scale function to the given output path",
-			Long:  "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified or the function is not associated with an org, no organization will be used.",
+			Use:     "export [<name>:<tag> | [<org>/<name>:<tag>] <output_path>",
+			Args:    cobra.ExactArgs(2),
+			Short:   "export a compiled scale function to the given output path",
+			Long:    "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified or the function is not associated with an org, no organization will be used.",
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.Default
 				if ch.Config.CacheDirectory != "" {
@@ -73,6 +77,15 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				}
 				if e == nil {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "export-function",
+						Timestamp:  time.Now(),
+						Properties: posthog.NewProperties().Set("language", e.ScaleFunc.Language),
+					})
 				}
 
 				output := args[1]
