@@ -26,9 +26,12 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"os"
 	"time"
@@ -44,9 +47,10 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var apiKey string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		loginCmd := &cobra.Command{
-			Use:    "login [flags]",
-			Short:  "Authenticate with the Scale Authentication API",
-			Hidden: hidden,
+			Use:     "login [flags]",
+			Short:   "Authenticate with the Scale Authentication API",
+			Hidden:  hidden,
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if !printer.IsTTY {
 					if ch.Printer.Format() == printer.Human {
@@ -135,6 +139,20 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 				info, err := c.Userinfo.PostUserinfo(userinfo.NewPostUserinfoParamsWithContext(ctx))
 				if err != nil {
 					return fmt.Errorf("error getting user info: %w", err)
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "login",
+						Timestamp:  time.Now(),
+						Properties: map[string]interface{}{
+							"$set": map[string]interface{}{
+								"user": info.GetPayload().Email,
+								"org":  info.GetPayload().Organization,
+							},
+						},
+					})
 				}
 
 				err = ch.Config.WriteSession()

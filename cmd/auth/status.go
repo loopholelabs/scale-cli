@@ -20,10 +20,13 @@ import (
 	"fmt"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/client/userinfo"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // StatusCmd encapsulates the commands for the authentication status
@@ -42,6 +45,14 @@ func StatusCmd() command.SetupCommand[*config.Config] {
 				end()
 				if err != nil {
 					return utils.ErrNotAuthenticated
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "status",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				return ch.Printer.PrintResource(map[string]string{

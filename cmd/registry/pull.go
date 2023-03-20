@@ -21,12 +21,15 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"time"
 )
 
 // PullCmd encapsulates the commands for pulling Functions
@@ -89,6 +92,14 @@ func PullCmd(hidden bool) command.SetupCommand[*config.Config] {
 					} else {
 						return fmt.Errorf("failed to pull function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
+				}
+
+				if analytics.Client != nil {
+					_ = analytics.Client.Enqueue(posthog.Capture{
+						DistinctId: analytics.MachineID,
+						Event:      "pull-registry",
+						Timestamp:  time.Now(),
+					})
 				}
 
 				if ch.Printer.Format() == printer.Human {

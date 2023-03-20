@@ -21,19 +21,22 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/pkg/template"
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
+	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
 	textTemplate "text/template"
+	"time"
 )
 
 const (
-	defaultSignature = "http@v0.3.7"
+	defaultSignature = "http@v0.3.8"
 )
 
 var (
@@ -49,10 +52,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var language string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
-			Use:    "new <name> [flags]",
-			Args:   cobra.ExactArgs(1),
-			Short:  "generate a new scale function with the given name",
-			Hidden: hidden,
+			Use:     "new <name> [flags]",
+			Args:    cobra.ExactArgs(1),
+			Short:   "generate a new scale function with the given name",
+			Hidden:  hidden,
+			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
 				if name == "" || !scalefunc.ValidString(name) {
@@ -84,6 +88,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				switch language {
 				case "go":
+					if analytics.Client != nil {
+						_ = analytics.Client.Enqueue(posthog.Capture{
+							DistinctId: analytics.MachineID,
+							Event:      "new-function",
+							Timestamp:  time.Now(),
+							Properties: posthog.NewProperties().Set("language", "go"),
+						})
+					}
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "github.com/loopholelabs/scale-signature",
@@ -91,7 +103,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						},
 						{
 							Name:    "github.com/loopholelabs/scale-signature-http",
-							Version: "v0.3.7",
+							Version: "v0.3.8",
 						},
 					}
 
@@ -111,10 +123,18 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
 				case "rust":
+					if analytics.Client != nil {
+						_ = analytics.Client.Enqueue(posthog.Capture{
+							DistinctId: analytics.MachineID,
+							Event:      "new-function",
+							Timestamp:  time.Now(),
+							Properties: posthog.NewProperties().Set("language", "rust"),
+						})
+					}
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "scale_signature_http",
-							Version: "0.3.7",
+							Version: "0.3.8",
 						},
 						{
 							Name:    "scale_signature",
