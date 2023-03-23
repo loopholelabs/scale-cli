@@ -52,11 +52,12 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var language string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
-			Use:     "new <name> [flags]",
-			Args:    cobra.ExactArgs(1),
-			Short:   "generate a new scale function with the given name",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "new <name> [flags]",
+			Args:     cobra.ExactArgs(1),
+			Short:    "generate a new scale function with the given name",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
 				if name == "" || !scalefunc.ValidString(name) {
