@@ -47,7 +47,7 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 		Name:      scaleFile.Name,
 		Tag:       scaleFile.Tag,
 		Signature: scaleFile.Signature,
-		Language:  scalefunc.Language(scaleFile.Language),
+		Language:  scaleFile.Language,
 	}
 
 	switch scaleFunc.Language {
