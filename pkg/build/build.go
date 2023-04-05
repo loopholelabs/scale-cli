@@ -19,14 +19,15 @@ package build
 import (
 	"errors"
 	"fmt"
-	"github.com/loopholelabs/scale/go/compile"
-	rustCompile "github.com/loopholelabs/scale/rust/compile"
-	"github.com/loopholelabs/scalefile"
-	"github.com/loopholelabs/scalefile/scalefunc"
 	"io"
 	"os"
 	"os/exec"
 	"path"
+
+	"github.com/loopholelabs/scale/go/compile"
+	rustCompile "github.com/loopholelabs/scale/rust/compile"
+	"github.com/loopholelabs/scalefile"
+	"github.com/loopholelabs/scalefile/scalefunc"
 )
 
 var (
@@ -41,7 +42,7 @@ type Module struct {
 	Signature string
 }
 
-func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, cargo string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, cargo string, baseDir string, tinygoArgs []string) (*scalefunc.ScaleFunc, error) {
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
 		Name:      scaleFile.Name,
@@ -189,7 +190,9 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygo string, car
 			return nil, fmt.Errorf("unable to compile scale function: %w", err)
 		}
 
-		cmd = exec.Command(tinygo, "build", "-o", "scale.wasm", "-scheduler=none", "-target=wasi", "--no-debug", "main.go")
+		tinygoArgs = append([]string{"build", "-o", "scale.wasm", "-target=wasi"}, tinygoArgs...)
+
+		cmd = exec.Command(tinygo, tinygoArgs...)
 		cmd.Dir = path.Join(wd, buildDir)
 
 		output, err = cmd.CombinedOutput()
