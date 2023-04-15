@@ -33,11 +33,17 @@ import (
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
+	"regexp"
 	"time"
+)
+
+var (
+	InvalidDeployRegex = regexp.MustCompile(`[^A-Za-z0-9-]`)
 )
 
 // DeployCmd encapsulates the commands for deploying Functions
 func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
+	var name string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		deployCmd := &cobra.Command{
 			Use:      "deploy [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ]",
@@ -55,6 +61,10 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if err != nil {
 						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.CacheDirectory, err)
 					}
+				}
+
+				if name != "" && InvalidDeployRegex.MatchString(name) {
+					return fmt.Errorf("invalid deploy name '%s', deploy names can only include letters, numbers, and dashes (`-`)", name)
 				}
 
 				fns := make([]*scalefunc.ScaleFunc, 0, len(args))
@@ -141,23 +151,24 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 				reader := runtime.NamedReader("functions", bytes.NewReader(buffer.Bytes()))
 
 				var end = ch.Printer.PrintProgress("Deploying to Scale Cloud...")
-				params := deploy.NewPostDeployFunctionParamsWithContext(ctx).WithFunctions(reader)
+				params := deploy.NewPostDeployFunctionParamsWithContext(ctx).WithFunctions(reader).WithName(&name)
 				resp, err := client.Deploy.PostDeployFunction(params)
+				end()
 				payload := resp.GetPayload()
 				if err != nil {
-					end()
-					println("error deploying function: ", err.Error())
-					return err
+					return fmt.Errorf("failed to deploy function: %w", err)
 				}
 
-				end()
 				ch.Printer.Printf(
 					"Functions deployed, available at \n",
-					printer.BoldGreen(fmt.Sprintf("https://%s.scale.fun", payload.ID)),
+					printer.BoldGreen(fmt.Sprintf("https://%s.%s", payload.Subdomain, payload.RootDomain)),
 				)
 				return nil
 			},
 		}
+
+		deployCmd.Flags().StringVarP(&name, "name", "n", "", "name of the function")
+
 		cmd.AddCommand(deployCmd)
 	}
 }
