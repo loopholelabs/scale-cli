@@ -47,6 +47,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var goBin string
 	var tinygoBin string
 	var cargoBin string
+	var npmBin string
+
 	var tinygoArgs []string
 	var cargoArgs []string
 
@@ -103,7 +105,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
-				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygoBin, cargoBin, directory, tinygoArgs, cargoArgs)
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygoBin, cargoBin, npmBin, directory, tinygoArgs, cargoArgs)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
@@ -168,6 +170,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVar(&tinygoBin, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
 		buildCmd.Flags().StringVar(&cargoBin, "cargo", "", "the (optional) path to the cargo binary")
+		buildCmd.Flags().StringVar(&npmBin, "npm", "", "the (optional) path to the npm binary")
 
 		buildCmd.Flags().StringSliceVar(&tinygoArgs, "tinygo-args", []string{"-scheduler=none", "--no-debug"}, "list of (optional) tinygo build arguments")
 		buildCmd.Flags().StringSliceVar(&cargoArgs, "cargo-args", []string{"--release"}, "list of (optional) cargo build arguments")

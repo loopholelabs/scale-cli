@@ -17,6 +17,8 @@
 package build
 
 import (
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"fmt"
 	"io"
@@ -26,14 +28,18 @@ import (
 
 	"github.com/loopholelabs/scale/go/compile"
 	rustCompile "github.com/loopholelabs/scale/rust/compile"
+	tsCompile "github.com/loopholelabs/scale/ts/compile"
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
+
+	_ "embed"
 )
 
 var (
 	ErrNoGo     = errors.New("go not found in PATH. Please install go: https://golang.org/doc/install")
 	ErrNoTinyGo = errors.New("tinygo not found in PATH. Please install tinygo: https://tinygo.org/getting-started/")
 	ErrNoCargo  = errors.New("cargo not found in PATH. Please install cargo: https://doc.rust-lang.org/cargo/getting-started/installation.html")
+	ErrNoNpm    = errors.New("npm not found in PATH. Please install npm: https://docs.npmjs.com/downloading-and-installing-node-js-and-npm")
 )
 
 type Module struct {
@@ -42,7 +48,7 @@ type Module struct {
 	Signature string
 }
 
-func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, baseDir string, tinygoArgs []string, cargoArgs []string) (*scalefunc.ScaleFunc, error) {
+func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, npmBin string, baseDir string, tinygoArgs []string, cargoArgs []string) (*scalefunc.ScaleFunc, error) {
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
 		Name:      scaleFile.Name,
@@ -56,6 +62,8 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, 
 		return GolangBuild(scaleFile, scaleFunc, goBin, tinygoBin, tinygoArgs, baseDir)
 	case scalefunc.Rust:
 		return RustBuild(scaleFile, scaleFunc, cargoBin, cargoArgs, baseDir)
+	case scalefunc.TypeScript:
+		return TypeScriptBuild(scaleFile, scaleFunc, npmBin, baseDir)
 	default:
 		return nil, fmt.Errorf("%s support not implemented", scaleFile.Language)
 	}
@@ -349,6 +357,172 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
+	scaleFunc.Function = data
+
+	return scaleFunc, nil
+}
+
+func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, npmBin string, baseDir string) (*scalefunc.ScaleFunc, error) {
+	module := &Module{
+		Name:      scaleFile.Name,
+		Source:    scaleFile.Source,
+		Signature: "scale-signature-http",
+	}
+
+	if npmBin != "" {
+		stat, err := os.Stat(npmBin)
+		if err != nil {
+			return nil, fmt.Errorf("unable to find npm binary %s: %w", npmBin, err)
+		}
+		if !(stat.Mode()&0111 != 0) {
+			return nil, fmt.Errorf("npm binary %s is not executable", npmBin)
+		}
+	} else {
+		var err error
+		npmBin, err = exec.LookPath("npm")
+		if err != nil {
+			return nil, ErrNoNpm
+		}
+	}
+
+	g := tsCompile.NewGenerator()
+
+	moduleSourcePath := path.Join(baseDir, module.Source)
+	_, err := os.Stat(moduleSourcePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to find module %s: %w", moduleSourcePath, err)
+	}
+
+	buildDir := path.Join(baseDir, "build")
+	defer func() {
+		_ = os.RemoveAll(buildDir)
+	}()
+
+	err = os.Mkdir(buildDir, 0755)
+	if !os.IsExist(err) && err != nil {
+		return nil, fmt.Errorf("unable to create build %s directory: %w", buildDir, err)
+	}
+
+	file, err := os.OpenFile(path.Join(buildDir, "runner.ts"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create runner.ts file: %w", err)
+	}
+
+	err = g.GenerateRunner(file, "", module.Signature)
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate runner.ts file: %w", err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		return nil, fmt.Errorf("unable to close runner.ts file: %w", err)
+	}
+
+	scale, err := os.OpenFile(path.Join(buildDir, "scale.ts"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create scale.ts file: %w", err)
+	}
+
+	file, err = os.Open(moduleSourcePath)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open scale source file: %w", err)
+	}
+
+	_, err = io.Copy(scale, file)
+	if err != nil {
+		return nil, fmt.Errorf("unable to copy scale source file: %w", err)
+	}
+
+	err = scale.Close()
+	if err != nil {
+		return nil, fmt.Errorf("unable to close scale.ts file: %w", err)
+	}
+
+	err = file.Close()
+	if err != nil {
+		return nil, fmt.Errorf("unable to close scale source file: %w", err)
+	}
+
+	if len(jsbuilderBin) == 0 {
+		return nil, fmt.Errorf("No jsbuilder was included for this architecture")
+	}
+
+	reader := bytes.NewReader(jsbuilderBin)
+	gzr, err := gzip.NewReader(reader)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create gzip reader for jsbuilder binary: %w", err)
+	}
+
+	jsf, err := os.Create(path.Join(buildDir, "jsbuilder"))
+
+	_, err = io.Copy(jsf, gzr)
+	if err != nil {
+		return nil, fmt.Errorf("unable to extract jsbuilder binary: %w", err)
+	}
+
+	err = jsf.Close()
+	if err != nil {
+		return nil, fmt.Errorf("unable to close jsbuilder binary: %w", err)
+	}
+
+	err = os.Chmod(path.Join(buildDir, "jsbuilder"), 0770)
+	if err != nil {
+		return nil, fmt.Errorf("unable to set permissions on jsbuilder binary: %w", err)
+	}
+
+	packageFile, err := os.OpenFile(path.Join(buildDir, "package.json"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create package.json file: %w", err)
+	}
+
+	deps := make([]*scalefile.Dependency, 0, len(scaleFile.Dependencies))
+	for _, dep := range scaleFile.Dependencies {
+		var d = dep
+		deps = append(deps, &d)
+	}
+	err = g.GeneratePackage(packageFile, deps, module.Signature, "")
+	if err != nil {
+		return nil, fmt.Errorf("unable to generate package.json file: %w", err)
+	}
+
+	cmdInstall := exec.Command(npmBin, "install")
+	cmdInstall.Dir = buildDir
+
+	outputInstall, err := cmdInstall.CombinedOutput()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("unable to compile scale function: %s", outputInstall)
+		}
+		return nil, fmt.Errorf("unable to compile scale function: %w", err)
+	}
+
+	cmdBuild := exec.Command(npmBin, "run", "build")
+	cmdBuild.Dir = buildDir
+
+	outputBuild, err := cmdBuild.CombinedOutput()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("unable to compile scale function: %s", outputBuild)
+		}
+		return nil, fmt.Errorf("unable to compile scale function: %w", err)
+	}
+
+	cmdJSBuilder := exec.Command("./jsbuilder", "dist/runner.js")
+	cmdJSBuilder.Dir = buildDir
+
+	outputJSBuilder, err := cmdJSBuilder.CombinedOutput()
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			return nil, fmt.Errorf("unable to compile scale function: %s", outputJSBuilder)
+		}
+		return nil, fmt.Errorf("unable to compile scale function: %w", err)
+	}
+
+	data, err := os.ReadFile(path.Join(buildDir, "index.wasm"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+	}
+
 	scaleFunc.Function = data
 
 	return scaleFunc, nil
