@@ -273,8 +273,8 @@ github.com/loopholelabs/polyglot-go v0.5.1 h1:21QVDELp+EodPUAL+Aw8GNXLyt2BFj9gYQ
 github.com/loopholelabs/polyglot-go v0.5.1/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
 github.com/loopholelabs/releaser v0.1.1 h1:o8Z4jIR4TcaSRiwFpAGIJSAkAUOxlXL1ML3EscGqxDU=
 github.com/loopholelabs/releaser v0.1.1/go.mod h1:51hV+lDDYeJNzeVOZCQnGS5cJN8ODg/V5AxYtiL67UA=
-github.com/loopholelabs/scale v0.3.15 h1:byRL601gWMIxyn4YK4oYlbcKgxBTutR0LF5B5yJI6bY=
-github.com/loopholelabs/scale v0.3.15/go.mod h1:Y26GQaRfNbzffcJS7N9rv/liH6NRYhX0IyiscdWdxvw=
+github.com/loopholelabs/scale v0.3.16 h1:a32tx47RKvomabjRbXgtJjJ4P/yIeWOZ+KRXNmZzqTQ=
+github.com/loopholelabs/scale v0.3.16/go.mod h1:TXIiUBjvIK5+HFCwtGNzkPNBlDbNKHJPAIUBVbUGDas=
 github.com/loopholelabs/scale-http-adapters v0.3.8 h1:tngPE+qbZ85hQCz0c+8jR/JC6fFpAWzRZEP4reaqUtA=
 github.com/loopholelabs/scale-http-adapters v0.3.8/go.mod h1:1Ft0XdrF1mt44xg8oBCTMRiLjlAJ5m0QGJu+mAt3eDY=
 github.com/loopholelabs/scale-signature v0.2.11 h1:Wnur2owfIsuOFDzJTiwRd8rCJRBOzWRYK29ORr6XVYo=
@@ -387,8 +387,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/tetratelabs/wazero v1.0.0-rc.2 h1:OA3UUynnoqxrjCQ94mpAtdO4/oMxFQVNL2BXDMOc66Q=
-github.com/tetratelabs/wazero v1.0.0-rc.2/go.mod h1:wYx2gNRg8/WihJfSDxA1TIL8H+GkfLYm+bIfbblu9VQ=
+github.com/tetratelabs/wazero v1.0.1 h1:xyWBoGyMjYekG3mEQ/W7xm9E05S89kJ/at696d/9yuc=
+github.com/tetratelabs/wazero v1.0.1/go.mod h1:wYx2gNRg8/WihJfSDxA1TIL8H+GkfLYm+bIfbblu9VQ=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/tinylib/msgp v1.1.6 h1:i+SbKraHhnrf9M5MYmvQhFnbLhAXSDWF8WWsuyRdocw=
