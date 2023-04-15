@@ -20,6 +20,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"path"
+	"time"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -32,8 +35,6 @@ import (
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
-	"path"
-	"time"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -46,6 +47,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var goBin string
 	var tinygo string
 	var cargo string
+	var tinygoArgs []string
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
@@ -100,7 +102,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
-				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, directory)
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, directory, tinygoArgs)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
@@ -162,6 +164,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
 		buildCmd.Flags().StringVarP(&org, "org", "o", "", "the (optional) organization of this scale function")
 
+		buildCmd.Flags().StringSliceVar(&tinygoArgs, "tinygo-args", []string{"-scheduler=none", "--no-debug", "main.go"}, "list of (optional) tinygo build arguments")
 		buildCmd.Flags().StringVar(&tinygo, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
 		buildCmd.Flags().StringVar(&cargo, "cargo", "", "the (optional) path to the cargo binary")
