@@ -8,8 +8,9 @@ require (
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/loopholelabs/auth v0.2.26
 	github.com/loopholelabs/cmdutils v0.1.2
+	github.com/loopholelabs/polyglot-go v0.5.1
 	github.com/loopholelabs/releaser v0.1.1
-	github.com/loopholelabs/scale v0.3.15
+	github.com/loopholelabs/scale v0.3.16
 	github.com/loopholelabs/scale-http-adapters v0.3.8
 	github.com/loopholelabs/scale-signature v0.2.11
 	github.com/loopholelabs/scalefile v0.1.9
@@ -58,7 +59,6 @@ require (
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
-	github.com/loopholelabs/polyglot-go v0.5.1 // indirect
 	github.com/loopholelabs/scale-signature-http v0.3.8 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -80,7 +80,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.14.0 // indirect
 	github.com/subosito/gotenv v1.4.1 // indirect
-	github.com/tetratelabs/wazero v1.0.0-rc.2 // indirect
+	github.com/tetratelabs/wazero v1.0.1 // indirect
 	github.com/tinylib/msgp v1.1.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
