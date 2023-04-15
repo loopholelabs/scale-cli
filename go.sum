@@ -253,12 +253,14 @@ github.com/loopholelabs/cmdutils v0.1.2 h1:b784XmNiRbv5aWXGTThvRq9GulaAJFdGN7w/I
 github.com/loopholelabs/cmdutils v0.1.2/go.mod h1:rnVqMBoNGG1DDx+nU0y0n49VSQzLDFpUzAH3OIQA62A=
 github.com/loopholelabs/polyglot-go v0.5.1 h1:21QVDELp+EodPUAL+Aw8GNXLyt2BFj9gYQsGvHIFlcc=
 github.com/loopholelabs/polyglot-go v0.5.1/go.mod h1:Z0QiNv4KRuWjQWpUerMhmkvRh6ks1pYmEH4SGpG0EHQ=
+github.com/loopholelabs/scale v0.3.16 h1:a32tx47RKvomabjRbXgtJjJ4P/yIeWOZ+KRXNmZzqTQ=
+github.com/loopholelabs/scale v0.3.16/go.mod h1:TXIiUBjvIK5+HFCwtGNzkPNBlDbNKHJPAIUBVbUGDas=
 github.com/loopholelabs/scale-http-adapters v0.3.7 h1:EnaTufn6LHBK0YtmiRpY1mMme2wA1SWuiU6JBNMfk78=
 github.com/loopholelabs/scale-http-adapters v0.3.7/go.mod h1:2D4a2eJjxTAH+dTABOIT9NT3mG39f0GtlG0Ti64ZfD0=
 github.com/loopholelabs/scale-signature v0.2.11 h1:Wnur2owfIsuOFDzJTiwRd8rCJRBOzWRYK29ORr6XVYo=
 github.com/loopholelabs/scale-signature v0.2.11/go.mod h1:5qakYb6WN1hbmubB/UuBT9XsMi9b1vEHSSlsyvBF4vQ=
-github.com/loopholelabs/scale-signature-http v0.3.7 h1:dj01hgJZ5XutNqWfh/2CV+Wqb4R3B20X7R/VcBOYheE=
-github.com/loopholelabs/scale-signature-http v0.3.7/go.mod h1:WoMckzVJEV9akY8vegZBJl7BmqjtVmtxanJHElqOGxI=
+github.com/loopholelabs/scale-signature-http v0.3.8 h1:2McyHf/yngxBQZvQZ0NTDvAwL8HhMFa9NjnH7xQp1Co=
+github.com/loopholelabs/scale-signature-http v0.3.8/go.mod h1:WoMckzVJEV9akY8vegZBJl7BmqjtVmtxanJHElqOGxI=
 github.com/loopholelabs/scalefile v0.1.9 h1:YXVJPI9OKQVnNj+al48yHl/3P8IUOOt9Vq9Aixu0iRI=
 github.com/loopholelabs/scalefile v0.1.9/go.mod h1:fPq4xcXpAzWErW1tqLTex2xIrHJ/iCRFb4et6+sbOvk=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
@@ -355,8 +357,8 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKsk=
 github.com/subosito/gotenv v1.4.1 h1:jyEFiXpy21Wm81FBN71l9VoMMV8H8jG+qIK3GCpY6Qs=
 github.com/subosito/gotenv v1.4.1/go.mod h1:ayKnFf/c6rvx/2iiLrJUk1e6plDbT3edrFNGqEflhK0=
-github.com/tetratelabs/wazero v1.0.0-rc.1 h1:ytecMV5Ue0BwezjKh/cM5yv1Mo49ep2R2snSsQUyToc=
-github.com/tetratelabs/wazero v1.0.0-rc.1/go.mod h1:wYx2gNRg8/WihJfSDxA1TIL8H+GkfLYm+bIfbblu9VQ=
+github.com/tetratelabs/wazero v1.0.1 h1:xyWBoGyMjYekG3mEQ/W7xm9E05S89kJ/at696d/9yuc=
+github.com/tetratelabs/wazero v1.0.1/go.mod h1:wYx2gNRg8/WihJfSDxA1TIL8H+GkfLYm+bIfbblu9VQ=
 github.com/tidwall/pretty v1.0.0 h1:HsD+QiTn7sK6flMKIvNmpqz1qrpP3Ps6jOKIKMooyg4=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
