@@ -159,10 +159,7 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to deploy function: %w", err)
 				}
 
-				ch.Printer.Printf(
-					"Functions deployed, available at \n",
-					printer.BoldGreen(fmt.Sprintf("https://%s.%s", payload.Subdomain, payload.RootDomain)),
-				)
+				ch.Printer.Printf("Functions deployed, available at %s\n", printer.BoldGreen(fmt.Sprintf("https://%s.%s", payload.Subdomain, payload.RootDomain)))
 				return nil
 			},
 		}
