@@ -87,8 +87,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				scaleFilePath := path.Join(directory, "scalefile")
 
-				switch language {
-				case "go":
+				switch scalefunc.Language(language) {
+				case scalefunc.Go:
 					scaleFile.Language = scalefunc.Go
 					if analytics.Client != nil {
 						_ = analytics.Client.Enqueue(posthog.Capture{
@@ -124,7 +124,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						_ = dependencyFile.Close()
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
-				case "rust":
+				case scalefunc.Rust:
 					scaleFile.Language = scalefunc.Rust
 					if analytics.Client != nil {
 						_ = analytics.Client.Enqueue(posthog.Capture{
@@ -161,12 +161,12 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						_ = dependencyFile.Close()
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
-				case "typescript":
+				case scalefunc.TypeScript:
 					scaleFile.Language = scalefunc.TypeScript
 					scaleFile.Dependencies = []scalefile.Dependency{
 						{
 							Name:    "@loopholelabs/scale-signature-http",
-							Version: "0.3.7",
+							Version: "0.3.8",
 						},
 						{
 							Name:    "@loopholelabs/scale-signature",
@@ -218,7 +218,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language to create the new scale function in (go, rust)")
+		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language to create the new scale function in (go, rust, ts)")
 
 		cmd.AddCommand(newCmd)
 	}
