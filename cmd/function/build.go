@@ -45,9 +45,10 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 
 	var goBin string
-	var tinygo string
-	var cargo string
+	var tinygoBin string
+	var cargoBin string
 	var tinygoArgs []string
+	var cargoArgs []string
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
@@ -102,7 +103,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
-				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygo, cargo, directory, tinygoArgs)
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygoBin, cargoBin, directory, tinygoArgs, cargoArgs)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
@@ -164,10 +165,12 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
 		buildCmd.Flags().StringVarP(&org, "org", "o", "", "the (optional) organization of this scale function")
 
-		buildCmd.Flags().StringSliceVar(&tinygoArgs, "tinygo-args", []string{"-scheduler=none", "--no-debug", "main.go"}, "list of (optional) tinygo build arguments")
-		buildCmd.Flags().StringVar(&tinygo, "tinygo", "", "the (optional) path to the tinygo binary")
+		buildCmd.Flags().StringVar(&tinygoBin, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
-		buildCmd.Flags().StringVar(&cargo, "cargo", "", "the (optional) path to the cargo binary")
+		buildCmd.Flags().StringVar(&cargoBin, "cargo", "", "the (optional) path to the cargo binary")
+
+		buildCmd.Flags().StringSliceVar(&tinygoArgs, "tinygo-args", []string{"-scheduler=none", "--no-debug"}, "list of (optional) tinygo build arguments")
+		buildCmd.Flags().StringSliceVar(&cargoArgs, "cargo-args", []string{"--release"}, "list of (optional) cargo build arguments")
 
 		cmd.AddCommand(buildCmd)
 	}
