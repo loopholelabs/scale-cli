@@ -62,6 +62,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		runSetup := RunCmd(false)
 		runSetup(functionCmd, ch)
 
+		deploySetup := DeployCmd(false)
+		deploySetup(functionCmd, ch)
+
 		tagSetup := TagCmd()
 		tagSetup(functionCmd, ch)
 
@@ -73,6 +76,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 
 		runAliasSetup := RunCmd(true)
 		runAliasSetup(cmd, ch)
+
+		deployAliasSetup := DeployCmd(true)
+		deployAliasSetup(cmd, ch)
 
 		cmd.AddCommand(functionCmd)
 	}

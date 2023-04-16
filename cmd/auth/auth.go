@@ -19,7 +19,6 @@ package auth
 import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
-	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -28,11 +27,9 @@ import (
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		authCmd := &cobra.Command{
-			Use:                "auth",
-			Short:              "Login and Logout using the Scale Authentication API",
-			Long:               "Manage access to the Scale API using the Scale Authentication API",
-			PersistentPreRunE:  utils.PreRunUpdateCheck(ch),
-			PersistentPostRunE: utils.PostRunAnalytics(ch),
+			Use:   "auth",
+			Short: "Login and Logout using the Scale Authentication API",
+			Long:  "Manage access to the Scale API using the Scale Authentication API",
 		}
 
 		loginSetup := LoginCmd(false)

@@ -24,6 +24,7 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
+	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/pkg/errors"
 	"github.com/posthog/posthog-go"
@@ -37,10 +38,12 @@ import (
 func LogoutCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		logoutCmd := &cobra.Command{
-			Use:    "logout",
-			Args:   cobra.NoArgs,
-			Short:  "Log out of the Scale API",
-			Hidden: hidden,
+			Use:      "logout",
+			Args:     cobra.NoArgs,
+			Short:    "Log out of the Scale API",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				if !ch.Config.IsAuthenticated() {
 					ch.Printer.Println("Already logged out. Exiting...")

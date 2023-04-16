@@ -41,8 +41,9 @@ const (
 
 var (
 	extensionLUT = map[string]string{
-		string(scalefunc.Go):   "go",
-		string(scalefunc.Rust): "rs",
+		string(scalefunc.Go):         "go",
+		string(scalefunc.Rust):       "rs",
+		string(scalefunc.TypeScript): "ts",
 	}
 )
 
@@ -74,7 +75,6 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					Name:      name,
 					Tag:       utils.DefaultTag,
 					Signature: defaultSignature,
-					Language:  scalefunc.Language(language),
 					Source:    fmt.Sprintf("scale.%s", extension),
 				}
 
@@ -87,8 +87,9 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				scaleFilePath := path.Join(directory, "scalefile")
 
-				switch language {
-				case "go":
+				switch scalefunc.Language(language) {
+				case scalefunc.Go:
+					scaleFile.Language = scalefunc.Go
 					if analytics.Client != nil {
 						_ = analytics.Client.Enqueue(posthog.Capture{
 							DistinctId: analytics.MachineID,
@@ -123,7 +124,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						_ = dependencyFile.Close()
 						return fmt.Errorf("error writing dependencies file: %w", err)
 					}
-				case "rust":
+				case scalefunc.Rust:
+					scaleFile.Language = scalefunc.Rust
 					if analytics.Client != nil {
 						_ = analytics.Client.Enqueue(posthog.Capture{
 							DistinctId: analytics.MachineID,
@@ -149,6 +151,35 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
+					if err != nil {
+						return fmt.Errorf("error creating dependencies file: %w", err)
+					}
+
+					err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
+
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing dependencies file: %w", err)
+					}
+				case scalefunc.TypeScript:
+					scaleFile.Language = scalefunc.TypeScript
+					scaleFile.Dependencies = []scalefile.Dependency{
+						{
+							Name:    "@loopholelabs/scale-signature-http",
+							Version: "0.3.8",
+						},
+						{
+							Name:    "@loopholelabs/scale-signature",
+							Version: "0.2.11",
+						},
+					}
+
+					tmpl, err := textTemplate.New("dependencies").Parse(template.TypeScriptTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing dependency template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(fmt.Sprintf("%s/package.json", directory))
 					if err != nil {
 						return fmt.Errorf("error creating dependencies file: %w", err)
 					}
@@ -187,7 +218,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
-		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language to create the new scale function in (go, rust)")
+		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language to create the new scale function in (go, rust, ts)")
 
 		cmd.AddCommand(newCmd)
 	}
