@@ -30,7 +30,6 @@ import (
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"net/http"
 	"net/url"
 	"os"
 	"path"
@@ -232,28 +231,10 @@ func (c *Config) NewAuthenticatedAPIClient() (*apiClient.ScaleAPIV1, error) {
 		return nil, ErrNoSession
 	}
 
-	DefaultCookieURL = &url.URL{
-		Scheme: "http",
-		Host:   "scale.sh",
+	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
+	if err != nil {
+		return nil, err
 	}
-
-	cl := client.UnauthenticatedClient(c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil)
-	cl.Jar.SetCookies(DefaultCookieURL, []*http.Cookie{
-		{
-			Name:    "auth-session",
-			Value:   c.Session.Value,
-			Domain:  DefaultCookieURL.Host,
-			Expires: c.Session.Expiry,
-			//Secure:   true,
-			HttpOnly: true,
-			SameSite: http.SameSiteLaxMode,
-		},
-	})
-
-	//cl, err := client.AuthenticatedClient(DefaultCookieURL, c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
-	//if err != nil {
-	//	return nil, err
-	//}
 
 	return apiClient.New(cl, strfmt.Default), nil
 }
