@@ -9,6 +9,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [v0.1.5] - 2023-04-15
 
+### Features
+
+- Adding support for `Typescript` functions (building, running, and deploying)
+- Adding support for `scale deploy` command, which instantly deploys a function to the Scale Cloud
+- Adding `cargo-args` and `tinygo-args` flags to `scale build` command (@fernandormoraes)
+
 ## [v0.1.4] - 2023-03-23
 
 ### Fixes
