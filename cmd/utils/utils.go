@@ -30,6 +30,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/internal/log"
 	"github.com/loopholelabs/scale-cli/version"
+	apiClient "github.com/loopholelabs/scale/go/client"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/spf13/cobra"
 	"io"
@@ -112,6 +113,7 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 		if !ch.Config.IsAuthenticated() {
 			return ErrNotAuthenticated
 		}
+		apiClient.DefaultSchemes = []string{"http"}
 
 		c, err := ch.Config.NewAuthenticatedAPIClient()
 		if err != nil {
