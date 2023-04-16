@@ -77,6 +77,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		runAliasSetup := RunCmd(true)
 		runAliasSetup(cmd, ch)
 
+		deployAliasSetup := DeployCmd(true)
+		deployAliasSetup(cmd, ch)
+
 		cmd.AddCommand(functionCmd)
 	}
 }

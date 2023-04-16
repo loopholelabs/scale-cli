@@ -230,6 +230,7 @@ func (c *Config) NewAuthenticatedAPIClient() (*apiClient.ScaleAPIV1, error) {
 	if !c.IsAuthenticated() {
 		return nil, ErrNoSession
 	}
+
 	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
 	if err != nil {
 		return nil, err

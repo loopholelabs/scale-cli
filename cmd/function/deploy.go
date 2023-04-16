@@ -154,10 +154,11 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 				params := deploy.NewPostDeployFunctionParamsWithContext(ctx).WithFunctions(reader).WithName(&name)
 				resp, err := client.Deploy.PostDeployFunction(params)
 				end()
-				payload := resp.GetPayload()
 				if err != nil {
 					return fmt.Errorf("failed to deploy function: %w", err)
 				}
+
+				payload := resp.GetPayload()
 
 				ch.Printer.Printf("Functions deployed, available at %s\n", printer.BoldGreen(fmt.Sprintf("https://%s.%s", payload.Subdomain, payload.RootDomain)))
 				return nil

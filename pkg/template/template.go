@@ -16,11 +16,13 @@
 
 package template
 
+import "github.com/loopholelabs/scalefile/scalefunc"
+
 var (
 	LUT = map[string]func() []byte{
-		"go":         Go,
-		"rust":       Rust,
-		"typescript": TypeScript,
+		string(scalefunc.Go):         Go,
+		string(scalefunc.Rust):       Rust,
+		string(scalefunc.TypeScript): TypeScript,
 	}
 )
 
@@ -46,8 +48,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 path = "scale.rs"
 `
-	TypeScriptTemplate = `
-{
+	TypeScriptTemplate = `{
 	"name": "scale",
 	"version": "0.1.0",
 	"description": "scale",
@@ -83,6 +84,7 @@ pub fn scale(ctx: &mut Context) -> Result<&mut Context, Box<dyn std::error::Erro
 
 func TypeScript() []byte {
 	return []byte(`import { GuestContext } from "@loopholelabs/scale-signature-http";
+
 export function scale(ctx: GuestContext) {
     ctx.Response.SetBody("Hello, World!");
 }
