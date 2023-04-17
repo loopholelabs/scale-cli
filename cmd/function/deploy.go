@@ -160,6 +160,9 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				payload := resp.GetPayload()
 
+				// Wait for function to be deployed globally before printing the URL
+				time.Sleep(3 * time.Second)
+
 				ch.Printer.Printf("Functions deployed, available at %s\n", printer.BoldGreen(fmt.Sprintf("https://%s.%s", payload.Subdomain, payload.RootDomain)))
 				return nil
 			},
