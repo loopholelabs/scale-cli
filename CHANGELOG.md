@@ -7,7 +7,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [v0.1.5] - 2023-04-15
+## [v0.1.6] - 2023-04-16
+
+### Fixes
+
+- Adding a `sleep` to `scale deploy` to give it time to distribute the function to all regions
+
+### Dependencies
+
+- Bumping `scale` version to `v0.3.17`
 
 ### Features
 
@@ -83,7 +91,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added support for running `http` functions locally
 - Added support for pushing and pulling functions from the scale registry
 
-[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.5...HEAD
+[unreleased]: https://github.com/loopholelabs/scale-cli/compare/v0.1.6...HEAD
+[v0.1.6]: https://github.com/loopholelabs/scale-cli/compare/v0.1.6
 [v0.1.5]: https://github.com/loopholelabs/scale-cli/compare/v0.1.5
 [v0.1.4]: https://github.com/loopholelabs/scale-cli/compare/v0.1.4
 [v0.1.3]: https://github.com/loopholelabs/scale-cli/compare/v0.1.3
