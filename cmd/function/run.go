@@ -17,7 +17,15 @@
 package function
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -25,24 +33,20 @@ import (
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	adapter "github.com/loopholelabs/scale-http-adapters/fasthttp"
-	"github.com/loopholelabs/scale/go"
+	runtime "github.com/loopholelabs/scale/go"
 	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 )
 
 // RunCmd encapsulates the commands for running Functions
 func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		var listen string
+		var tracingServer string
 		runCmd := &cobra.Command{
 			Use:      "run [ ...[ <name>:<tag> ] | [ <org>/<name>:<tag> ] ] [flags]",
 			Args:     cobra.MinimumNArgs(1),
@@ -138,6 +142,38 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to create runtime: %w", err)
 				}
 
+				if tracingServer != "" {
+					const TRACING_MAX_CONCURRENCY = 8
+					var client = http.Client{}
+					var limiter = make(chan bool, TRACING_MAX_CONCURRENCY)
+					var url = fmt.Sprintf("http://%s/v1/traces", tracingServer)
+					r.TraceDataCallback = func(s string) {
+						// Don't delay the scale function...
+						go func() {
+							limiter <- true
+							r, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(s)))
+							if err != nil {
+								ch.Printer.Printf("error sending trace data: %v\n", printer.BoldRed(err))
+							} else {
+								r.Header.Add("Content-Type", "application/json")
+
+								res, err := client.Do(r)
+								if err != nil {
+									ch.Printer.Printf("error sending trace data [%s]: %v\n", s, printer.BoldRed(err))
+								} else {
+									if res.StatusCode != 200 {
+										ch.Printer.Printf("error sending trace data [%s]: %s\n", s, printer.BoldRed(res.StatusCode))
+									} else {
+										// OK, trace was sent successfully.
+									}
+								}
+							}
+							<-limiter
+						}()
+					}
+					ch.Printer.Printf("Sending Otel traces to %s\n", printer.BoldGreen(tracingServer))
+				}
+
 				stop := make(chan os.Signal, 1)
 				signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
@@ -168,6 +204,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		runCmd.Flags().StringVarP(&listen, "listen", "l", ":8080", "the address to listen on")
+		runCmd.Flags().StringVarP(&tracingServer, "tracing", "t", "", "Otel tracing server to send traces to")
 		cmd.AddCommand(runCmd)
 	}
 }

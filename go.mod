@@ -10,7 +10,7 @@ require (
 	github.com/loopholelabs/cmdutils v0.1.2
 	github.com/loopholelabs/polyglot-go v0.5.1
 	github.com/loopholelabs/releaser v0.1.1
-	github.com/loopholelabs/scale v0.3.17
+	github.com/loopholelabs/scale v0.3.19
 	github.com/loopholelabs/scale-http-adapters v0.3.8
 	github.com/loopholelabs/scale-signature v0.2.11
 	github.com/loopholelabs/scalefile v0.1.9
