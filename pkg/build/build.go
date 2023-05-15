@@ -221,11 +221,11 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	data, err := os.ReadFile(path.Join(cmd.Dir, "scale.wasm"))
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, "scale.wasm"))
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
-	scaleFunc.Function = data
 
 	return scaleFunc, nil
 }
@@ -353,11 +353,11 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 		}
 	}
 
-	data, err := os.ReadFile(path.Join(cmd.Dir, outputPath))
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, outputPath))
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
-	scaleFunc.Function = data
 
 	return scaleFunc, nil
 }
@@ -518,12 +518,23 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	data, err := os.ReadFile(path.Join(buildDir, "index.wasm"))
+	err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"))
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
 
-	scaleFunc.Function = data
-
 	return scaleFunc, nil
+}
+
+func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string) error {
+	data, err := os.ReadFile(wasmfile)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Optimize wasm, add tracing, logging, etc etc
+
+	scaleFunc.Function = data
+	return nil
 }
