@@ -162,7 +162,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 									ch.Printer.Printf("error sending trace data [%s]: %v\n", s, printer.BoldRed(err))
 								} else {
 									if res.StatusCode != 200 {
-										ch.Printer.Printf("error sending trace data [%s]: %d\n", s, printer.BoldRed(res.StatusCode))
+										ch.Printer.Printf("error sending trace data [%s]: %s\n", s, printer.BoldRed(res.StatusCode))
 									} else {
 										// OK, trace was sent successfully.
 									}
