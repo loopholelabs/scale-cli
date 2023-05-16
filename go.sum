@@ -238,6 +238,8 @@ github.com/ianlancetaylor/demangle v0.0.0-20200824232613-28f6c0f3b639/go.mod h1:
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/inconshreveable/mousetrap v1.0.1 h1:U3uMjPSQEBMNp1lFxmllqCPM6P5u/Xq7Pgzkat/bFNc=
 github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
+github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/joho/godotenv v1.3.0/go.mod h1:7hK45KPybAkOC6peb+G5yklZfMxEjkZhHbwpqxOKXbg=
 github.com/josharian/intern v1.0.0 h1:vlS4z54oSdjm0bgjRigI+G1HpF+tI+9rE5LLzOg8HmY=
 github.com/josharian/intern v1.0.0/go.mod h1:5DoeVV0s6jJacbCEi61lwdGj/aVlrQvzHFFd8Hwg//Y=
@@ -283,6 +285,12 @@ github.com/loopholelabs/scale-signature-http v0.3.8 h1:2McyHf/yngxBQZvQZ0NTDvAwL
 github.com/loopholelabs/scale-signature-http v0.3.8/go.mod h1:WoMckzVJEV9akY8vegZBJl7BmqjtVmtxanJHElqOGxI=
 github.com/loopholelabs/scalefile v0.1.9 h1:YXVJPI9OKQVnNj+al48yHl/3P8IUOOt9Vq9Aixu0iRI=
 github.com/loopholelabs/scalefile v0.1.9/go.mod h1:fPq4xcXpAzWErW1tqLTex2xIrHJ/iCRFb4et6+sbOvk=
+github.com/loopholelabs/wasm-toolkit v0.0.1-alpha h1:/YN+1hWhT+JhKGxUtilpEYmj6zgtwNTEp/c0XUjgPu4=
+github.com/loopholelabs/wasm-toolkit v0.0.1-alpha/go.mod h1:Miyk7GoMcik0hdlh6lYKvFUdS8DdQfZ3quGN00fijb8=
+github.com/loopholelabs/wasm-toolkit v0.0.1-alpha.0.20230424131309-6045b29b0852 h1:zbKNu0mS4FAVf9DUqd+XiCFXD4kl9zeTQJSN19JgIdg=
+github.com/loopholelabs/wasm-toolkit v0.0.1-alpha.0.20230424131309-6045b29b0852/go.mod h1:m4psyhcRJrwhDNsOlFKPCzvdZIPqQDsWZiJTMk9Qcbk=
+github.com/loopholelabs/wasm-toolkit v0.0.2 h1:VOZenzxKIiqFbSpNcxgor4FlaZVVQpiUql+/B17hzqU=
+github.com/loopholelabs/wasm-toolkit v0.0.2/go.mod h1:m4psyhcRJrwhDNsOlFKPCzvdZIPqQDsWZiJTMk9Qcbk=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
@@ -366,6 +374,8 @@ github.com/spf13/cast v1.5.0/go.mod h1:SpXXQ5YoyJw6s3/6cMTQuxvgRl3PCJiyaX9p6b155
 github.com/spf13/cobra v0.0.3/go.mod h1:1l0Ry5zgKvJasoi3XT1TypsSe7PqH0Sj9dhYf7v3XqQ=
 github.com/spf13/cobra v1.6.1 h1:o94oiPyS4KD1mPy2fmcYYHHfCxLqYjJOhGsCHFZtEzA=
 github.com/spf13/cobra v1.6.1/go.mod h1:IOw/AERYS7UzyrGinqmz6HLUo219MORXGxhbaJUqzrY=
+github.com/spf13/cobra v1.7.0 h1:hyqWnYt1ZQShIddO5kBpj3vu05/++x6tJ6dg8EC572I=
+github.com/spf13/cobra v1.7.0/go.mod h1:uLxZILRyS/50WlhOIKD7W6V5bgeIt+4sICxh6uRMrb0=
 github.com/spf13/jwalterweatherman v1.1.0 h1:ue6voC5bR5F8YxI5S67j9i582FU4Qvo2bmqnqMYADFk=
 github.com/spf13/jwalterweatherman v1.1.0/go.mod h1:aNWZUN0dPAAO/Ljvb5BEdw96iTZ0EXowPYD95IqWIGo=
 github.com/spf13/pflag v1.0.3/go.mod h1:DYY7MBk1bdzusC3SYhjObp+wFpr4gzcvqqNjLnInEg4=

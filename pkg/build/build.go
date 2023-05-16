@@ -32,6 +32,8 @@ import (
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
 
+	wtoolkit "github.com/loopholelabs/wasm-toolkit/pkg/otel"
+
 	_ "embed"
 )
 
@@ -48,7 +50,12 @@ type Module struct {
 	Signature string
 }
 
-func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, npmBin string, baseDir string, tinygoArgs []string, cargoArgs []string) (*scalefunc.ScaleFunc, error) {
+type DebugOptions struct {
+	Tracing        bool
+	WatchVariables []string
+}
+
+func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, npmBin string, baseDir string, tinygoArgs []string, cargoArgs []string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
 		Name:      scaleFile.Name,
@@ -59,17 +66,17 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, 
 
 	switch scaleFunc.Language {
 	case scalefunc.Go:
-		return GolangBuild(scaleFile, scaleFunc, goBin, tinygoBin, tinygoArgs, baseDir)
+		return GolangBuild(scaleFile, scaleFunc, goBin, tinygoBin, tinygoArgs, baseDir, debugOpts)
 	case scalefunc.Rust:
-		return RustBuild(scaleFile, scaleFunc, cargoBin, cargoArgs, baseDir)
+		return RustBuild(scaleFile, scaleFunc, cargoBin, cargoArgs, baseDir, debugOpts)
 	case scalefunc.TypeScript:
-		return TypeScriptBuild(scaleFile, scaleFunc, npmBin, baseDir)
+		return TypeScriptBuild(scaleFile, scaleFunc, npmBin, baseDir, debugOpts)
 	default:
 		return nil, fmt.Errorf("%s support not implemented", scaleFile.Language)
 	}
 }
 
-func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, goBin string, tinygoBin string, tinygoArgs []string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, goBin string, tinygoBin string, tinygoArgs []string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -221,7 +228,12 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, "scale.wasm"))
+	wconfig := wtoolkit.Otel_config{
+		Scale_api:   true,
+		Quickjs:     false,
+		Func_regexp: ".*",
+	}
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, "scale.wasm"), wconfig, debugOpts)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
@@ -230,7 +242,7 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 	return scaleFunc, nil
 }
 
-func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, cargoBin string, cargoArgs []string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, cargoBin string, cargoArgs []string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -353,7 +365,12 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 		}
 	}
 
-	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, outputPath))
+	wconfig := wtoolkit.Otel_config{
+		Scale_api:   true,
+		Quickjs:     false,
+		Func_regexp: ".*",
+	}
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, outputPath), wconfig, debugOpts)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
@@ -362,7 +379,7 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 	return scaleFunc, nil
 }
 
-func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, npmBin string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, npmBin string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -518,7 +535,12 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"))
+	wconfig := wtoolkit.Otel_config{
+		Scale_api:   true,
+		Quickjs:     true,
+		Func_regexp: "^\\$JS_CallInternal$",
+	}
+	err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts)
 
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
@@ -527,13 +549,19 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 	return scaleFunc, nil
 }
 
-func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string) error {
+// In this function we can do any wasm prep - optimization, add tracing, etc etc
+func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config wtoolkit.Otel_config, debugOpts DebugOptions) error {
 	data, err := os.ReadFile(wasmfile)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Optimize wasm, add tracing, logging, etc etc
+	if debugOpts.Tracing {
+		data, err = wtoolkit.AddOtel(data, config)
+		if err != nil {
+			return err
+		}
+	}
 
 	scaleFunc.Function = data
 	return nil
