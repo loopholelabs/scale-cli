@@ -214,6 +214,19 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
+	if debugOpts.Tracing {
+		// Make sure we have best options for tinygo
+		debugTinygoArgs := make([]string, 0)
+		for _, a := range tinygoArgs {
+			if a == "--no-debug" {
+				// Remove the flag. Using this flag when we're doing debugging/tracing doesn't make much sense.
+			} else {
+				debugTinygoArgs = append(debugTinygoArgs, a)
+			}
+		}
+		tinygoArgs = debugTinygoArgs
+	}
+
 	tinygoArgs = append([]string{"build", "-o", "scale.wasm", "-target=wasi"}, tinygoArgs...)
 	tinygoArgs = append(tinygoArgs, "main.go")
 
@@ -342,6 +355,19 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 	err = file.Close()
 	if err != nil {
 		return nil, fmt.Errorf("unable to close scale source file: %w", err)
+	}
+
+	if debugOpts.Tracing {
+		// Make sure we have best options for cargo
+		debugCargoArgs := make([]string, 0)
+		for _, a := range cargoArgs {
+			if a == "--release" {
+				// Remove the flag. Using this flag when we're doing debugging/tracing doesn't make much sense.
+			} else {
+				debugCargoArgs = append(debugCargoArgs, a)
+			}
+		}
+		cargoArgs = debugCargoArgs
 	}
 
 	cargoArgs = append([]string{"build", "--target", "wasm32-wasi", "--manifest-path", "Cargo.toml"}, cargoArgs...)
