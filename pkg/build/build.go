@@ -242,9 +242,11 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 	}
 
 	wconfig := wtoolkit.Otel_config{
-		Scale_api:   true,
-		Quickjs:     false,
-		Func_regexp: ".*",
+		Scale_api:       true,
+		Quickjs:         false,
+		Func_regexp:     ".*",
+		Watch_variables: debugOpts.WatchVariables,
+		Language:        "go",
 	}
 	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, "scale.wasm"), wconfig, debugOpts)
 
@@ -392,9 +394,11 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 	}
 
 	wconfig := wtoolkit.Otel_config{
-		Scale_api:   true,
-		Quickjs:     false,
-		Func_regexp: ".*",
+		Scale_api:       true,
+		Quickjs:         false,
+		Func_regexp:     ".*",
+		Watch_variables: debugOpts.WatchVariables,
+		Language:        "rust",
 	}
 	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, outputPath), wconfig, debugOpts)
 
@@ -562,9 +566,11 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 	}
 
 	wconfig := wtoolkit.Otel_config{
-		Scale_api:   true,
-		Quickjs:     true,
-		Func_regexp: "^\\$JS_CallInternal$",
+		Scale_api:       true,
+		Quickjs:         true,
+		Func_regexp:     "^\\$JS_CallInternal$",
+		Watch_variables: debugOpts.WatchVariables,
+		Language:        "javascript",
 	}
 	err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts)
 
