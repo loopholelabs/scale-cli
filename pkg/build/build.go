@@ -33,7 +33,8 @@ import (
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
 
-	wtoolkit "github.com/loopholelabs/wasm-toolkit/pkg/otel"
+	addsource "github.com/loopholelabs/wasm-toolkit/pkg/addsource"
+	addotel "github.com/loopholelabs/wasm-toolkit/pkg/otel"
 
 	_ "embed"
 )
@@ -245,7 +246,7 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	wconfig := wtoolkit.Otel_config{
+	wconfig := addotel.Otel_config{
 		Scale_api:       true,
 		Quickjs:         false,
 		Func_regexp:     ".*",
@@ -397,7 +398,7 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 		}
 	}
 
-	wconfig := wtoolkit.Otel_config{
+	wconfig := addotel.Otel_config{
 		Scale_api:       true,
 		Quickjs:         false,
 		Func_regexp:     ".*",
@@ -558,45 +559,87 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	cmdJSBuilder := exec.Command("./jsbuilder", "dist/runner.js")
-	cmdJSBuilder.Dir = buildDir
-
-	outputJSBuilder, err := cmdJSBuilder.CombinedOutput()
-	if err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("unable to compile scale function: %s", outputJSBuilder)
+	if debugOpts.Tracing {
+		jsSource, err := os.ReadFile(path.Join(buildDir, "dist/runner.js"))
+		if err != nil {
+			return nil, fmt.Errorf("unable to read js compiled source: %w", err)
 		}
-		return nil, fmt.Errorf("unable to compile scale function: %w", err)
-	}
 
-	wconfig := wtoolkit.Otel_config{
-		Scale_api:       true,
-		Quickjs:         true,
-		Func_regexp:     "^\\$JS_CallInternal$",
-		Watch_variables: debugOpts.WatchVariables,
-		Language:        "javascript",
-	}
-	err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts)
+		wconfig := addotel.Otel_config{
+			Scale_api:       true,
+			Quickjs:         true,
+			Func_regexp:     "^\\$JS_CallInternal$",
+			Watch_variables: debugOpts.WatchVariables,
+			Language:        "javascript",
+		}
+		err = setScaleFuncSource(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts, jsSource)
 
-	if err != nil {
-		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		}
+	} else {
+		cmdJSBuilder := exec.Command("./jsbuilder", "dist/runner.js")
+		cmdJSBuilder.Dir = buildDir
+
+		outputJSBuilder, err := cmdJSBuilder.CombinedOutput()
+		if err != nil {
+			if _, ok := err.(*exec.ExitError); ok {
+				return nil, fmt.Errorf("unable to compile scale function: %s", outputJSBuilder)
+			}
+			return nil, fmt.Errorf("unable to compile scale function: %w", err)
+		}
+
+		wconfig := addotel.Otel_config{
+			Scale_api:       true,
+			Quickjs:         true,
+			Func_regexp:     "^\\$JS_CallInternal$",
+			Watch_variables: debugOpts.WatchVariables,
+			Language:        "javascript",
+		}
+		err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts)
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		}
 	}
 
 	return scaleFunc, nil
 }
 
 // In this function we can do any wasm prep - optimization, add tracing, etc etc
-func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config wtoolkit.Otel_config, debugOpts DebugOptions) error {
+func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config addotel.Otel_config, debugOpts DebugOptions) error {
 	data, err := os.ReadFile(wasmfile)
 	if err != nil {
 		return err
 	}
 
 	if debugOpts.Tracing {
-		data, err = wtoolkit.AddOtel(data, config)
+		data, err = addotel.AddOtel(data, config)
 		if err != nil {
 			return err
 		}
+	}
+
+	scaleFunc.Function = data
+	return nil
+}
+
+// In this function we can do any wasm prep - optimization, add tracing, etc etc
+func setScaleFuncSource(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config addotel.Otel_config, debugOpts DebugOptions, sourceCode []byte) error {
+	var err error
+	data := jslinksource
+
+	if debugOpts.Tracing {
+		data, err = addotel.AddOtel(data, config)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Add the source here...
+	data, err = addsource.AddSource(data, sourceCode, false)
+	if err != nil {
+		return err
 	}
 
 	scaleFunc.Function = data
