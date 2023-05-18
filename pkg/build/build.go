@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/loopholelabs/scale/go/compile"
 	rustCompile "github.com/loopholelabs/scale/rust/compile"
@@ -220,11 +221,14 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		for _, a := range tinygoArgs {
 			if a == "--no-debug" {
 				// Remove the flag. Using this flag when we're doing debugging/tracing doesn't make much sense.
+			} else if strings.HasPrefix(a, "-opt=") {
+				// Remove any opt flag
 			} else {
 				debugTinygoArgs = append(debugTinygoArgs, a)
 			}
 		}
 		tinygoArgs = debugTinygoArgs
+		tinygoArgs = append(tinygoArgs, "-opt=0")
 	}
 
 	tinygoArgs = append([]string{"build", "-o", "scale.wasm", "-target=wasi"}, tinygoArgs...)
