@@ -537,6 +537,33 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to generate package.json file: %w", err)
 	}
 
+	// Modify package.json to have "optimize: false"
+	// TODO: Do this better, or have specific GeneratePackage for debug build
+	if debugOpts.Tracing {
+		packageJson, err := os.ReadFile(path.Join(buildDir, "package.json"))
+		if err != nil {
+			return nil, fmt.Errorf("unable to modify package.json file: %w", err)
+		}
+
+		debugPackageJson := ""
+
+		lines := strings.Split(string(packageJson), "\n")
+		for _, l := range lines {
+			if strings.Trim(l, " \t\r\n,") == "\"optimize\": true" {
+				// Replace it with false
+				l = strings.Replace(l, "true", "false", -1)
+				debugPackageJson = fmt.Sprintf("%s\n%s", debugPackageJson, l)
+			} else {
+				debugPackageJson = fmt.Sprintf("%s\n%s", debugPackageJson, l)
+			}
+		}
+
+		err = os.WriteFile(path.Join(buildDir, "package.json"), []byte(debugPackageJson), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("unable to modify package.json file: %w", err)
+		}
+	}
+
 	cmdInstall := exec.Command(npmBin, "install")
 	cmdInstall.Dir = buildDir
 
