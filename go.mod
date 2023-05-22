@@ -60,7 +60,7 @@ require (
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/scale-signature-http v0.3.8 // indirect
-	github.com/loopholelabs/wasm-toolkit v0.0.2 // indirect
+	github.com/loopholelabs/wasm-toolkit v0.0.3 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
