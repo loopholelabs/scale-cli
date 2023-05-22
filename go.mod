@@ -14,6 +14,7 @@ require (
 	github.com/loopholelabs/scale-http-adapters v0.3.8
 	github.com/loopholelabs/scale-signature v0.2.11
 	github.com/loopholelabs/scalefile v0.1.9
+	github.com/loopholelabs/wasm-toolkit v0.0.3
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
@@ -60,7 +61,6 @@ require (
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/scale-signature-http v0.3.8 // indirect
-	github.com/loopholelabs/wasm-toolkit v0.0.3 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
