@@ -25,12 +25,16 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"strings"
 
 	"github.com/loopholelabs/scale/go/compile"
 	rustCompile "github.com/loopholelabs/scale/rust/compile"
 	tsCompile "github.com/loopholelabs/scale/ts/compile"
 	"github.com/loopholelabs/scalefile"
 	"github.com/loopholelabs/scalefile/scalefunc"
+
+	addsource "github.com/loopholelabs/wasm-toolkit/pkg/addsource"
+	addotel "github.com/loopholelabs/wasm-toolkit/pkg/otel"
 
 	_ "embed"
 )
@@ -48,7 +52,12 @@ type Module struct {
 	Signature string
 }
 
-func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, npmBin string, baseDir string, tinygoArgs []string, cargoArgs []string) (*scalefunc.ScaleFunc, error) {
+type DebugOptions struct {
+	Tracing        bool
+	WatchVariables []string
+}
+
+func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, cargoBin string, npmBin string, baseDir string, tinygoArgs []string, cargoArgs []string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	scaleFunc := &scalefunc.ScaleFunc{
 		Version:   scalefunc.V1Alpha,
 		Name:      scaleFile.Name,
@@ -59,17 +68,17 @@ func LocalBuild(scaleFile *scalefile.ScaleFile, goBin string, tinygoBin string, 
 
 	switch scaleFunc.Language {
 	case scalefunc.Go:
-		return GolangBuild(scaleFile, scaleFunc, goBin, tinygoBin, tinygoArgs, baseDir)
+		return GolangBuild(scaleFile, scaleFunc, goBin, tinygoBin, tinygoArgs, baseDir, debugOpts)
 	case scalefunc.Rust:
-		return RustBuild(scaleFile, scaleFunc, cargoBin, cargoArgs, baseDir)
+		return RustBuild(scaleFile, scaleFunc, cargoBin, cargoArgs, baseDir, debugOpts)
 	case scalefunc.TypeScript:
-		return TypeScriptBuild(scaleFile, scaleFunc, npmBin, baseDir)
+		return TypeScriptBuild(scaleFile, scaleFunc, npmBin, baseDir, debugOpts)
 	default:
 		return nil, fmt.Errorf("%s support not implemented", scaleFile.Language)
 	}
 }
 
-func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, goBin string, tinygoBin string, tinygoArgs []string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, goBin string, tinygoBin string, tinygoArgs []string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -167,6 +176,81 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to create scale source directory %s: %w", scalePath, err)
 	}
 
+	// Add Watch bits here... We do this even if debugOpts.Tracing==false so we don't break builds.
+	os.WriteFile(path.Join(scalePath, "debug.go"), []byte(`
+package scale
+
+import (
+	"unsafe"
+	"strconv"
+)
+
+// Watch a variable
+func WatchInt32(id uint32, v *int32) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 4)
+}
+
+func WatchInt64(id uint32, v *int64) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 8)
+}
+
+func WatchUint32(id uint32, v *uint32) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 4)
+}
+
+func WatchUint64(id uint32, v *uint64) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 8)
+}
+
+func WatchInt(id uint32, v *int) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), strconv.IntSize >> 3)
+}
+
+func WatchUint(id uint32, v *uint) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), strconv.IntSize >> 3)
+}
+
+// TODO: Fix the int etc parts. The pointers do not get passed via the interface{} w tinygo.
+func WatchVariable(id uint32, v interface{}) {
+	switch v.(type) {
+	case int:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), strconv.IntSize >> 3)
+		return
+	case uint:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), strconv.IntSize >> 3)
+		return
+	case int32:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 4)
+		return
+	case uint32:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 4)
+		return
+	case int64:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 8)
+		return
+	case uint64:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 8)
+		return
+	case []byte:
+		bs := v.([]byte)
+		ptr := &bs[0]
+		watch(id, uint32(uintptr(unsafe.Pointer(ptr))), uint32(len(bs)))
+	}
+}
+
+func UnwatchVariable(id uint32) {
+  unwatch(id)
+}
+
+//go:wasm-module scale
+//export watch
+func watch(id uint32, addr uint32, len uint32)
+
+//go:wasm-module scale
+//export unwatch
+func unwatch(id uint32)
+		`), 0644)
+
 	scale, err := os.OpenFile(path.Join(scalePath, "scale.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create scale.go file: %w", err)
@@ -207,6 +291,22 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
+	if debugOpts.Tracing {
+		// Make sure we have best options for tinygo
+		debugTinygoArgs := make([]string, 0)
+		for _, a := range tinygoArgs {
+			if a == "--no-debug" {
+				// Remove the flag. Using this flag when we're doing debugging/tracing doesn't make much sense.
+			} else if strings.HasPrefix(a, "-opt=") {
+				// Remove any opt flag
+			} else {
+				debugTinygoArgs = append(debugTinygoArgs, a)
+			}
+		}
+		tinygoArgs = debugTinygoArgs
+		tinygoArgs = append(tinygoArgs, "-opt=0")
+	}
+
 	tinygoArgs = append([]string{"build", "-o", "scale.wasm", "-target=wasi"}, tinygoArgs...)
 	tinygoArgs = append(tinygoArgs, "main.go")
 
@@ -221,16 +321,23 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	data, err := os.ReadFile(path.Join(cmd.Dir, "scale.wasm"))
+	wconfig := addotel.Otel_config{
+		Scale_api:       true,
+		Quickjs:         false,
+		Func_regexp:     ".*",
+		Watch_variables: debugOpts.WatchVariables,
+		Language:        "go",
+	}
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, "scale.wasm"), wconfig, debugOpts)
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
-	scaleFunc.Function = data
 
 	return scaleFunc, nil
 }
 
-func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, cargoBin string, cargoArgs []string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, cargoBin string, cargoArgs []string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -332,6 +439,19 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 		return nil, fmt.Errorf("unable to close scale source file: %w", err)
 	}
 
+	if debugOpts.Tracing {
+		// Make sure we have best options for cargo
+		debugCargoArgs := make([]string, 0)
+		for _, a := range cargoArgs {
+			if a == "--release" {
+				// Remove the flag. Using this flag when we're doing debugging/tracing doesn't make much sense.
+			} else {
+				debugCargoArgs = append(debugCargoArgs, a)
+			}
+		}
+		cargoArgs = debugCargoArgs
+	}
+
 	cargoArgs = append([]string{"build", "--target", "wasm32-wasi", "--manifest-path", "Cargo.toml"}, cargoArgs...)
 
 	cmd := exec.Command(cargoBin, cargoArgs...)
@@ -353,16 +473,23 @@ func RustBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, c
 		}
 	}
 
-	data, err := os.ReadFile(path.Join(cmd.Dir, outputPath))
+	wconfig := addotel.Otel_config{
+		Scale_api:       true,
+		Quickjs:         false,
+		Func_regexp:     ".*",
+		Watch_variables: debugOpts.WatchVariables,
+		Language:        "rust",
+	}
+	err = setScaleFunc(scaleFunc, path.Join(cmd.Dir, outputPath), wconfig, debugOpts)
+
 	if err != nil {
 		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
 	}
-	scaleFunc.Function = data
 
 	return scaleFunc, nil
 }
 
-func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, npmBin string, baseDir string) (*scalefunc.ScaleFunc, error) {
+func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc, npmBin string, baseDir string, debugOpts DebugOptions) (*scalefunc.ScaleFunc, error) {
 	module := &Module{
 		Name:      scaleFile.Name,
 		Source:    scaleFile.Source,
@@ -485,6 +612,33 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to generate package.json file: %w", err)
 	}
 
+	// Modify package.json to have "optimize: false"
+	// TODO: Do this better, or have specific GeneratePackage for debug build
+	if debugOpts.Tracing {
+		packageJson, err := os.ReadFile(path.Join(buildDir, "package.json"))
+		if err != nil {
+			return nil, fmt.Errorf("unable to modify package.json file: %w", err)
+		}
+
+		debugPackageJson := ""
+
+		lines := strings.Split(string(packageJson), "\n")
+		for _, l := range lines {
+			if strings.Trim(l, " \t\r\n,") == "\"optimize\": true" {
+				// Replace it with false
+				l = strings.Replace(l, "true", "false", -1)
+				debugPackageJson = fmt.Sprintf("%s\n%s", debugPackageJson, l)
+			} else {
+				debugPackageJson = fmt.Sprintf("%s\n%s", debugPackageJson, l)
+			}
+		}
+
+		err = os.WriteFile(path.Join(buildDir, "package.json"), []byte(debugPackageJson), 0644)
+		if err != nil {
+			return nil, fmt.Errorf("unable to modify package.json file: %w", err)
+		}
+	}
+
 	cmdInstall := exec.Command(npmBin, "install")
 	cmdInstall.Dir = buildDir
 
@@ -507,23 +661,89 @@ func TypeScriptBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleF
 		return nil, fmt.Errorf("unable to compile scale function: %w", err)
 	}
 
-	cmdJSBuilder := exec.Command("./jsbuilder", "dist/runner.js")
-	cmdJSBuilder.Dir = buildDir
-
-	outputJSBuilder, err := cmdJSBuilder.CombinedOutput()
-	if err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			return nil, fmt.Errorf("unable to compile scale function: %s", outputJSBuilder)
+	if debugOpts.Tracing {
+		jsSource, err := os.ReadFile(path.Join(buildDir, "dist/runner.js"))
+		if err != nil {
+			return nil, fmt.Errorf("unable to read js compiled source: %w", err)
 		}
-		return nil, fmt.Errorf("unable to compile scale function: %w", err)
+
+		wconfig := addotel.Otel_config{
+			Scale_api:       true,
+			Quickjs:         true,
+			Func_regexp:     "^\\$JS_CallInternal$",
+			Watch_variables: debugOpts.WatchVariables,
+			Language:        "javascript",
+		}
+		err = setScaleFuncSource(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts, jsSource)
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		}
+	} else {
+		cmdJSBuilder := exec.Command("./jsbuilder", "dist/runner.js")
+		cmdJSBuilder.Dir = buildDir
+
+		outputJSBuilder, err := cmdJSBuilder.CombinedOutput()
+		if err != nil {
+			if _, ok := err.(*exec.ExitError); ok {
+				return nil, fmt.Errorf("unable to compile scale function: %s", outputJSBuilder)
+			}
+			return nil, fmt.Errorf("unable to compile scale function: %w", err)
+		}
+
+		wconfig := addotel.Otel_config{
+			Scale_api:       true,
+			Quickjs:         true,
+			Func_regexp:     "^\\$JS_CallInternal$",
+			Watch_variables: debugOpts.WatchVariables,
+			Language:        "javascript",
+		}
+		err = setScaleFunc(scaleFunc, path.Join(buildDir, "index.wasm"), wconfig, debugOpts)
+
+		if err != nil {
+			return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		}
 	}
 
-	data, err := os.ReadFile(path.Join(buildDir, "index.wasm"))
+	return scaleFunc, nil
+}
+
+// In this function we can do any wasm prep - optimization, add tracing, etc etc
+func setScaleFunc(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config addotel.Otel_config, debugOpts DebugOptions) error {
+	data, err := os.ReadFile(wasmfile)
 	if err != nil {
-		return nil, fmt.Errorf("unable to read compiled wasm file: %w", err)
+		return err
+	}
+
+	if debugOpts.Tracing {
+		data, err = addotel.AddOtel(data, config)
+		if err != nil {
+			return err
+		}
 	}
 
 	scaleFunc.Function = data
+	return nil
+}
 
-	return scaleFunc, nil
+// In this function we can do any wasm prep - optimization, add tracing, etc etc
+func setScaleFuncSource(scaleFunc *scalefunc.ScaleFunc, wasmfile string, config addotel.Otel_config, debugOpts DebugOptions, sourceCode []byte) error {
+	var err error
+	data := jslinksource
+
+	if debugOpts.Tracing {
+		data, err = addotel.AddOtel(data, config)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Add the source here...
+	data, err = addsource.AddSource(data, sourceCode, false)
+	if err != nil {
+		return err
+	}
+
+	scaleFunc.Function = data
+	return nil
 }

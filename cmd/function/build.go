@@ -52,6 +52,9 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var tinygoArgs []string
 	var cargoArgs []string
 
+	var addTracing bool
+	var addTracingWatches []string
+
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
 			Use:     "build [flags]",
@@ -104,8 +107,21 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					})
 				}
 
+				if addTracing {
+					ch.Printer.Print("Adding otel tracing to scale function")
+					for _, v := range addTracingWatches {
+						ch.Printer.Print(fmt.Sprintf("Adding otel tracing watch variable '%s'", v))
+					}
+				}
+
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function %s:%s...", scaleFile.Name, scaleFile.Tag))
-				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygoBin, cargoBin, npmBin, directory, tinygoArgs, cargoArgs)
+
+				debugOpts := build.DebugOptions{
+					Tracing:        addTracing,
+					WatchVariables: addTracingWatches,
+				}
+
+				scaleFunc, err := build.LocalBuild(scaleFile, goBin, tinygoBin, cargoBin, npmBin, directory, tinygoArgs, cargoArgs, debugOpts)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
@@ -171,6 +187,9 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")
 		buildCmd.Flags().StringVar(&cargoBin, "cargo", "", "the (optional) path to the cargo binary")
 		buildCmd.Flags().StringVar(&npmBin, "npm", "", "the (optional) path to the npm binary")
+
+		buildCmd.Flags().BoolVar(&addTracing, "otel", false, "add otel tracing to the scale function")
+		buildCmd.Flags().StringSliceVar(&addTracingWatches, "watch", []string{}, "list of (optional) global variables to watch")
 
 		buildCmd.Flags().StringSliceVar(&tinygoArgs, "tinygo-args", []string{"-scheduler=none", "--no-debug"}, "list of (optional) tinygo build arguments")
 		buildCmd.Flags().StringSliceVar(&cargoArgs, "cargo-args", []string{"--release"}, "list of (optional) cargo build arguments")
