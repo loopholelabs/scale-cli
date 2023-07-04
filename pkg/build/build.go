@@ -176,6 +176,81 @@ func GolangBuild(scaleFile *scalefile.ScaleFile, scaleFunc *scalefunc.ScaleFunc,
 		return nil, fmt.Errorf("unable to create scale source directory %s: %w", scalePath, err)
 	}
 
+	// Add Watch bits here... We do this even if debugOpts.Tracing==false so we don't break builds.
+	os.WriteFile(path.Join(scalePath, "debug.go"), []byte(`
+package scale
+
+import (
+	"unsafe"
+	"strconv"
+)
+
+// Watch a variable
+func WatchInt32(id uint32, v *int32) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 4)
+}
+
+func WatchInt64(id uint32, v *int64) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 8)
+}
+
+func WatchUint32(id uint32, v *uint32) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 4)
+}
+
+func WatchUint64(id uint32, v *uint64) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), 8)
+}
+
+func WatchInt(id uint32, v *int) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), strconv.IntSize >> 3)
+}
+
+func WatchUint(id uint32, v *uint) {
+	watch(id, uint32(uintptr(unsafe.Pointer(v))), strconv.IntSize >> 3)
+}
+
+// TODO: Fix the int etc parts. The pointers do not get passed via the interface{} w tinygo.
+func WatchVariable(id uint32, v interface{}) {
+	switch v.(type) {
+	case int:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), strconv.IntSize >> 3)
+		return
+	case uint:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), strconv.IntSize >> 3)
+		return
+	case int32:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 4)
+		return
+	case uint32:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 4)
+		return
+	case int64:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 8)
+		return
+	case uint64:
+		watch(id, uint32(uintptr(unsafe.Pointer(&v))), 8)
+		return
+	case []byte:
+		bs := v.([]byte)
+		ptr := &bs[0]
+		watch(id, uint32(uintptr(unsafe.Pointer(ptr))), uint32(len(bs)))
+	}
+}
+
+func UnwatchVariable(id uint32) {
+  unwatch(id)
+}
+
+//go:wasm-module scale
+//export watch
+func watch(id uint32, addr uint32, len uint32)
+
+//go:wasm-module scale
+//export unwatch
+func unwatch(id uint32)
+		`), 0644)
+
 	scale, err := os.OpenFile(path.Join(scalePath, "scale.go"), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create scale.go file: %w", err)
