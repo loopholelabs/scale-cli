@@ -14,11 +14,14 @@
 	limitations under the License.
 */
 
-package function
+package cloud
 
 import (
 	"bytes"
 	"fmt"
+	"regexp"
+	"time"
+
 	"github.com/go-openapi/runtime"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
@@ -27,14 +30,12 @@ import (
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale/go/client/deploy"
+	"github.com/loopholelabs/scale/go/client/cloud"
 	"github.com/loopholelabs/scale/go/registry"
 	"github.com/loopholelabs/scale/go/storage"
 	"github.com/loopholelabs/scalefile/scalefunc"
 	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
-	"regexp"
-	"time"
 )
 
 var (
@@ -151,8 +152,8 @@ func DeployCmd(hidden bool) command.SetupCommand[*config.Config] {
 				reader := runtime.NamedReader("functions", bytes.NewReader(buffer.Bytes()))
 
 				var end = ch.Printer.PrintProgress("Deploying to Scale Cloud...")
-				params := deploy.NewPostDeployFunctionParamsWithContext(ctx).WithFunctions(reader).WithName(&name)
-				resp, err := client.Deploy.PostDeployFunction(params)
+				params := cloud.NewPostCloudFunctionParamsWithContext(ctx).WithFunctions(reader).WithName(&name)
+				resp, err := client.Cloud.PostCloudFunction(params)
 				end()
 				if err != nil {
 					return fmt.Errorf("failed to deploy function: %w", err)
