@@ -1,17 +1,17 @@
 /*
-	Copyright 2023 Loophole Labs
+ 	Copyright 2023 Loophole Labs
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+ 	Licensed under the Apache License, Version 2.0 (the "License");
+ 	you may not use this file except in compliance with the License.
+ 	You may obtain a copy of the License at
 
-		   http://www.apache.org/licenses/LICENSE-2.0
+ 		   http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+ 	Unless required by applicable law or agreed to in writing, software
+ 	distributed under the License is distributed on an "AS IS" BASIS,
+ 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ 	See the License for the specific language governing permissions and
+ 	limitations under the License.
 */
 
 package function
@@ -21,9 +21,9 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale/go/storage"
+	"github.com/loopholelabs/scale-cli/utils"
+	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -36,12 +36,12 @@ func ListCmd() command.SetupCommand[*config.Config] {
 			Args:    cobra.NoArgs,
 			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				st := storage.Default
-				if ch.Config.CacheDirectory != "" {
+				st := storage.DefaultFunction
+				if ch.Config.StorageDirectory != "" {
 					var err error
-					st, err = storage.New(ch.Config.CacheDirectory)
+					st, err = storage.NewFunction(ch.Config.StorageDirectory)
 					if err != nil {
-						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.CacheDirectory, err)
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
 				}
 				scaleFuncEntries, err := st.List()
@@ -54,17 +54,17 @@ func ListCmd() command.SetupCommand[*config.Config] {
 					return nil
 				}
 
-				funcs := make([]scaleFunction, len(scaleFuncEntries))
+				funcs := make([]functionModel, len(scaleFuncEntries))
 				for i, entry := range scaleFuncEntries {
 					if entry.Organization == utils.DefaultOrganization {
 						entry.Organization = ""
 					}
-					funcs[i] = scaleFunction{
-						Name:      entry.ScaleFunc.Name,
-						Tag:       entry.ScaleFunc.Tag,
-						Signature: entry.ScaleFunc.Signature,
-						Language:  string(entry.ScaleFunc.Language),
-						Version:   string(entry.ScaleFunc.Version),
+					funcs[i] = functionModel{
+						Name:      entry.Schema.Name,
+						Tag:       entry.Schema.Tag,
+						Signature: entry.Schema.Signature,
+						Language:  string(entry.Schema.Language),
+						Version:   string(entry.Schema.Version),
 						Hash:      entry.Hash,
 						Org:       entry.Organization,
 					}

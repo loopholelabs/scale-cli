@@ -1,37 +1,36 @@
 /*
-	Copyright 2023 Loophole Labs
+ 	Copyright 2023 Loophole Labs
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+ 	Licensed under the Apache License, Version 2.0 (the "License");
+ 	you may not use this file except in compliance with the License.
+ 	You may obtain a copy of the License at
 
-		   http://www.apache.org/licenses/LICENSE-2.0
+ 		   http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+ 	Unless required by applicable law or agreed to in writing, software
+ 	distributed under the License is distributed on an "AS IS" BASIS,
+ 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ 	See the License for the specific language governing permissions and
+ 	limitations under the License.
 */
 
 package auth
 
 import (
 	"fmt"
-	runtimeClient "github.com/go-openapi/runtime/client"
-	"github.com/loopholelabs/auth"
+	"github.com/go-openapi/runtime/client"
 	"github.com/loopholelabs/auth/pkg/client/device"
 	"github.com/loopholelabs/auth/pkg/client/session"
 	"github.com/loopholelabs/auth/pkg/client/userinfo"
+	"github.com/loopholelabs/auth/pkg/kind"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
-	"github.com/loopholelabs/scale-cli/cmd/utils"
 	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/pkg/browser"
 	"github.com/pkg/errors"
-	"github.com/posthog/posthog-go"
 	"github.com/spf13/cobra"
 	"os"
 	"time"
@@ -73,7 +72,7 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 						}
 						os.Exit(0)
 					}()
-					ch.Config.Session = session.New(auth.KindAPIKey, apiKey, time.Time{})
+					ch.Config.Session = session.New(kind.APIKey, apiKey, time.Time{})
 				} else {
 					flow, err := c.Device.PostDeviceFlow(device.NewPostDeviceFlowParamsWithContext(ctx))
 					if err != nil {
@@ -122,11 +121,11 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 								}
 								return fmt.Errorf("error polling for confirmation: %w", err)
 							}
-							cookies := c.Transport.(*runtimeClient.Runtime).Jar.Cookies(config.DefaultCookieURL)
+							cookies := c.Transport.(*client.Runtime).Jar.Cookies(ch.Config.SessionCookieURL())
 							if len(cookies) == 0 {
 								return ErrNoSession
 							}
-							ch.Config.Session = session.New(auth.KindSession, cookies[0].Value, cookies[0].Expires)
+							ch.Config.Session = session.New(kind.Session, cookies[0].Value, cookies[0].Expires)
 							goto DONE
 						}
 					}
@@ -142,19 +141,10 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("error getting user info: %w", err)
 				}
 
-				if analytics.Client != nil {
-					_ = analytics.Client.Enqueue(posthog.Capture{
-						DistinctId: analytics.MachineID,
-						Event:      "login",
-						Timestamp:  time.Now(),
-						Properties: map[string]interface{}{
-							"$set": map[string]interface{}{
-								"user": info.GetPayload().Email,
-								"org":  info.GetPayload().Organization,
-							},
-						},
-					})
-				}
+				analytics.AssociateUser(info.GetPayload().Identifier, info.GetPayload().Organization)
+				analytics.Event("login", map[string]string{
+					"kind": string(info.GetPayload().Kind),
+				})
 
 				err = ch.Config.WriteSession()
 				if err != nil {
@@ -169,12 +159,12 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 				switch ch.Printer.Format() {
 				case printer.JSON, printer.CSV:
 					return ch.Printer.PrintJSON(map[string]string{
-						"email":        info.GetPayload().Email,
-						"session":      string(info.GetPayload().Session),
+						"identifier":   info.GetPayload().Identifier,
+						"kind":         string(info.GetPayload().Kind),
 						"organization": info.GetPayload().Organization,
 					})
 				case printer.Human:
-					ch.Printer.Printf("Logged in as %s\n", printer.Bold(info.GetPayload().Email))
+					ch.Printer.Printf("Logged in as %s (using organization %s)\n", printer.Bold(info.GetPayload().Identifier), printer.Bold(info.GetPayload().Organization))
 				}
 				return nil
 			},

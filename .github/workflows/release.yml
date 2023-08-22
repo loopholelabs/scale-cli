@@ -19,7 +19,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.20"
+          go-version: "1.21"
           check-latest: true
           cache: true
 
@@ -39,7 +39,7 @@ jobs:
           GO_VERSION: ${{ steps.build-variables.outputs.go-version }}
           GO_PLATFORM: ${{ steps.build-variables.outputs.go-platform }}
           BUILD_DATE: ${{ steps.build-variables.outputs.build-date }}
-          ANALYTICS_API_KEY: ${{ secrets.ANALYTICS_API_KEY }}
-          ANALYTICS_APP_ID: ${{ vars.ANALYTICS_APP_ID }}
-          ANALYTICS_API_HOST: ${{ vars.ANALYTICS_API_HOST }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ANALYTICS_APPLICATION_ID: ${{ vars.ANALYTICS_APPLICATION_ID }}
+          POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+          POSTHOG_API_HOST: ${{ vars.POSTHOG_API_HOST }}

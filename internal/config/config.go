@@ -1,17 +1,17 @@
 /*
-	Copyright 2023 Loophole Labs
+ 	Copyright 2023 Loophole Labs
 
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
+ 	Licensed under the Apache License, Version 2.0 (the "License");
+ 	you may not use this file except in compliance with the License.
+ 	You may obtain a copy of the License at
 
-		   http://www.apache.org/licenses/LICENSE-2.0
+ 		   http://www.apache.org/licenses/LICENSE-2.0
 
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
+ 	Unless required by applicable law or agreed to in writing, software
+ 	distributed under the License is distributed on an "AS IS" BASIS,
+ 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ 	See the License for the specific language governing permissions and
+ 	limitations under the License.
 */
 
 package config
@@ -21,15 +21,16 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-openapi/strfmt"
-	"github.com/loopholelabs/auth"
 	authClient "github.com/loopholelabs/auth/pkg/client"
 	client "github.com/loopholelabs/auth/pkg/client/openapi"
 	"github.com/loopholelabs/auth/pkg/client/session"
+	"github.com/loopholelabs/auth/pkg/kind"
 	"github.com/loopholelabs/cmdutils/pkg/config"
-	apiClient "github.com/loopholelabs/scale/go/client"
+	apiClient "github.com/loopholelabs/scale-cli/client"
 	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 	"net/url"
 	"os"
 	"path"
@@ -41,15 +42,9 @@ var _ config.Config = (*Config)(nil)
 var (
 	ErrAPIEndpointRequired    = errors.New("api endpoint is required")
 	ErrAuthEndpointRequired   = errors.New("auth endpoint is required")
+	ErrSessionDomainRequired  = errors.New("session domain is required")
 	ErrUpdateEndpointRequired = errors.New("update endpoint is required")
 	ErrNoSession              = errors.New("no session found")
-)
-
-var (
-	DefaultCookieURL = &url.URL{
-		Scheme: "https",
-		Host:   "scale.sh",
-	}
 )
 
 var (
@@ -64,6 +59,7 @@ const (
 
 	DefaultAPIEndpoint    = "api.scale.sh"
 	DefaultAuthEndpoint   = "auth.scale.sh"
+	DefaultSessionDomain  = "scale.sh"
 	DefaultUpdateEndpoint = "dl.scale.sh"
 
 	sessionFileMode = 0600
@@ -71,21 +67,24 @@ const (
 
 // Config is dynamically sourced from various files and environment variables.
 type Config struct {
-	APIEndpoint       string                `yaml:"api_endpoint"`
-	AuthEndpoint      string                `yaml:"auth_endpoint"`
-	UpdateEndpoint    string                `yaml:"update_endpoint"`
-	DisableAutoUpdate bool                  `yaml:"disable_auto_update"`
-	NoTelemetry       bool                  `yaml:"no_telemetry"`
-	CacheDirectory    string                `yaml:"cache_directory"`
-	Session           *session.Session      `yaml:"-"`
-	authClient        *authClient.AuthAPIV1 `yaml:"-"`
-	apiClient         *apiClient.ScaleAPIV1 `yaml:"-"`
+	APIEndpoint       string                `mapstructure:"api_endpoint"`
+	AuthEndpoint      string                `mapstructure:"auth_endpoint"`
+	SessionDomain     string                `mapstructure:"session_domain"`
+	UpdateEndpoint    string                `mapstructure:"update_endpoint"`
+	DisableAutoUpdate bool                  `mapstructure:"disable_auto_update"`
+	NoTelemetry       bool                  `mapstructure:"no_telemetry"`
+	StorageDirectory  string                `mapstructure:"storage_directory"`
+	Session           *session.Session      `mapstructure:"-"`
+	authClient        *authClient.AuthAPIV1 `mapstructure:"-"`
+	apiClient         *apiClient.ScaleAPIV1 `mapstructure:"-"`
+	sessionCookieURL  *url.URL              `mapstructure:"-"`
 }
 
 func New() *Config {
 	return &Config{
 		APIEndpoint:    DefaultAPIEndpoint,
 		AuthEndpoint:   DefaultAuthEndpoint,
+		SessionDomain:  DefaultSessionDomain,
 		UpdateEndpoint: DefaultUpdateEndpoint,
 	}
 }
@@ -93,10 +92,14 @@ func New() *Config {
 func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&c.APIEndpoint, "api-endpoint", DefaultAPIEndpoint, "The Scale API endpoint")
 	flags.StringVar(&c.AuthEndpoint, "auth-endpoint", DefaultAuthEndpoint, "The Scale Authentication API endpoint")
+	flags.StringVar(&c.SessionDomain, "session-domain", DefaultSessionDomain, "The Scale API session domain")
 	flags.StringVar(&c.UpdateEndpoint, "update-endpoint", DefaultUpdateEndpoint, "The Scale Update API endpoint")
 	flags.BoolVar(&c.DisableAutoUpdate, "disable-auto-update", false, "Disable automatic update checks")
 	flags.BoolVar(&c.NoTelemetry, "no-telemetry", false, "Opt out of telemetry tracking")
-	flags.StringVar(&c.CacheDirectory, "cache-directory", "", "The (optional) directory to store compiled scale functions")
+	flags.StringVar(&c.StorageDirectory, "storage-directory", "", "The (optional) directory to store compiled scale functions and generated signatures")
+
+	_ = flags.MarkHidden("session-domain")
+	_ = flags.MarkHidden("update-endpoint")
 }
 
 func (c *Config) GlobalRequiredFlags(_ *cobra.Command) error {
@@ -104,6 +107,11 @@ func (c *Config) GlobalRequiredFlags(_ *cobra.Command) error {
 }
 
 func (c *Config) Validate() error {
+	err := viper.Unmarshal(c)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal config: %w", err)
+	}
+
 	if c.APIEndpoint == "" {
 		return ErrAPIEndpointRequired
 	}
@@ -112,8 +120,17 @@ func (c *Config) Validate() error {
 		return ErrAuthEndpointRequired
 	}
 
+	if c.SessionDomain == "" {
+		return ErrSessionDomainRequired
+	}
+
 	if c.UpdateEndpoint == "" {
 		return ErrUpdateEndpointRequired
+	}
+
+	c.sessionCookieURL = &url.URL{
+		Scheme: "https",
+		Host:   c.SessionDomain,
 	}
 
 	sessionPath, err := c.SessionPath()
@@ -204,12 +221,12 @@ func (c *Config) IsAuthenticated() bool {
 		return false
 	}
 	switch c.Session.Kind {
-	case auth.KindSession:
+	case kind.Session:
 		if c.Session.Expiry.After(time.Now()) {
 			return true
 		}
 		return false
-	case auth.KindServiceSession, auth.KindAPIKey:
+	case kind.ServiceSession, kind.APIKey:
 		return true
 	default:
 		return false
@@ -231,7 +248,7 @@ func (c *Config) NewAuthenticatedAPIClient() (*apiClient.ScaleAPIV1, error) {
 		return nil, ErrNoSession
 	}
 
-	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
+	cl, err := client.AuthenticatedClient(c.SessionCookieURL(), c.APIEndpoint, apiClient.DefaultBasePath, apiClient.DefaultSchemes, nil, c.Session)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +281,7 @@ func (c *Config) NewAuthenticatedAuthClient() (*authClient.AuthAPIV1, error) {
 	if !c.IsAuthenticated() {
 		return nil, ErrNoSession
 	}
-	cl, err := client.AuthenticatedClient(DefaultCookieURL, c.AuthEndpoint, authClient.DefaultBasePath, authClient.DefaultSchemes, nil, c.Session)
+	cl, err := client.AuthenticatedClient(c.SessionCookieURL(), c.AuthEndpoint, authClient.DefaultBasePath, authClient.DefaultSchemes, nil, c.Session)
 	if err != nil {
 		return nil, err
 	}
@@ -278,6 +295,10 @@ func (c *Config) SetAuthClient(authClient *authClient.AuthAPIV1) {
 
 func (c *Config) AuthClient() *authClient.AuthAPIV1 {
 	return c.authClient
+}
+
+func (c *Config) SessionCookieURL() *url.URL {
+	return c.sessionCookieURL
 }
 
 func (c *Config) WriteSession() error {
