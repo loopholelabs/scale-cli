@@ -283,8 +283,8 @@ github.com/loopholelabs/polyglot v1.1.1 h1:eMHsUG9J6Y29NF2GfrVE2k4z4DPlSNrtdyPly
 github.com/loopholelabs/polyglot v1.1.1/go.mod h1:eRDEp4BRyRqMvrIzU6X6yAOCPTkzZL16T5tO38kPS8I=
 github.com/loopholelabs/releaser v0.1.1 h1:o8Z4jIR4TcaSRiwFpAGIJSAkAUOxlXL1ML3EscGqxDU=
 github.com/loopholelabs/releaser v0.1.1/go.mod h1:51hV+lDDYeJNzeVOZCQnGS5cJN8ODg/V5AxYtiL67UA=
-github.com/loopholelabs/scale v0.3.20-dev2 h1:JTroHXPPnSANZTAkkwTiBU2TCsfczzgi6d9IBq7JNd4=
-github.com/loopholelabs/scale v0.3.20-dev2/go.mod h1:MP30kBUqJFeEdt+3KLLpriV4J6cXbD+75Eg+ZS9jAVo=
+github.com/loopholelabs/scale v0.3.20-dev3 h1:G3igerv5ViPJ/vM4kyTlhVYvJgUgGPddRe8lJTqZJ2c=
+github.com/loopholelabs/scale v0.3.20-dev3/go.mod h1:MP30kBUqJFeEdt+3KLLpriV4J6cXbD+75Eg+ZS9jAVo=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=
 github.com/magiconair/properties v1.8.7/go.mod h1:Dhd985XPs7jluiymwWYZ0G4Z61jb3vdS329zhj2hYo0=
 github.com/mailru/easyjson v0.0.0-20190614124828-94de47d64c63/go.mod h1:C1wdFJiN94OJF2b5HbByQZoLdCWB1Yqtg26g4irojpc=
