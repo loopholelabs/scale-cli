@@ -1,24 +1,22 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package signature
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
@@ -34,15 +32,12 @@ import (
 
 // GenerateCmd encapsulates the commands for generating a Signature from a Signature File
 func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
-	var name string
-	var tag string
-	var org string
 	var directory string
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		generateCmd := &cobra.Command{
-			Use:     "generate [flags]",
-			Args:    cobra.ExactArgs(0),
+			Use:     "generate <name>:<tag> [flags]",
+			Args:    cobra.ExactArgs(2),
 			Short:   "generate a scale signature from a signature file",
 			Hidden:  hidden,
 			PreRunE: utils.PreRunUpdateCheck(ch),
@@ -53,43 +48,18 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to read signature file at %s: %w", signaturePath, err)
 				}
 
-				if org == "" {
-					org = utils.DefaultOrganization
+				name := args[0]
+				tag := args[1]
+
+				if name == "" || !scalefunc.ValidString(name) {
+					return utils.InvalidStringError("name", name)
 				}
 
-				if name == "" {
-					name = signatureFile.Name
-				} else {
-					signatureFile.Name = name
+				if tag == "" || !scalefunc.ValidString(tag) {
+					return utils.InvalidStringError("tag", tag)
 				}
 
-				if tag == "" {
-					tag = signatureFile.Tag
-				} else {
-					signatureFile.Tag = tag
-				}
-
-				if !scalefunc.ValidString(org) {
-					return utils.InvalidStringError("organization", org)
-				}
-
-				if signatureFile.Name == "" || !scalefunc.ValidString(signatureFile.Name) {
-					return utils.InvalidStringError("name", signatureFile.Name)
-				}
-
-				if signatureFile.Tag == "" || !scalefunc.ValidString(signatureFile.Tag) {
-					return utils.InvalidStringError("tag", signatureFile.Tag)
-				}
-
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Generating scale signature %s/%s:%s...", org, signatureFile.Name, signatureFile.Tag))
-				hash := sha256.New()
-				hashData, err := signatureFile.Encode()
-				if err != nil {
-					end()
-					return fmt.Errorf("failed to encode signature file: %w", err)
-				}
-				hash.Write(hashData)
-				checksum := hex.EncodeToString(hash.Sum(nil))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Generating scale signature local/%s:%s...", name, tag))
 
 				st := storage.DefaultSignature
 				if ch.Config.StorageDirectory != "" {
@@ -100,7 +70,7 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				oldEntry, err := st.Get(signatureFile.Name, signatureFile.Tag, org, "")
+				oldEntry, err := st.Get(name, tag, "local", "")
 				if err != nil {
 					end()
 					return fmt.Errorf("failed to check if scale signature already exists: %w", err)
@@ -114,7 +84,7 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				err = st.Put(signatureFile.Name, signatureFile.Tag, org, checksum, signatureFile)
+				err = st.Put(name, tag, "local", signatureFile)
 				if err != nil {
 					end()
 					return fmt.Errorf("failed to store scale signature: %w", err)
@@ -123,23 +93,20 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 				end()
 
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Successfully generated scale signature %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", org, signatureFile.Name, signatureFile.Tag)))
+					ch.Printer.Printf("Successfully generated scale signature %s\n", printer.BoldGreen(fmt.Sprintf("local/%s:%s", name, tag)))
 					return nil
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
 					"name":      name,
 					"tag":       tag,
-					"org":       org,
+					"org":       "local",
 					"directory": directory,
 				})
 			},
 		}
 
 		generateCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory containing the signature file")
-		generateCmd.Flags().StringVarP(&name, "name", "n", "", "the (optional) name of this scale signature")
-		generateCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale signature")
-		generateCmd.Flags().StringVarP(&org, "org", "o", utils.DefaultOrganization, "the (optional) organization of this scale signature")
 
 		cmd.AddCommand(generateCmd)
 	}

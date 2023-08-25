@@ -12,7 +12,7 @@ require (
 	github.com/loopholelabs/auth v0.2.47
 	github.com/loopholelabs/cmdutils v0.1.3
 	github.com/loopholelabs/releaser v0.1.1
-	github.com/loopholelabs/scale v0.3.20-dev3
+	github.com/loopholelabs/scale v0.3.20-dev5
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
