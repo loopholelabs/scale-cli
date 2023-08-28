@@ -117,6 +117,18 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Args:             tinygoArgs,
 					}
 					scaleFunc, err = build.LocalGolang(opts)
+				case scalefunc.Rust:
+					opts := &build.LocalRustOptions{
+						Version:          version.Version,
+						Scalefile:        sf,
+						SourceDirectory:  sourceDir,
+						StorageDirectory: ch.Config.StorageDirectory,
+						Release:          false,
+						Target:           build.WASITarget,
+						CargoBin:         cargoBin,
+						Args:             cargoArgs,
+					}
+					scaleFunc, err = build.LocalRust(opts)
 				default:
 					end()
 					return fmt.Errorf("language %s is not supported for local builds", sf.Language)

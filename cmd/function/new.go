@@ -177,43 +177,60 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if err != nil {
 						return fmt.Errorf("error closing main.go file: %w", err)
 					}
-				//case scalefunc.Rust:
-				//	scaleFile.Language = scalefunc.Rust
-				//	if analytics.Client != nil {
-				//		_ = analytics.Client.Enqueue(posthog.Capture{
-				//			DistinctId: analytics.MachineID,
-				//			Event:      "new-function",
-				//			Timestamp:  time.Now(),
-				//			Properties: posthog.NewProperties().Set("language", "rust"),
-				//		})
-				//	}
-				//	scaleFile.Dependencies = []scalefile.Dependency{
-				//		{
-				//			Name:    "scale_signature_http",
-				//			Version: "0.3.8",
-				//		},
-				//		{
-				//			Name:    "scale_signature",
-				//			Version: "0.2.11",
-				//		},
-				//	}
-				//
-				//	tmpl, err := textTemplate.New("dependencies").Parse(template.RustTemplate)
-				//	if err != nil {
-				//		return fmt.Errorf("error parsing dependency template: %w", err)
-				//	}
-				//
-				//	dependencyFile, err := os.Create(fmt.Sprintf("%s/Cargo.toml", directory))
-				//	if err != nil {
-				//		return fmt.Errorf("error creating dependencies file: %w", err)
-				//	}
-				//
-				//	err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
-				//
-				//	if err != nil {
-				//		_ = dependencyFile.Close()
-				//		return fmt.Errorf("error writing dependencies file: %w", err)
-				//	}
+				case scalefunc.Rust:
+					scaleFile.Language = string(scalefunc.Rust)
+					scaleFile.Function = "scale"
+					analytics.Event("new-function", map[string]string{"language": "rust"})
+
+					cargofileTempl, err := textTemplate.New("dependencies").Parse(template.RustCargofileTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing Cargo.toml template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(path.Join(sourceDir, "Cargo.toml"))
+					if err != nil {
+						return fmt.Errorf("error creating Cargo.toml file: %w", err)
+					}
+
+					err = cargofileTempl.Execute(dependencyFile, map[string]interface{}{
+						"package":              name,
+						"version":              "0.1.0",
+						"signature_dependency": "signature",
+						"signature_path":       path.Join(signaturePath, "rust", "guest"),
+						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", scaleFile.Signature.Organization, scaleFile.Signature.Name, scaleFile.Signature.Tag),
+					})
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing Cargo.toml file: %w", err)
+					}
+
+					err = dependencyFile.Close()
+					if err != nil {
+						return fmt.Errorf("error closing Cargo.toml file: %w", err)
+					}
+
+					funcTempl, err := textTemplate.New("function").Parse(template.RustFunctionTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing function template: %w", err)
+					}
+
+					funcFile, err := os.Create(path.Join(sourceDir, "lib.rs"))
+					if err != nil {
+						return fmt.Errorf("error creating lib.rs file: %w", err)
+					}
+
+					err = funcTempl.Execute(funcFile, map[string]interface{}{
+						"context": sig.Schema.Context,
+					})
+					if err != nil {
+						_ = funcFile.Close()
+						return fmt.Errorf("error writing lib.rs file: %w", err)
+					}
+
+					err = funcFile.Close()
+					if err != nil {
+						return fmt.Errorf("error closing lib.rs file: %w", err)
+					}
 				//case scalefunc.TypeScript:
 				//	scaleFile.Language = scalefunc.TypeScript
 				//	scaleFile.Dependencies = []scalefile.Dependency{

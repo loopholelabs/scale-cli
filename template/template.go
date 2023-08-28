@@ -54,7 +54,6 @@ edition = "2021"
 
 [lib]
 path = "lib.rs"
-crate-type = ["cdylib"]
 
 [dependencies]
 {{ range $dependency := .dependencies -}}
