@@ -27,7 +27,9 @@ import (
 	"github.com/loopholelabs/scale/signature"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
+	"os"
 	"path"
+	"strings"
 )
 
 // GenerateCmd encapsulates the commands for generating a Signature from a Signature File
@@ -37,19 +39,32 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		generateCmd := &cobra.Command{
 			Use:     "generate <name>:<tag> [flags]",
-			Args:    cobra.ExactArgs(2),
+			Args:    cobra.ExactArgs(1),
 			Short:   "generate a scale signature from a signature file",
 			Hidden:  hidden,
 			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				signaturePath := path.Join(directory, "scale.signature")
+				sourceDir := directory
+				if !path.IsAbs(sourceDir) {
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("failed to get working directory: %w", err)
+					}
+					sourceDir = path.Join(wd, sourceDir)
+				}
+
+				signaturePath := path.Join(sourceDir, "scale.signature")
 				signatureFile, err := signature.ReadSchema(signaturePath)
 				if err != nil {
 					return fmt.Errorf("failed to read signature file at %s: %w", signaturePath, err)
 				}
 
-				name := args[0]
-				tag := args[1]
+				nametag := strings.Split(args[0], ":")
+				if len(nametag) != 2 {
+					return fmt.Errorf("invalid name or tag %s", args[0])
+				}
+				name := nametag[0]
+				tag := nametag[1]
 
 				if name == "" || !scalefunc.ValidString(name) {
 					return utils.InvalidStringError("name", name)

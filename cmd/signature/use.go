@@ -1,17 +1,17 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package signature
@@ -70,14 +70,23 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 
-				sf, err := scalefile.ReadSchema(path.Join(directory, "scalefile"))
+				sourceDir := directory
+				if !path.IsAbs(sourceDir) {
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("failed to get working directory: %w", err)
+					}
+					sourceDir = path.Join(wd, sourceDir)
+				}
+
+				sf, err := scalefile.ReadSchema(path.Join(sourceDir, "scalefile"))
 				if err != nil {
 					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
-					modfileData, err := os.ReadFile(path.Join(directory, "go.mod"))
+					modfileData, err := os.ReadFile(path.Join(sourceDir, "go.mod"))
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
@@ -97,7 +106,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = m.AddReplacement("signature", golang.DefaultVersion, path.Join(signaturePath, "golang"), "")
+					err = m.AddReplacement("signature", golang.DefaultVersion, path.Join(signaturePath, "golang", "guest"), "")
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
@@ -106,7 +115,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = os.WriteFile(path.Join(directory, "go.mod"), modfileData, 0644)
+					err = os.WriteFile(path.Join(sourceDir, "go.mod"), modfileData, 0644)
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
@@ -123,7 +132,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 
-				err = os.WriteFile(path.Join(directory, "scalefile"), sfData, 0644)
+				err = os.WriteFile(path.Join(sourceDir, "scalefile"), sfData, 0644)
 				if err != nil {
 					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}

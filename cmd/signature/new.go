@@ -23,20 +23,12 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
+	"github.com/loopholelabs/scale-cli/template"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/spf13/cobra"
 	"os"
 	"path"
 )
-
-const signatureFile = `
-version = "v1alpha"
-context = "context"
-model Context {
-  string MyString {
-    default = "DefaultValue"
-  }
-}`
 
 // NewCmd encapsulates the commands for creating new Signatures
 func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
@@ -50,7 +42,15 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 			PreRunE: utils.PreRunUpdateCheck(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				analytics.Event("new-signature")
-				err := os.WriteFile(path.Join(directory, fmt.Sprintf("scale.signature")), []byte(signatureFile), 0644)
+				sourceDir := directory
+				if !path.IsAbs(sourceDir) {
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("failed to get working directory: %w", err)
+					}
+					sourceDir = path.Join(wd, sourceDir)
+				}
+				err := os.WriteFile(path.Join(sourceDir, fmt.Sprintf("scale.signature")), []byte(template.SignatureFile), 0644)
 				if err != nil {
 					return fmt.Errorf("error writing signature: %w", err)
 				}
