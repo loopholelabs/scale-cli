@@ -51,6 +51,9 @@ type ModelsSignatureResponse struct {
 	// public
 	Public bool `json:"public,omitempty"`
 
+	// rust import path guest
+	RustImportPathGuest string `json:"rust_import_path_guest,omitempty"`
+
 	// tag
 	Tag string `json:"tag,omitempty"`
 

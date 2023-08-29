@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-package function
+package signature
 
 import (
 	"fmt"
@@ -30,13 +30,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ListCmd encapsulates the commands for listing Functions
+// ListCmd encapsulates the commands for listing Signatures
 func ListCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		listCmd := &cobra.Command{
 			Use:      "list [<org>] [flags]",
-			Short:    "list all the scale function for an organization from the registry",
-			Long:     "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the user's organization.",
+			Short:    "list all the scale signatures for an organization from the registry",
+			Long:     "List all the scale signatures available in an organization from the registry. If no org is specified, it will default to the user's organization.",
 			Args:     cobra.RangeArgs(0, 1),
 			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
 			PostRunE: utils.PostRunAuthenticatedAPI(ch),
@@ -57,30 +57,28 @@ func ListCmd() command.SetupCommand[*config.Config] {
 					return utils.InvalidStringError("organization name", org)
 				}
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Functions for the '%s' organization from the Registry...", org))
-				res, err := client.Registry.GetRegistryFunctionOrg(registry.NewGetRegistryFunctionOrgParamsWithContext(ctx).WithOrg(org))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Retrieving Scale Signatures for the '%s' organization from the Registry...", org))
+				res, err := client.Registry.GetRegistrySignatureOrg(registry.NewGetRegistrySignatureOrgParamsWithContext(ctx).WithOrg(org))
 				end()
 				if err != nil {
 					return err
 				}
 
-				analytics.Event("list-function")
+				analytics.Event("list-signature")
 
 				if len(res.GetPayload()) == 0 && ch.Printer.Format() == printer.Human {
-					ch.Printer.Println("No functions available in this organization yet.")
+					ch.Printer.Println("No signatures available in this organization yet.")
 					return nil
 				}
 
-				ret := make([]functionModel, 0, len(res.GetPayload()))
+				ret := make([]signatureModel, 0, len(res.GetPayload()))
 				for _, fn := range res.GetPayload() {
-					ret = append(ret, functionModel{
-						Name:      fn.Name,
-						Tag:       fn.Tag,
-						Hash:      fn.Hash,
-						Org:       fn.Organization,
-						Public:    fmt.Sprintf("%t", fn.Public),
-						Signature: fn.Signature,
-						Version:   fn.Version,
+					ret = append(ret, signatureModel{
+						Name:    fn.Name,
+						Tag:     fn.Tag,
+						Hash:    fn.Hash,
+						Org:     fn.Organization,
+						Version: fn.Version,
 					})
 				}
 

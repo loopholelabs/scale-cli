@@ -17,7 +17,9 @@
 package function
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/go-openapi/runtime"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -26,20 +28,29 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/scalefunc"
+	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
 )
 
-// DeleteCmd encapsulates the commands for deleting Functions
-func DeleteCmd() command.SetupCommand[*config.Config] {
+// PushCmd encapsulates the commands for pushing Functions
+func PushCmd() command.SetupCommand[*config.Config] {
+	var public bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		deleteCmd := &cobra.Command{
-			Use:      "delete <org>/<name>:<tag> [flags]",
-			Short:    "delete a scale function from the scale registry ",
-			Long:     "Delete a scale functions from an organization in the registry.",
+		pushCmd := &cobra.Command{
+			Use:      "push <org>/<name>:<tag> [flags]",
 			Args:     cobra.ExactArgs(1),
 			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
 			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
+				st := storage.DefaultFunction
+				if ch.Config.StorageDirectory != "" {
+					var err error
+					st, err = storage.NewFunction(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+				}
+
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
@@ -55,30 +66,43 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 
 				ctx := cmd.Context()
 				client := ch.Config.APIClient()
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting %s/%s:%s from the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
 
-				_, err := client.Registry.DeleteRegistryFunctionOrgNameTag(registry.NewDeleteRegistryFunctionOrgNameTagParamsWithContext(ctx).WithOrg(parsed.Organization).WithName(parsed.Name).WithTag(parsed.Tag))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing signature %s/%s:%s to the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
+
+				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
+				if err != nil {
+					return fmt.Errorf("failed to find signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+				}
+				if e == nil {
+					return fmt.Errorf("signature %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
+				}
+
+				analytics.Event("push-function")
+
+				res, err := client.Registry.PostRegistryFunction(registry.NewPostRegistryFunctionParamsWithContext(ctx).WithFunction(runtime.NamedReader("function", bytes.NewReader(e.Schema.Encode()))).WithPublic(&public))
 				end()
 				if err != nil {
 					return err
 				}
 
-				analytics.Event("delete-function")
-
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Deleted %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)))
+					ch.Printer.Printf("Pushed function %s to the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", res.GetPayload().Organization, res.GetPayload().Name, res.GetPayload().Tag)))
 					return nil
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
-					"name": parsed.Name,
-					"tag":  parsed.Tag,
-					"org":  parsed.Organization,
+					"name":   res.GetPayload().Name,
+					"tag":    res.GetPayload().Tag,
+					"org":    res.GetPayload().Organization,
+					"public": fmt.Sprintf("%t", res.GetPayload().Public),
 				})
 
 			},
 		}
 
-		cmd.AddCommand(deleteCmd)
+		pushCmd.Flags().BoolVar(&public, "public", true, "whether the signature is publicly available")
+		_ = pushCmd.Flags().MarkHidden("public")
+
+		cmd.AddCommand(pushCmd)
 	}
 }

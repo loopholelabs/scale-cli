@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-package function
+package signature
 
 import (
 	"fmt"
@@ -29,13 +29,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// DeleteCmd encapsulates the commands for deleting Functions
+// DeleteCmd encapsulates the commands for deleting Signatures
 func DeleteCmd() command.SetupCommand[*config.Config] {
+	var public bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
-		deleteCmd := &cobra.Command{
+		pushCmd := &cobra.Command{
 			Use:      "delete <org>/<name>:<tag> [flags]",
-			Short:    "delete a scale function from the scale registry ",
-			Long:     "Delete a scale functions from an organization in the registry.",
 			Args:     cobra.ExactArgs(1),
 			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
 			PostRunE: utils.PostRunAuthenticatedAPI(ch),
@@ -57,13 +56,13 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 				client := ch.Config.APIClient()
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Deleting %s/%s:%s from the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
 
-				_, err := client.Registry.DeleteRegistryFunctionOrgNameTag(registry.NewDeleteRegistryFunctionOrgNameTagParamsWithContext(ctx).WithOrg(parsed.Organization).WithName(parsed.Name).WithTag(parsed.Tag))
+				_, err := client.Registry.DeleteRegistrySignatureOrgNameTag(registry.NewDeleteRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(parsed.Organization).WithName(parsed.Name).WithTag(parsed.Tag))
 				end()
 				if err != nil {
 					return err
 				}
 
-				analytics.Event("delete-function")
+				analytics.Event("delete-signature")
 
 				if ch.Printer.Format() == printer.Human {
 					ch.Printer.Printf("Deleted %s from the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)))
@@ -75,10 +74,12 @@ func DeleteCmd() command.SetupCommand[*config.Config] {
 					"tag":  parsed.Tag,
 					"org":  parsed.Organization,
 				})
-
 			},
 		}
 
-		cmd.AddCommand(deleteCmd)
+		pushCmd.Flags().BoolVar(&public, "public", true, "whether the signature is publicly available")
+		_ = pushCmd.Flags().MarkHidden("public")
+
+		cmd.AddCommand(pushCmd)
 	}
 }

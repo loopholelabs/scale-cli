@@ -62,39 +62,39 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				if len(nametag) != 2 {
 					return fmt.Errorf("invalid name or tag %s", args[0])
 				}
-				name := nametag[0]
-				tag := nametag[1]
+				functionName := nametag[0]
+				functionTag := nametag[1]
 
-				if name == "" || !scalefunc.ValidString(name) {
-					return utils.InvalidStringError("function name", name)
+				if functionName == "" || !scalefunc.ValidString(functionName) {
+					return utils.InvalidStringError("function name", functionName)
 				}
 
-				if tag == "" || !scalefunc.ValidString(tag) {
-					return utils.InvalidStringError("function tag", tag)
+				if functionTag == "" || !scalefunc.ValidString(functionTag) {
+					return utils.InvalidStringError("function tag", functionTag)
 				}
 
 				if signature == "" {
 					return fmt.Errorf("signature is required")
 				}
 
-				org, name, tag := scalefunc.ParseFunctionName(signature)
-				signaturePath, err := st.Path(name, tag, org, "")
+				signatureOrg, signatureName, signatureTag := scalefunc.ParseFunctionName(signature)
+				signaturePath, err := st.Path(signatureName, signatureTag, signatureOrg, "")
 				if err != nil {
 					return fmt.Errorf("error while getting signature %s: %w", signature, err)
 				}
-				sig, err := st.Get(name, tag, org, "")
+				sig, err := st.Get(signatureName, signatureTag, signatureOrg, "")
 				if err != nil {
 					return fmt.Errorf("error while getting signature %s: %w", signature, err)
 				}
 
 				scaleFile := &scalefile.Schema{
 					Version: scalefile.V1AlphaVersion,
-					Name:    name,
-					Tag:     "latest",
+					Name:    functionName,
+					Tag:     functionTag,
 					Signature: scalefile.SignatureSchema{
-						Organization: org,
-						Name:         name,
-						Tag:          tag,
+						Organization: signatureOrg,
+						Name:         signatureName,
+						Tag:          signatureTag,
 					},
 				}
 
@@ -132,7 +132,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = modfileTempl.Execute(dependencyFile, map[string]interface{}{
-						"package":                  name,
+						"package":                  functionName,
 						"old_signature_dependency": "signature",
 						"old_signature_version":    "",
 						"new_signature_dependency": path.Join(signaturePath, "golang", "guest"),
@@ -165,7 +165,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = funcTempl.Execute(funcFile, map[string]interface{}{
-						"package": name,
+						"package": functionName,
 						"context": sig.Schema.Context,
 					})
 					if err != nil {
@@ -193,7 +193,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = cargofileTempl.Execute(dependencyFile, map[string]interface{}{
-						"package":              name,
+						"package":              functionName,
 						"version":              "0.1.0",
 						"signature_dependency": "signature",
 						"signature_path":       path.Join(signaturePath, "rust", "guest"),
@@ -274,13 +274,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Successfully created new %s scale function %s\n", printer.BoldGreen(language), printer.BoldGreen(name))
+					ch.Printer.Printf("Successfully created new %s scale function %s:%s\n", printer.BoldGreen(language), printer.BoldGreen(functionName), printer.BoldGreen(functionTag))
 					return nil
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
 					"path":     scaleFilePath,
-					"name":     name,
+					"name":     functionName,
+					"tag":      functionTag,
 					"language": language,
 				})
 			},

@@ -1,17 +1,17 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package auth
@@ -79,17 +79,17 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error getting device flow: %w", err)
 					}
 
+					browserURL := fmt.Sprintf("https://%s/device-auth?code=%s", ch.Config.UIEndpoint, flow.GetPayload().DeviceCode)
 					switch ch.Printer.Format() {
 					case printer.Human:
 						ch.Printer.Printf("\n%s%s\n", printer.Bold("Confirmation Code: "), printer.BoldGreen(flow.GetPayload().DeviceCode))
-
-						ch.Printer.Printf("Opening browser to %s\n", printer.Bold("https://scale.sh/device-auth?code="+flow.GetPayload().DeviceCode))
-						err = browser.OpenURL("https://scale.sh/device-auth?code=" + flow.GetPayload().DeviceCode)
+						ch.Printer.Printf("Opening browser to %s\n", printer.Bold(browserURL))
+						err = browser.OpenURL(browserURL)
 						if err != nil {
 							ch.Printer.Printf("Failed to open browser: %s\n", err)
 						}
 
-						ch.Printer.Printf("\nIf something goes wrong, copy and paste this URL into your browser: %s\n\n", printer.Bold(fmt.Sprintf("https://scale.sh/device-auth?code=%s", flow.GetPayload().DeviceCode)))
+						ch.Printer.Printf("\nIf something goes wrong, copy and paste this URL into your browser: %s\n\n", printer.Bold(browserURL))
 						end = ch.Printer.PrintProgress("Waiting for confirmation... (press Ctrl+C to cancel)")
 						go func() {
 							<-ctx.Done()
@@ -101,7 +101,7 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 					case printer.JSON, printer.CSV:
 						err = ch.Printer.PrintJSON(map[string]string{
 							"code": flow.GetPayload().DeviceCode,
-							"url":  "https://scale.sh/device-auth?code=" + flow.GetPayload().DeviceCode,
+							"url":  browserURL,
 						})
 						if err != nil {
 							return fmt.Errorf("error printing JSON: %w", err)

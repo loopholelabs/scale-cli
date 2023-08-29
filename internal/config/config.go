@@ -1,17 +1,17 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package config
@@ -42,8 +42,9 @@ var _ config.Config = (*Config)(nil)
 var (
 	ErrAPIEndpointRequired    = errors.New("api endpoint is required")
 	ErrAuthEndpointRequired   = errors.New("auth endpoint is required")
-	ErrSessionDomainRequired  = errors.New("session domain is required")
 	ErrUpdateEndpointRequired = errors.New("update endpoint is required")
+	ErrUIEndpointRequired     = errors.New("ui endpoint is required")
+	ErrSessionDomainRequired  = errors.New("session domain is required")
 	ErrNoSession              = errors.New("no session found")
 )
 
@@ -59,8 +60,9 @@ const (
 
 	DefaultAPIEndpoint    = "api.scale.sh"
 	DefaultAuthEndpoint   = "auth.scale.sh"
-	DefaultSessionDomain  = "scale.sh"
+	DefaultUIEndpoint     = "scale.sh"
 	DefaultUpdateEndpoint = "dl.scale.sh"
+	DefaultSessionDomain  = "scale.sh"
 
 	sessionFileMode = 0600
 )
@@ -69,8 +71,9 @@ const (
 type Config struct {
 	APIEndpoint       string                `mapstructure:"api_endpoint"`
 	AuthEndpoint      string                `mapstructure:"auth_endpoint"`
-	SessionDomain     string                `mapstructure:"session_domain"`
+	UIEndpoint        string                `mapstructure:"ui_endpoint"`
 	UpdateEndpoint    string                `mapstructure:"update_endpoint"`
+	SessionDomain     string                `mapstructure:"session_domain"`
 	DisableAutoUpdate bool                  `mapstructure:"disable_auto_update"`
 	NoTelemetry       bool                  `mapstructure:"no_telemetry"`
 	StorageDirectory  string                `mapstructure:"storage_directory"`
@@ -84,22 +87,25 @@ func New() *Config {
 	return &Config{
 		APIEndpoint:    DefaultAPIEndpoint,
 		AuthEndpoint:   DefaultAuthEndpoint,
-		SessionDomain:  DefaultSessionDomain,
+		UIEndpoint:     DefaultUIEndpoint,
 		UpdateEndpoint: DefaultUpdateEndpoint,
+		SessionDomain:  DefaultSessionDomain,
 	}
 }
 
 func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&c.APIEndpoint, "api-endpoint", DefaultAPIEndpoint, "The Scale API endpoint")
-	flags.StringVar(&c.AuthEndpoint, "auth-endpoint", DefaultAuthEndpoint, "The Scale Authentication API endpoint")
+	flags.StringVar(&c.AuthEndpoint, "auth-endpoint", DefaultAuthEndpoint, "The Scale Authentication endpoint")
+	flags.StringVar(&c.UIEndpoint, "ui-endpoint", DefaultUIEndpoint, "The Scale UI endpoint")
+	flags.StringVar(&c.UpdateEndpoint, "update-endpoint", DefaultUpdateEndpoint, "The Scale Update endpoint")
 	flags.StringVar(&c.SessionDomain, "session-domain", DefaultSessionDomain, "The Scale API session domain")
-	flags.StringVar(&c.UpdateEndpoint, "update-endpoint", DefaultUpdateEndpoint, "The Scale Update API endpoint")
 	flags.BoolVar(&c.DisableAutoUpdate, "disable-auto-update", false, "Disable automatic update checks")
 	flags.BoolVar(&c.NoTelemetry, "no-telemetry", false, "Opt out of telemetry tracking")
 	flags.StringVar(&c.StorageDirectory, "storage-directory", "", "The (optional) directory to store compiled scale functions and generated signatures")
 
 	_ = flags.MarkHidden("session-domain")
 	_ = flags.MarkHidden("update-endpoint")
+	_ = flags.MarkHidden("ui-endpoint")
 }
 
 func (c *Config) GlobalRequiredFlags(_ *cobra.Command) error {
@@ -120,12 +126,16 @@ func (c *Config) Validate() error {
 		return ErrAuthEndpointRequired
 	}
 
-	if c.SessionDomain == "" {
-		return ErrSessionDomainRequired
+	if c.UIEndpoint == "" {
+		return ErrUIEndpointRequired
 	}
 
 	if c.UpdateEndpoint == "" {
 		return ErrUpdateEndpointRequired
+	}
+
+	if c.SessionDomain == "" {
+		return ErrSessionDomainRequired
 	}
 
 	c.sessionCookieURL = &url.URL{

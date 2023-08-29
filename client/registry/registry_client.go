@@ -46,11 +46,17 @@ type ClientOption func(*runtime.ClientOperation)
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	DeleteRegistryFunctionNameTag(params *DeleteRegistryFunctionNameTagParams, opts ...ClientOption) (*DeleteRegistryFunctionNameTagOK, error)
+	DeleteRegistryFunctionOrgNameTag(params *DeleteRegistryFunctionOrgNameTagParams, opts ...ClientOption) (*DeleteRegistryFunctionOrgNameTagOK, error)
+
+	DeleteRegistrySignatureOrgNameTag(params *DeleteRegistrySignatureOrgNameTagParams, opts ...ClientOption) (*DeleteRegistrySignatureOrgNameTagOK, error)
 
 	GetRegistryFunctionOrg(params *GetRegistryFunctionOrgParams, opts ...ClientOption) (*GetRegistryFunctionOrgOK, error)
 
 	GetRegistryFunctionOrgNameTag(params *GetRegistryFunctionOrgNameTagParams, opts ...ClientOption) (*GetRegistryFunctionOrgNameTagOK, error)
+
+	GetRegistrySignatureOrg(params *GetRegistrySignatureOrgParams, opts ...ClientOption) (*GetRegistrySignatureOrgOK, error)
+
+	GetRegistrySignatureOrgNameTag(params *GetRegistrySignatureOrgNameTagParams, opts ...ClientOption) (*GetRegistrySignatureOrgNameTagOK, error)
 
 	PostRegistryFunction(params *PostRegistryFunctionParams, opts ...ClientOption) (*PostRegistryFunctionOK, error)
 
@@ -60,22 +66,22 @@ type ClientService interface {
 }
 
 /*
-DeleteRegistryFunctionNameTag Deletes a function given its `name` and `tag`. The function must be a part of the same org that the session is scoped to.
+DeleteRegistryFunctionOrgNameTag Deletes a function given its `name` and `tag`. The function must be a part of the same org that the session is scoped to.
 */
-func (a *Client) DeleteRegistryFunctionNameTag(params *DeleteRegistryFunctionNameTagParams, opts ...ClientOption) (*DeleteRegistryFunctionNameTagOK, error) {
+func (a *Client) DeleteRegistryFunctionOrgNameTag(params *DeleteRegistryFunctionOrgNameTagParams, opts ...ClientOption) (*DeleteRegistryFunctionOrgNameTagOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewDeleteRegistryFunctionNameTagParams()
+		params = NewDeleteRegistryFunctionOrgNameTagParams()
 	}
 	op := &runtime.ClientOperation{
-		ID:                 "DeleteRegistryFunctionNameTag",
+		ID:                 "DeleteRegistryFunctionOrgNameTag",
 		Method:             "DELETE",
-		PathPattern:        "/registry/function/{name}/{tag}",
+		PathPattern:        "/registry/function/{org}/{name}/{tag}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &DeleteRegistryFunctionNameTagReader{formats: a.formats},
+		Reader:             &DeleteRegistryFunctionOrgNameTagReader{formats: a.formats},
 		Context:            params.Context,
 		Client:             params.HTTPClient,
 	}
@@ -87,13 +93,51 @@ func (a *Client) DeleteRegistryFunctionNameTag(params *DeleteRegistryFunctionNam
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*DeleteRegistryFunctionNameTagOK)
+	success, ok := result.(*DeleteRegistryFunctionOrgNameTagOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
-	msg := fmt.Sprintf("unexpected success response for DeleteRegistryFunctionNameTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	msg := fmt.Sprintf("unexpected success response for DeleteRegistryFunctionOrgNameTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+DeleteRegistrySignatureOrgNameTag Deletes a signature given its `name` and `tag`. The signature must be a part of the same org that the session is scoped to.
+*/
+func (a *Client) DeleteRegistrySignatureOrgNameTag(params *DeleteRegistrySignatureOrgNameTagParams, opts ...ClientOption) (*DeleteRegistrySignatureOrgNameTagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteRegistrySignatureOrgNameTagParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "DeleteRegistrySignatureOrgNameTag",
+		Method:             "DELETE",
+		PathPattern:        "/registry/signature/{org}/{name}/{tag}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteRegistrySignatureOrgNameTagReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteRegistrySignatureOrgNameTagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for DeleteRegistrySignatureOrgNameTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 
@@ -170,6 +214,82 @@ func (a *Client) GetRegistryFunctionOrgNameTag(params *GetRegistryFunctionOrgNam
 	// unexpected success response
 	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
 	msg := fmt.Sprintf("unexpected success response for GetRegistryFunctionOrgNameTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRegistrySignatureOrg Lists all the signatures in the given `org`. If the session is scoped to the same `org`, signatures that are not public will be returned, otherwise only public signatures will be returned.
+*/
+func (a *Client) GetRegistrySignatureOrg(params *GetRegistrySignatureOrgParams, opts ...ClientOption) (*GetRegistrySignatureOrgOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetRegistrySignatureOrgParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRegistrySignatureOrg",
+		Method:             "GET",
+		PathPattern:        "/registry/signature/{org}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRegistrySignatureOrgReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetRegistrySignatureOrgOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRegistrySignatureOrg: API contract not enforced by server. Client expected to get an error, but got: %T", result)
+	panic(msg)
+}
+
+/*
+GetRegistrySignatureOrgNameTag Retrieves a signature from the given `org` given its `name` and `tag`. If the session is scoped to the same `org`, signatures that are not public will be returned, otherwise only public signatures will be returned.
+*/
+func (a *Client) GetRegistrySignatureOrgNameTag(params *GetRegistrySignatureOrgNameTagParams, opts ...ClientOption) (*GetRegistrySignatureOrgNameTagOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetRegistrySignatureOrgNameTagParams()
+	}
+	op := &runtime.ClientOperation{
+		ID:                 "GetRegistrySignatureOrgNameTag",
+		Method:             "GET",
+		PathPattern:        "/registry/signature/{org}/{name}/{tag}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetRegistrySignatureOrgNameTagReader{formats: a.formats},
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	}
+	for _, opt := range opts {
+		opt(op)
+	}
+
+	result, err := a.transport.Submit(op)
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetRegistrySignatureOrgNameTagOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	// safeguard: normally, absent a default response, unknown success responses return an error above: so this is a codegen issue
+	msg := fmt.Sprintf("unexpected success response for GetRegistrySignatureOrgNameTag: API contract not enforced by server. Client expected to get an error, but got: %T", result)
 	panic(msg)
 }
 

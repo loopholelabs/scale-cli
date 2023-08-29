@@ -73,6 +73,7 @@ func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comm
 		if err != nil {
 			return err
 		}
+
 		err = ch.Config.Validate()
 		if err != nil {
 			return err
@@ -99,6 +100,7 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 		if err != nil {
 			return err
 		}
+
 		err = ch.Config.Validate()
 		if err != nil {
 			return err
