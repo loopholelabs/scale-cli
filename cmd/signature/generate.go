@@ -38,11 +38,12 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		generateCmd := &cobra.Command{
-			Use:     "generate <name>:<tag> [flags]",
-			Args:    cobra.ExactArgs(1),
-			Short:   "generate a scale signature from a signature file",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "generate <name>:<tag> [flags]",
+			Args:     cobra.ExactArgs(1),
+			Short:    "generate a scale signature from a signature file",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				sourceDir := directory
 				if !path.IsAbs(sourceDir) {

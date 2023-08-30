@@ -149,6 +149,8 @@ func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cm
 			if err == nil {
 				ch.Config.SetAPIClient(c)
 			}
+		} else {
+			ch.Config.SetAPIClient(ch.Config.NewUnauthenticatedAPIClient())
 		}
 
 		if !ch.Config.DisableAutoUpdate {
@@ -180,6 +182,26 @@ func PostRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobr
 				return fmt.Errorf("error updating session: %w", err)
 			}
 
+		}
+		analytics.Cleanup()
+		return nil
+	}
+}
+
+func PostRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
+	return func(cmd *cobra.Command, args []string) error {
+		c := ch.Config.APIClient()
+		if c != nil && c.Transport != nil && ch.Config.IsAuthenticated() {
+			cookies := c.Transport.(*runtimeClient.Runtime).Jar.Cookies(ch.Config.SessionCookieURL())
+			if len(cookies) == 0 {
+				return nil
+			}
+			ch.Config.Session = session.New(kind.Session, cookies[0].Value, cookies[0].Expires)
+
+			err := ch.Config.WriteSession()
+			if err != nil {
+				return fmt.Errorf("error updating session: %w", err)
+			}
 		}
 		analytics.Cleanup()
 		return nil

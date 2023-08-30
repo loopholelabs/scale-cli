@@ -20,7 +20,6 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -36,10 +35,9 @@ type signatureModel struct {
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		signatureCmd := &cobra.Command{
-			Use:                "signature <command>",
-			Aliases:            []string{"sig"},
-			Short:              "Commands for managing Scale Signatures in the Scale Registry",
-			PersistentPostRunE: utils.PostRunAnalytics(ch),
+			Use:     "signature <command>",
+			Aliases: []string{"sig"},
+			Short:   "Commands for managing Scale Signatures in the Scale Registry",
 		}
 
 		listSetup := ListCmd()

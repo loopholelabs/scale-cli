@@ -31,10 +31,11 @@ import (
 func ListCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		listCmd := &cobra.Command{
-			Use:     "list",
-			Short:   "list locally available scale functions",
-			Args:    cobra.NoArgs,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "list",
+			Short:    "list locally available scale functions",
+			Args:     cobra.NoArgs,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultFunction
 				if ch.Config.StorageDirectory != "" {

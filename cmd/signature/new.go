@@ -35,11 +35,12 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
-			Use:     "new [flags]",
-			Args:    cobra.ExactArgs(0),
-			Short:   "create a new scale signature",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "new [flags]",
+			Args:     cobra.ExactArgs(0),
+			Short:    "create a new scale signature",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				analytics.Event("new-signature")
 				sourceDir := directory

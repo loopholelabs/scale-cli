@@ -20,7 +20,6 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/scale-cli/internal/config"
-	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -38,10 +37,9 @@ type functionModel struct {
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		functionCmd := &cobra.Command{
-			Use:                "function <command>",
-			Aliases:            []string{"fn"},
-			Short:              "Commands for managing Scale Functions in the Scale Registry",
-			PersistentPostRunE: utils.PostRunAnalytics(ch),
+			Use:     "function <command>",
+			Aliases: []string{"fn"},
+			Short:   "Commands for managing Scale Functions in the Scale Registry",
 		}
 
 		listSetup := ListCmd()

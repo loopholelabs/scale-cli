@@ -1,17 +1,17 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package signature
@@ -32,11 +32,12 @@ import (
 func DeleteCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		deleteCmd := &cobra.Command{
-			Use:     "delete <org>/<name>:<tag> [flags]",
-			Args:    cobra.ExactArgs(1),
-			Short:   "delete a generated scale signature",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "delete <org>/<name>:<tag> [flags]",
+			Args:     cobra.ExactArgs(1),
+			Short:    "delete a generated scale signature",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultSignature
 				if ch.Config.StorageDirectory != "" {

@@ -45,7 +45,8 @@ var (
 	ErrUpdateEndpointRequired = errors.New("update endpoint is required")
 	ErrUIEndpointRequired     = errors.New("ui endpoint is required")
 	ErrSessionDomainRequired  = errors.New("session domain is required")
-	ErrNoSession              = errors.New("no session found")
+
+	ErrNoSession = errors.New("no session found")
 )
 
 var (
@@ -99,6 +100,7 @@ func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
 	flags.StringVar(&c.UIEndpoint, "ui-endpoint", DefaultUIEndpoint, "The Scale UI endpoint")
 	flags.StringVar(&c.UpdateEndpoint, "update-endpoint", DefaultUpdateEndpoint, "The Scale Update endpoint")
 	flags.StringVar(&c.SessionDomain, "session-domain", DefaultSessionDomain, "The Scale API session domain")
+
 	flags.BoolVar(&c.DisableAutoUpdate, "disable-auto-update", false, "Disable automatic update checks")
 	flags.BoolVar(&c.NoTelemetry, "no-telemetry", false, "Opt out of telemetry tracking")
 	flags.StringVar(&c.StorageDirectory, "storage-directory", "", "The (optional) directory to store compiled scale functions and generated signatures")
@@ -106,6 +108,9 @@ func (c *Config) RootPersistentFlags(flags *pflag.FlagSet) {
 	_ = flags.MarkHidden("session-domain")
 	_ = flags.MarkHidden("update-endpoint")
 	_ = flags.MarkHidden("ui-endpoint")
+
+	_ = flags.MarkHidden("golang-registry")
+	_ = flags.MarkHidden("rust-registry")
 }
 
 func (c *Config) GlobalRequiredFlags(_ *cobra.Command) error {

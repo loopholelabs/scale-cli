@@ -38,8 +38,8 @@ func ListCmd() command.SetupCommand[*config.Config] {
 			Short:    "list all the scale function for an organization from the registry",
 			Long:     "List all the scale functions available in an organization from the registry. If no org is specified, it will default to the user's organization.",
 			Args:     cobra.RangeArgs(0, 1),
-			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
-			PostRunE: utils.PostRunAuthenticatedAPI(ch),
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				ctx := cmd.Context()
 				client := ch.Config.APIClient()

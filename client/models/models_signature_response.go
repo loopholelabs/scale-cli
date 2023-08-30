@@ -33,11 +33,17 @@ import (
 // swagger:model models.SignatureResponse
 type ModelsSignatureResponse struct {
 
+	// context
+	Context string `json:"context,omitempty"`
+
 	// golang import path guest
 	GolangImportPathGuest string `json:"golang_import_path_guest,omitempty"`
 
 	// golang import path host
 	GolangImportPathHost string `json:"golang_import_path_host,omitempty"`
+
+	// golang registry
+	GolangRegistry string `json:"golang_registry,omitempty"`
 
 	// hash
 	Hash string `json:"hash,omitempty"`
@@ -53,6 +59,12 @@ type ModelsSignatureResponse struct {
 
 	// rust import path guest
 	RustImportPathGuest string `json:"rust_import_path_guest,omitempty"`
+
+	// rust registry
+	RustRegistry string `json:"rust_registry,omitempty"`
+
+	// schema
+	Schema string `json:"schema,omitempty"`
 
 	// tag
 	Tag string `json:"tag,omitempty"`

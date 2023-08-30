@@ -17,17 +17,20 @@
 package function
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
+	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale-cli/version"
 	"github.com/loopholelabs/scale/build"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
+	"github.com/loopholelabs/scale/signature"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
 	"os"
@@ -40,6 +43,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var tag string
 	var directory string
 
+	var release bool
+
 	var goBin string
 	var tinygoBin string
 	var cargoBin string
@@ -50,12 +55,13 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		buildCmd := &cobra.Command{
-			Use:     "build [flags]",
-			Args:    cobra.ExactArgs(0),
-			Short:   "build a scale function locally and store it in the cache",
-			Long:    "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "build [flags]",
+			Args:     cobra.ExactArgs(0),
+			Short:    "build a scale function locally and store it in the cache",
+			Long:     "Build a scale function locally and store it in the cache. The scalefile must be in the current directory or specified with the --directory flag.",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				sfPath := path.Join(directory, "scalefile")
 				sf, err := scalefile.ReadSchema(sfPath)
@@ -83,14 +89,6 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return utils.InvalidStringError("tag", sf.Tag)
 				}
 
-				st := storage.DefaultSignature
-				if ch.Config.StorageDirectory != "" {
-					st, err = storage.NewSignature(ch.Config.StorageDirectory)
-					if err != nil {
-						return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
-					}
-				}
-
 				sourceDir := directory
 				if !path.IsAbs(sourceDir) {
 					wd, err := os.Getwd()
@@ -101,6 +99,79 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 				analytics.Event("build-function", map[string]string{"language": sf.Language})
 
+				stb := storage.DefaultBuild
+				if ch.Config.StorageDirectory != "" {
+					stb, err = storage.NewBuild(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate build storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+				}
+
+				var signatureSchema *signature.Schema
+				var signatureImportPath string
+				var signatureImportVersion string
+				if sf.Signature.Organization == "local" {
+					sts := storage.DefaultSignature
+					if ch.Config.StorageDirectory != "" {
+						sts, err = storage.NewSignature(ch.Config.StorageDirectory)
+						if err != nil {
+							return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
+						}
+					}
+
+					sig, err := sts.Get(sf.Signature.Name, sf.Signature.Tag, sf.Signature.Organization, "")
+					if err != nil {
+						return fmt.Errorf("failed to get signature %s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
+					}
+
+					signaturePath, err := sts.Path(sf.Signature.Name, sf.Signature.Tag, sf.Signature.Organization, "")
+					if err != nil {
+						return fmt.Errorf("failed to get signature %s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
+					}
+
+					switch scalefunc.Language(sf.Language) {
+					case scalefunc.Go:
+						signatureImportPath = path.Join(signaturePath, "golang", "guest")
+						signatureImportVersion = ""
+					case scalefunc.Rust:
+						signatureImportPath = path.Join(signaturePath, "rust", "guest")
+						signatureImportVersion = ""
+					default:
+						return fmt.Errorf("language %s is not supported for local builds", sf.Language)
+					}
+					signatureSchema = sig.Schema
+
+				} else {
+					ctx := cmd.Context()
+					client := ch.Config.APIClient()
+					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", sf.Signature.Organization, sf.Signature.Name, sf.Signature.Tag))
+					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(sf.Signature.Organization).WithName(sf.Signature.Name).WithTag(sf.Signature.Tag))
+					end()
+					if err != nil {
+						return fmt.Errorf("failed to fetch signature %s/%s:%s: %w", sf.Signature.Organization, sf.Signature.Name, sf.Signature.Tag, err)
+					}
+					switch scalefunc.Language(sf.Language) {
+					case scalefunc.Go:
+						signatureImportVersion = ""
+						signatureImportPath = res.GetPayload().GolangImportPathGuest
+					case scalefunc.Rust:
+						signatureImportVersion = "0.1.0"
+						signatureImportPath = ""
+					default:
+						return fmt.Errorf("language %s is not supported for local builds", sf.Language)
+					}
+
+					signatureSchemaData, err := base64.StdEncoding.DecodeString(res.GetPayload().Schema)
+					if err != nil {
+						return fmt.Errorf("failed to decode signature schema: %w", err)
+					}
+					signatureSchema = new(signature.Schema)
+					err = signatureSchema.Decode(signatureSchemaData)
+					if err != nil {
+						return fmt.Errorf("failed to decode signature schema: %w", err)
+					}
+				}
+
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.Schema
 				switch scalefunc.Language(sf.Language) {
@@ -109,8 +180,11 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Version:          version.Version,
 						Scalefile:        sf,
 						SourceDirectory:  sourceDir,
-						StorageDirectory: ch.Config.StorageDirectory,
-						Release:          false,
+						SignaturePath:    signatureImportPath,
+						SignatureVersion: signatureImportVersion,
+						SignatureSchema:  signatureSchema,
+						Storage:          stb,
+						Release:          release,
 						Target:           build.WASITarget,
 						GoBin:            goBin,
 						TinyGoBin:        tinygoBin,
@@ -118,12 +192,17 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
+					signaturePackage := fmt.Sprintf("%s_%s_%s_guest", sf.Signature.Organization, sf.Signature.Name, sf.Signature.Tag)
 					opts := &build.LocalRustOptions{
 						Version:          version.Version,
 						Scalefile:        sf,
 						SourceDirectory:  sourceDir,
-						StorageDirectory: ch.Config.StorageDirectory,
-						Release:          false,
+						SignaturePackage: signaturePackage,
+						SignaturePath:    signatureImportPath,
+						SignatureVersion: signatureImportVersion,
+						SignatureSchema:  signatureSchema,
+						Storage:          stb,
+						Release:          release,
 						Target:           build.WASITarget,
 						CargoBin:         cargoBin,
 						Args:             cargoArgs,
@@ -138,27 +217,27 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to build scale function: %w", err)
 				}
 
-				functionStorage := storage.DefaultFunction
+				fs := storage.DefaultFunction
 				if ch.Config.StorageDirectory != "" {
-					functionStorage, err = storage.NewFunction(ch.Config.StorageDirectory)
+					fs, err = storage.NewFunction(ch.Config.StorageDirectory)
 					if err != nil {
 						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
 				}
 
-				oldEntry, err := functionStorage.Get(scaleFunc.Name, scaleFunc.Tag, "local", "")
+				oldEntry, err := fs.Get(scaleFunc.Name, scaleFunc.Tag, "local", "")
 				if err != nil {
 					return fmt.Errorf("failed to check if scale function already exists: %w", err)
 				}
 
 				if oldEntry != nil {
-					err = st.Delete(name, tag, oldEntry.Organization, oldEntry.Hash)
+					err = fs.Delete(name, tag, oldEntry.Organization, oldEntry.Hash)
 					if err != nil {
 						return fmt.Errorf("failed to delete existing scale function %s:%s: %w", name, tag, err)
 					}
 				}
 
-				err = functionStorage.Put(scaleFunc.Name, scaleFunc.Tag, "local", scaleFunc)
+				err = fs.Put(scaleFunc.Name, scaleFunc.Tag, "local", scaleFunc)
 				if err != nil {
 					return fmt.Errorf("failed to store scale function: %w", err)
 				}
@@ -180,6 +259,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory containing the scalefile")
 		buildCmd.Flags().StringVarP(&name, "name", "n", "", "the (optional) name of this scale function")
 		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
+
+		buildCmd.Flags().BoolVar(&release, "release", false, "build the function in release mode")
 
 		buildCmd.Flags().StringVar(&tinygoBin, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")

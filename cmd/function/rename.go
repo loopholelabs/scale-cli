@@ -32,10 +32,11 @@ import (
 func RenameCmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		renameCmd := &cobra.Command{
-			Use:     "rename or retag <current_org>/<current_name>:<current_tag> <new_org>/<new_name>:<new_tag>",
-			Short:   "rename or retag a locally available Scale Function",
-			Args:    cobra.ExactArgs(2),
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "rename or retag <current_org>/<current_name>:<current_tag> <new_org>/<new_name>:<new_tag>",
+			Short:    "rename or retag a locally available Scale Function",
+			Args:     cobra.ExactArgs(2),
+			PreRunE:  utils.PreRunUpdateCheck(ch),
+			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultFunction
 				if ch.Config.StorageDirectory != "" {

@@ -67,19 +67,22 @@ func PushCmd() command.SetupCommand[*config.Config] {
 				ctx := cmd.Context()
 				client := ch.Config.APIClient()
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing signature %s/%s:%s to the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Pushing function %s/%s:%s to the Scale Registry...", parsed.Organization, parsed.Name, parsed.Tag))
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
-					return fmt.Errorf("failed to find signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					end()
+					return fmt.Errorf("failed to find function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 				if e == nil {
-					return fmt.Errorf("signature %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
+					end()
+					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
 				}
 
 				analytics.Event("push-function")
 
-				res, err := client.Registry.PostRegistryFunction(registry.NewPostRegistryFunctionParamsWithContext(ctx).WithFunction(runtime.NamedReader("function", bytes.NewReader(e.Schema.Encode()))).WithPublic(&public))
+				encodedData := e.Schema.Encode()
+				res, err := client.Registry.PostRegistryFunction(registry.NewPostRegistryFunctionParamsWithContext(ctx).WithFunction(runtime.NamedReader("function", bytes.NewReader(encodedData))).WithPublic(&public))
 				end()
 				if err != nil {
 					return err

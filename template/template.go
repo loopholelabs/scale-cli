@@ -64,8 +64,8 @@ path = "lib.rs"
 {{ .signature_dependency }} = { package = "{{ .signature_package }}", path = "{{ .signature_path }}" }
 {{ end }}
 
-{{ if (and .signature_version .registry) }}
-{{ .signature_dependency }} = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "{{ .registry }}" }
+{{ if .signature_version }}
+{{ .signature_dependency }} = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "scale" }
 {{ end }}
 
 [profile.release]

@@ -21,9 +21,11 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/compile/golang"
+	"github.com/loopholelabs/scale/compile/rust"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
@@ -37,21 +39,14 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		useCmd := &cobra.Command{
-			Use:     "use <org>/<name>:<tag> [flags]",
-			Args:    cobra.ExactArgs(1),
-			Short:   "create a new scale signature with the given name and tag",
-			Hidden:  hidden,
-			PreRunE: utils.PreRunUpdateCheck(ch),
+			Use:      "use <org>/<name>:<tag> [flags]",
+			Args:     cobra.ExactArgs(1),
+			Short:    "create a new scale signature with the given name and tag",
+			Hidden:   hidden,
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				st := storage.DefaultSignature
-				if ch.Config.StorageDirectory != "" {
-					var err error
-					st, err = storage.NewSignature(ch.Config.StorageDirectory)
-					if err != nil {
-						return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
-					}
-				}
-
+				var err error
 				parsed := utils.ParseFunction(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
@@ -63,11 +58,6 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
 					return utils.InvalidStringError("signature tag", parsed.Tag)
-				}
-
-				signaturePath, err := st.Path(parsed.Name, parsed.Tag, parsed.Organization, "")
-				if err != nil || signaturePath == "" {
-					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 
 				sourceDir := directory
@@ -82,6 +72,51 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 				sf, err := scalefile.ReadSchema(path.Join(sourceDir, "scalefile"))
 				if err != nil {
 					return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+				}
+
+				var signaturePath string
+				var signatureVersion string
+				if parsed.Organization == "local" {
+					st := storage.DefaultSignature
+					if ch.Config.StorageDirectory != "" {
+						st, err = storage.NewSignature(ch.Config.StorageDirectory)
+						if err != nil {
+							return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
+						}
+					}
+
+					signaturePath, err = st.Path(parsed.Name, parsed.Tag, parsed.Organization, "")
+					if err != nil || signaturePath == "" {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+					switch scalefunc.Language(sf.Language) {
+					case scalefunc.Go:
+						signaturePath = path.Join(signaturePath, "golang", "guest")
+					case scalefunc.Rust:
+						signaturePath = path.Join(signaturePath, "rust", "guest")
+					default:
+						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
+					}
+				} else {
+					ctx := cmd.Context()
+					client := ch.Config.APIClient()
+
+					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", parsed.Organization, parsed.Name, parsed.Tag))
+					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(parsed.Organization).WithName(parsed.Name).WithTag(parsed.Tag))
+					end()
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					switch scalefunc.Language(sf.Language) {
+					case scalefunc.Go:
+						signaturePath = res.GetPayload().GolangImportPathGuest
+					case scalefunc.Rust:
+						signaturePath = res.GetPayload().RustImportPathGuest
+					default:
+						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
+					}
+					signatureVersion = "0.1.0"
 				}
 
 				switch scalefunc.Language(sf.Language) {
@@ -106,7 +141,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = m.AddReplacement("signature", golang.DefaultVersion, path.Join(signaturePath, "golang", "guest"), "")
+					err = m.AddReplacement("signature", golang.DefaultVersion, signaturePath, signatureVersion)
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
@@ -116,6 +151,50 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = os.WriteFile(path.Join(sourceDir, "go.mod"), modfileData, 0644)
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+				case scalefunc.Rust:
+					cargofileData, err := os.ReadFile(path.Join(sourceDir, "Cargo.toml"))
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					m, err := rust.ParseManifest(cargofileData)
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					err = m.RemoveDependency("signature")
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					if parsed.Organization == "local" {
+						err = m.AddDependencyWithPath("signature", rust.DependencyPath{
+							Path:    signaturePath,
+							Package: fmt.Sprintf("%s_%s_%s_guest", parsed.Organization, parsed.Name, parsed.Tag),
+						})
+						if err != nil {
+							return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+						}
+					} else {
+						err = m.AddDependencyWithVersion("signature", rust.DependencyVersion{
+							Version:  signatureVersion,
+							Package:  fmt.Sprintf("%s_%s_%s_guest", parsed.Organization, parsed.Name, parsed.Tag),
+							Registry: "scale",
+						})
+						if err != nil {
+							return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+						}
+					}
+
+					cargofileData, err = m.Write()
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					err = os.WriteFile(path.Join(sourceDir, "Cargo.toml"), cargofileData, 0644)
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}

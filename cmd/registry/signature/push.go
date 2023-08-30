@@ -71,20 +71,23 @@ func PushCmd() command.SetupCommand[*config.Config] {
 
 				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
+					end()
 					return fmt.Errorf("failed to find signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
 				if e == nil {
+					end()
 					return fmt.Errorf("signature %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
 				}
 
 				analytics.Event("push-signature")
 
-				encodedSchemaReader, err := e.Schema.Encode()
+				encodedData, err := e.Schema.Encode()
 				if err != nil {
+					end()
 					return fmt.Errorf("failed to encode schema: %w", err)
 				}
 
-				res, err := client.Registry.PostRegistrySignature(registry.NewPostRegistrySignatureParamsWithContext(ctx).WithSignature(runtime.NamedReader("signature", bytes.NewReader(encodedSchemaReader))).WithName(parsed.Name).WithTag(parsed.Tag).WithPublic(&public))
+				res, err := client.Registry.PostRegistrySignature(registry.NewPostRegistrySignatureParamsWithContext(ctx).WithSignature(runtime.NamedReader("signature", bytes.NewReader(encodedData))).WithName(parsed.Name).WithTag(parsed.Tag).WithPublic(&public))
 				end()
 				if err != nil {
 					return err
@@ -98,7 +101,8 @@ func PushCmd() command.SetupCommand[*config.Config] {
 					ch.Printer.Printf("Pushed signature %s to the Scale Registry\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", res.GetPayload().Organization, res.GetPayload().Name, res.GetPayload().Tag)))
 					ch.Printer.Printf("The following packages are now %s available:\n", printer.BoldBlue(p))
 					ch.Printer.Printf("  %s: %s\n", printer.BoldBlue("Golang (Guest)"), printer.BoldGreen(res.GetPayload().GolangImportPathGuest))
-					ch.Printer.Printf("  %s: %s\n\n", printer.BoldBlue("Golang (Host)"), printer.BoldGreen(res.GetPayload().GolangImportPathHost))
+					ch.Printer.Printf("  %s: %s\n", printer.BoldBlue("Golang (Host)"), printer.BoldGreen(res.GetPayload().GolangImportPathHost))
+					ch.Printer.Printf("  %s: %s\n\n", printer.BoldBlue("Rust (Guest)"), printer.BoldGreen(res.GetPayload().RustImportPathGuest))
 					return nil
 				}
 

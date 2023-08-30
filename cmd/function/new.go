@@ -22,6 +22,7 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
+	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/template"
 	"github.com/loopholelabs/scale-cli/utils"
@@ -46,8 +47,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 			Args:     cobra.ExactArgs(1),
 			Short:    "generate a new scale function with the given name",
 			Hidden:   hidden,
-			PreRunE:  utils.PreRunUpdateCheck(ch),
-			PostRunE: utils.PostRunAnalytics(ch),
+			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
+			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultSignature
 				if ch.Config.StorageDirectory != "" {
@@ -77,14 +78,69 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("signature is required")
 				}
 
-				signatureOrg, signatureName, signatureTag := scalefunc.ParseFunctionName(signature)
-				signaturePath, err := st.Path(signatureName, signatureTag, signatureOrg, "")
-				if err != nil {
-					return fmt.Errorf("error while getting signature %s: %w", signature, err)
+				sourceDir := directory
+				if !path.IsAbs(sourceDir) {
+					wd, err := os.Getwd()
+					if err != nil {
+						return fmt.Errorf("failed to get working directory: %w", err)
+					}
+					sourceDir = path.Join(wd, sourceDir)
 				}
-				sig, err := st.Get(signatureName, signatureTag, signatureOrg, "")
-				if err != nil {
-					return fmt.Errorf("error while getting signature %s: %w", signature, err)
+
+				_, err := os.Stat(sourceDir)
+				if err != nil && os.IsNotExist(err) {
+					err = os.MkdirAll(sourceDir, 0755)
+					if err != nil {
+						return fmt.Errorf("error creating directory %s: %w", sourceDir, err)
+					}
+				}
+
+				var signaturePath string
+				var signatureVersion string
+				var signatureContext string
+				signatureOrg, signatureName, signatureTag := scalefunc.ParseFunctionName(signature)
+				if signatureOrg == "local" {
+					signaturePath, err = st.Path(signatureName, signatureTag, signatureOrg, "")
+					if err != nil {
+						return fmt.Errorf("error while getting signature %s: %w", signatureName, err)
+					}
+					sig, err := st.Get(signatureName, signatureTag, signatureOrg, "")
+					if err != nil {
+						return fmt.Errorf("error while getting signature %s: %w", signatureName, err)
+					}
+					switch scalefunc.Language(language) {
+					case scalefunc.Go:
+						signatureVersion = ""
+						signaturePath = path.Join(signaturePath, "golang", "guest")
+					case scalefunc.Rust:
+						signatureVersion = ""
+						signaturePath = path.Join(signaturePath, "rust", "guest")
+					default:
+						return fmt.Errorf("language %s is not supported", language)
+					}
+					signatureContext = sig.Schema.Context
+				} else {
+					ctx := cmd.Context()
+					client := ch.Config.APIClient()
+
+					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", signatureOrg, signatureName, signatureTag))
+					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(signatureOrg).WithName(signatureName).WithTag(signatureTag))
+					end()
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", signatureOrg, signatureName, signatureTag, err)
+					}
+
+					switch scalefunc.Language(language) {
+					case scalefunc.Go:
+						signatureVersion = ""
+						signaturePath = res.GetPayload().GolangImportPathGuest
+					case scalefunc.Rust:
+						signatureVersion = "0.1.0"
+						signaturePath = ""
+					default:
+						return fmt.Errorf("language %s is not supported", language)
+					}
+					signatureContext = res.GetPayload().Context
 				}
 
 				scaleFile := &scalefile.Schema{
@@ -96,22 +152,6 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Name:         signatureName,
 						Tag:          signatureTag,
 					},
-				}
-
-				sourceDir := directory
-				if !path.IsAbs(sourceDir) {
-					wd, err := os.Getwd()
-					if err != nil {
-						return fmt.Errorf("failed to get working directory: %w", err)
-					}
-					sourceDir = path.Join(wd, sourceDir)
-				}
-
-				if _, err = os.Stat(sourceDir); os.IsNotExist(err) {
-					err = os.MkdirAll(sourceDir, 0755)
-					if err != nil {
-						return fmt.Errorf("error creating directory %s: %w", sourceDir, err)
-					}
 				}
 
 				scaleFilePath := path.Join(sourceDir, "scalefile")
@@ -134,13 +174,13 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					err = modfileTempl.Execute(dependencyFile, map[string]interface{}{
 						"package":                  functionName,
 						"old_signature_dependency": "signature",
-						"old_signature_version":    "",
-						"new_signature_dependency": path.Join(signaturePath, "golang", "guest"),
-						"new_signature_version":    "",
+						"old_signature_version":    signatureVersion,
+						"new_signature_dependency": signaturePath,
+						"new_signature_version":    signatureVersion,
 						"dependencies": []template.Dependency{
 							{
 								Name:    "signature",
-								Version: "v0.1.0",
+								Version: signatureVersion,
 							},
 						},
 					})
@@ -166,7 +206,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 					err = funcTempl.Execute(funcFile, map[string]interface{}{
 						"package": functionName,
-						"context": sig.Schema.Context,
+						"context": signatureContext,
 					})
 					if err != nil {
 						_ = funcFile.Close()
@@ -194,10 +234,12 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 					err = cargofileTempl.Execute(dependencyFile, map[string]interface{}{
 						"package":              functionName,
-						"version":              "0.1.0",
+						"version":              signatureVersion,
 						"signature_dependency": "signature",
-						"signature_path":       path.Join(signaturePath, "rust", "guest"),
-						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", scaleFile.Signature.Organization, scaleFile.Signature.Name, scaleFile.Signature.Tag),
+						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", signatureOrg, signatureName, signatureTag),
+						"signature_version":    signatureVersion,
+						"signature_path":       signaturePath,
+						"registry":             "scale",
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -220,7 +262,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = funcTempl.Execute(funcFile, map[string]interface{}{
-						"context": sig.Schema.Context,
+						"context": signatureContext,
 					})
 					if err != nil {
 						_ = funcFile.Close()

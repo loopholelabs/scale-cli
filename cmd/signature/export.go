@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-package function
+package signature
 
 import (
 	"fmt"
@@ -29,27 +29,27 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path"
+	"path/filepath"
 )
 
-// ExportCmd encapsulates the commands for exporting Functions
+// ExportCmd encapsulates the commands for exporting Signatures
 func ExportCmd() command.SetupCommand[*config.Config] {
-	var outputName string
-	var raw bool
+	var manifest bool
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		exportCmd := &cobra.Command{
-			Use:      "export <org>/<name>:<tag> <output_path>",
-			Args:     cobra.ExactArgs(2),
-			Short:    "export a compiled scale function to the given output path",
-			Long:     "Export a compiled scale function to the given output path. The output path must always be a directory and the function will be exported to a file with the name <org>-<name>-<tag>.scale by default. This can be overridden using the --output-name flag. If the org is not specified or the function is not associated with an org, no organization will be used.",
+			Use:      "export <org>/<name>:<tag> <language> <guest|host> <output_path>",
+			Args:     cobra.ExactArgs(4),
+			Short:    "export a generated scale signature to the given output path",
+			Long:     "Export a generated scale signature to the given output path. The output path must always be a directory.",
 			PreRunE:  utils.PreRunUpdateCheck(ch),
 			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				st := storage.DefaultFunction
+				st := storage.DefaultSignature
 				if ch.Config.StorageDirectory != "" {
 					var err error
-					st, err = storage.NewFunction(ch.Config.StorageDirectory)
+					st, err = storage.NewSignature(ch.Config.StorageDirectory)
 					if err != nil {
-						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
+						return fmt.Errorf("failed to instantiate signature storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
 				}
 
@@ -59,24 +59,52 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				}
 
 				if parsed.Name == "" || !scalefunc.ValidString(parsed.Name) {
-					return utils.InvalidStringError("function name", parsed.Name)
+					return utils.InvalidStringError("signature name", parsed.Name)
 				}
 
 				if parsed.Tag == "" || !scalefunc.ValidString(parsed.Tag) {
-					return utils.InvalidStringError("function tag", parsed.Tag)
+					return utils.InvalidStringError("signature tag", parsed.Tag)
 				}
 
-				e, err := st.Get(parsed.Name, parsed.Tag, parsed.Organization, "")
+				language := args[1]
+				kind := args[2]
+				output := args[3]
+
+				kindString := "guest"
+				switch kind {
+				case "guest":
+					switch scalefunc.Language(language) {
+					case scalefunc.Go, scalefunc.Rust:
+					default:
+						return fmt.Errorf("invalid signature language %s for guest: must be go or rust", language)
+					}
+					kindString = "guest"
+				case "host":
+					switch scalefunc.Language(language) {
+					case scalefunc.Go:
+					default:
+						return fmt.Errorf("invalid signature language %s for guest: must be go", language)
+					}
+					kindString = "host"
+				default:
+					return fmt.Errorf("invalid signature kind %s: must be guest or host", kind)
+				}
+
+				analytics.Event("export-signature", map[string]string{"language": language})
+
+				switch scalefunc.Language(language) {
+				case scalefunc.Go:
+					language = "golang"
+				case scalefunc.Rust:
+					language = "rust"
+				default:
+					return fmt.Errorf("invalid signature language %s: must be go, rust, or typescript", language)
+				}
+
+				signaturePath, err := st.Path(parsed.Name, parsed.Tag, parsed.Organization, "")
 				if err != nil {
-					return fmt.Errorf("failed to export function %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					return fmt.Errorf("failed to export signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 				}
-				if e == nil {
-					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
-				}
-
-				analytics.Event("export-function", map[string]string{"language": string(e.Schema.Language)})
-
-				output := args[1]
 
 				outputPath := output
 				if !path.IsAbs(outputPath) {
@@ -96,25 +124,24 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("output path %s is not a directory", output)
 				}
 
-				if outputName == "" {
-					suffix := "scale"
-					if raw {
-						suffix = "wasm"
-					}
-					output = path.Join(output, fmt.Sprintf("%s-%s-%s.%s", parsed.Organization, parsed.Name, parsed.Tag, suffix))
-				} else {
-					output = path.Join(output, outputName)
-				}
-
-				if raw {
-					err = os.WriteFile(output, e.Schema.Function, 0644)
-				} else {
-					err = os.WriteFile(output, e.Schema.Encode(), 0644)
-				}
+				files, err := filepath.Glob(path.Join(signaturePath, language, kindString, "*"))
 				if err != nil {
-					return fmt.Errorf("failed to write function to %s: %w", output, err)
+					return fmt.Errorf("failed to glob signature files: %w", err)
 				}
 
+				for _, file := range files {
+					name := filepath.Base(file)
+					if manifest || (name != "go.mod" && name != "Cargo.toml") {
+						data, err := os.ReadFile(file)
+						if err != nil {
+							return fmt.Errorf("failed to read file %s: %w", file, err)
+						}
+						err = os.WriteFile(path.Join(outputPath, filepath.Base(file)), data, 0644)
+						if err != nil {
+							return fmt.Errorf("failed to write file %s: %w", file, err)
+						}
+					}
+				}
 				if ch.Printer.Format() == printer.Human {
 					ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(output))
 					return nil
@@ -125,13 +152,12 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					"org":         parsed.Organization,
 					"name":        parsed.Name,
 					"tag":         parsed.Tag,
-					"hash":        e.Hash,
 				})
 			},
 		}
 
-		exportCmd.Flags().StringVarP(&outputName, "output-name", "o", "", "the (optional) output name of the function to export")
-		exportCmd.Flags().BoolVar(&raw, "raw", false, "export the raw wasm module instead of the compiled scale function")
+		exportCmd.Flags().BoolVar(&manifest, "manifest", true, "export the manifest file with the compiled signature")
+
 		cmd.AddCommand(exportCmd)
 	}
 }
