@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -98,15 +99,15 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				var signaturePath string
 				var signatureVersion string
 				var signatureContext string
-				signatureOrg, signatureName, signatureTag := scalefunc.ParseFunctionName(signature)
-				if signatureOrg == "local" {
-					signaturePath, err = st.Path(signatureName, signatureTag, signatureOrg, "")
+				parsedSignature := scale.Parse(signature)
+				if parsedSignature.Organization == "local" {
+					signaturePath, err = st.Path(parsedSignature.Name, parsedSignature.Tag, parsedSignature.Organization, "")
 					if err != nil {
-						return fmt.Errorf("error while getting signature %s: %w", signatureName, err)
+						return fmt.Errorf("error while getting signature %s: %w", parsedSignature.Name, err)
 					}
-					sig, err := st.Get(signatureName, signatureTag, signatureOrg, "")
+					sig, err := st.Get(parsedSignature.Name, parsedSignature.Tag, parsedSignature.Organization, "")
 					if err != nil {
-						return fmt.Errorf("error while getting signature %s: %w", signatureName, err)
+						return fmt.Errorf("error while getting signature %s: %w", parsedSignature.Name, err)
 					}
 					switch scalefunc.Language(language) {
 					case scalefunc.Go:
@@ -123,11 +124,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					ctx := cmd.Context()
 					client := ch.Config.APIClient()
 
-					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", signatureOrg, signatureName, signatureTag))
-					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(signatureOrg).WithName(signatureName).WithTag(signatureTag))
+					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag))
+					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(parsedSignature.Organization).WithName(parsedSignature.Name).WithTag(parsedSignature.Tag))
 					end()
 					if err != nil {
-						return fmt.Errorf("failed to use signature %s/%s:%s: %w", signatureOrg, signatureName, signatureTag, err)
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag, err)
 					}
 
 					switch scalefunc.Language(language) {
@@ -148,9 +149,9 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					Name:    functionName,
 					Tag:     functionTag,
 					Signature: scalefile.SignatureSchema{
-						Organization: signatureOrg,
-						Name:         signatureName,
-						Tag:          signatureTag,
+						Organization: parsedSignature.Organization,
+						Name:         parsedSignature.Name,
+						Tag:          parsedSignature.Tag,
 					},
 				}
 
@@ -174,13 +175,13 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					err = modfileTempl.Execute(dependencyFile, map[string]interface{}{
 						"package":                  functionName,
 						"old_signature_dependency": "signature",
-						"old_signature_version":    signatureVersion,
+						"old_signature_version":    "",
 						"new_signature_dependency": signaturePath,
 						"new_signature_version":    signatureVersion,
 						"dependencies": []template.Dependency{
 							{
 								Name:    "signature",
-								Version: signatureVersion,
+								Version: "v0.1.0",
 							},
 						},
 					})
@@ -236,7 +237,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"package":              functionName,
 						"version":              signatureVersion,
 						"signature_dependency": "signature",
-						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", signatureOrg, signatureName, signatureTag),
+						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag),
 						"signature_version":    signatureVersion,
 						"signature_path":       signaturePath,
 						"registry":             "scale",

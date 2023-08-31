@@ -21,6 +21,7 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
+	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/scalefunc"
@@ -46,7 +47,7 @@ func RenameCmd() command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
 				}
-				parsed := utils.ParseFunction(args[0])
+				parsed := scale.Parse(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
@@ -67,7 +68,7 @@ func RenameCmd() command.SetupCommand[*config.Config] {
 					return fmt.Errorf("function %s/%s:%s does not exist", parsed.Organization, parsed.Name, parsed.Tag)
 				}
 
-				newParsed := utils.ParseFunction(args[1])
+				newParsed := scale.Parse(args[1])
 				if newParsed.Organization != "" && !scalefunc.ValidString(newParsed.Organization) {
 					return utils.InvalidStringError("organization name", newParsed.Organization)
 				}

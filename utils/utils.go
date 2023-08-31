@@ -33,7 +33,6 @@ import (
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/spf13/cobra"
 	"io"
-	"strings"
 )
 
 var (
@@ -212,28 +211,6 @@ func PostRunAnalytics(_ *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comman
 	return func(cmd *cobra.Command, args []string) error {
 		analytics.Cleanup()
 		return nil
-	}
-}
-
-type ParsedFunction struct {
-	Organization string
-	Name         string
-	Tag          string
-}
-
-func ParseFunction(fn string) *ParsedFunction {
-	orgSplit := strings.Split(fn, "/")
-	if len(orgSplit) == 1 {
-		orgSplit = []string{"", fn}
-	}
-	tagSplit := strings.Split(orgSplit[1], ":")
-	if len(tagSplit) == 1 {
-		tagSplit = []string{tagSplit[0], ""}
-	}
-	return &ParsedFunction{
-		Organization: orgSplit[0],
-		Name:         tagSplit[0],
-		Tag:          tagSplit[1],
 	}
 }
 

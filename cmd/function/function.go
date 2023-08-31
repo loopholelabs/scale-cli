@@ -57,9 +57,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		exportSetup := ExportCmd()
 		exportSetup(functionCmd, ch)
 
-		//runSetup := RunCmd(false)
-		//runSetup(functionCmd, ch)
-		//
+		runSetup := RunCmd(false)
+		runSetup(functionCmd, ch)
+
 		//deploySetup := DeployCmd(false)
 		//deploySetup(functionCmd, ch)
 
