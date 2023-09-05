@@ -108,8 +108,6 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				var signatureSchema *signature.Schema
-				var signatureImportPath string
-				var signatureImportVersion string
 				if sf.Signature.Organization == "local" {
 					sts := storage.DefaultSignature
 					if ch.Config.StorageDirectory != "" {
@@ -124,23 +122,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to get signature %s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
 					}
 
-					signaturePath, err := sts.Path(sf.Signature.Name, sf.Signature.Tag, sf.Signature.Organization, "")
-					if err != nil {
-						return fmt.Errorf("failed to get signature %s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
-					}
-
-					switch scalefunc.Language(sf.Language) {
-					case scalefunc.Go:
-						signatureImportPath = path.Join(signaturePath, "golang", "guest")
-						signatureImportVersion = ""
-					case scalefunc.Rust:
-						signatureImportPath = path.Join(signaturePath, "rust", "guest")
-						signatureImportVersion = ""
-					default:
-						return fmt.Errorf("language %s is not supported for local builds", sf.Language)
-					}
 					signatureSchema = sig.Schema
-
 				} else {
 					ctx := cmd.Context()
 					client := ch.Config.APIClient()
@@ -149,16 +131,6 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					end()
 					if err != nil {
 						return fmt.Errorf("failed to fetch signature %s/%s:%s: %w", sf.Signature.Organization, sf.Signature.Name, sf.Signature.Tag, err)
-					}
-					switch scalefunc.Language(sf.Language) {
-					case scalefunc.Go:
-						signatureImportVersion = ""
-						signatureImportPath = res.GetPayload().GolangImportPathGuest
-					case scalefunc.Rust:
-						signatureImportVersion = "0.1.0"
-						signatureImportPath = ""
-					default:
-						return fmt.Errorf("language %s is not supported for local builds", sf.Language)
 					}
 
 					signatureSchemaData, err := base64.StdEncoding.DecodeString(res.GetPayload().Schema)
@@ -177,35 +149,29 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
 					opts := &build.LocalGolangOptions{
-						Version:          version.Version,
-						Scalefile:        sf,
-						SourceDirectory:  sourceDir,
-						SignaturePath:    signatureImportPath,
-						SignatureVersion: signatureImportVersion,
-						SignatureSchema:  signatureSchema,
-						Storage:          stb,
-						Release:          release,
-						Target:           build.WASITarget,
-						GoBin:            goBin,
-						TinyGoBin:        tinygoBin,
-						Args:             tinygoArgs,
+						Version:         version.Version,
+						Scalefile:       sf,
+						SourceDirectory: sourceDir,
+						SignatureSchema: signatureSchema,
+						Storage:         stb,
+						Release:         release,
+						Target:          build.WASITarget,
+						GoBin:           goBin,
+						TinyGoBin:       tinygoBin,
+						Args:            tinygoArgs,
 					}
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
-					signaturePackage := fmt.Sprintf("%s_%s_%s_guest", sf.Signature.Organization, sf.Signature.Name, sf.Signature.Tag)
 					opts := &build.LocalRustOptions{
-						Version:          version.Version,
-						Scalefile:        sf,
-						SourceDirectory:  sourceDir,
-						SignaturePackage: signaturePackage,
-						SignaturePath:    signatureImportPath,
-						SignatureVersion: signatureImportVersion,
-						SignatureSchema:  signatureSchema,
-						Storage:          stb,
-						Release:          release,
-						Target:           build.WASITarget,
-						CargoBin:         cargoBin,
-						Args:             cargoArgs,
+						Version:         version.Version,
+						Scalefile:       sf,
+						SourceDirectory: sourceDir,
+						SignatureSchema: signatureSchema,
+						Storage:         stb,
+						Release:         release,
+						Target:          build.WASITarget,
+						CargoBin:        cargoBin,
+						Args:            cargoArgs,
 					}
 					scaleFunc, err = build.LocalRust(opts)
 				default:
