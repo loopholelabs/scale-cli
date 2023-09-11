@@ -89,4 +89,51 @@ model Context {
     default = "DefaultValue"
   }
 }`
+
+	ExtensionFile = `
+	version = "v1alpha"
+	name = "HttpFetch"
+	tag = "alpha"
+	
+	function New {
+		params = "HttpConfig"
+		return = "HttpConnector"	
+	}
+	
+	model HttpConfig {
+		int32 timeout {
+			default = 60
+		}
+	}
+	
+	model HttpResponse {
+		string_map Headers {
+			value = "StringList"
+		}
+		int32 StatusCode {
+			default = 0
+		}
+		bytes Body {
+			initial_size = 0
+		}
+	}
+	
+	model StringList {
+		string_array Values {
+			initial_size = 0
+		}
+	}
+	
+	model ConnectionDetails {
+		string url {
+			default = "https://google.com"
+		}
+	}
+	
+	interface HttpConnector {
+		function Fetch {
+			params = "ConnectionDetails"
+			return = "HttpResponse"
+		}
+	}`
 )
