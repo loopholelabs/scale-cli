@@ -46,6 +46,9 @@ func Cmd() command.SetupCommand[*config.Config] {
 		generateSetup := GenerateCmd(false)
 		generateSetup(extensionCmd, ch)
 
+		listSetup := ListCmd(false)
+		listSetup(extensionCmd, ch)
+
 		cmd.AddCommand(extensionCmd)
 	}
 }
