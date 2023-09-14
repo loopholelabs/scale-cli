@@ -19,6 +19,9 @@ package function
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -27,13 +30,12 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/build"
+	"github.com/loopholelabs/scale/extension"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/signature"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -145,6 +147,40 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				out := ch.Printer.Out()
 
+				// Deal with extensions...
+				extensionData := make([]extension.ExtensionInfo, 0)
+
+				ets := storage.DefaultExtension
+				if ch.Config.StorageDirectory != "" {
+					ets, err = storage.NewExtension(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate extension storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+				}
+
+				for _, e := range sf.Extensions {
+					if e.Organization == "local" {
+						extensionPath, err := ets.Path(e.Name, e.Tag, e.Organization, "")
+
+						fmt.Printf("TODO: Include extension %v in build\n", e.Name)
+
+						ext, err := ets.Get(e.Name, e.Tag, e.Organization, "")
+						if err != nil {
+							return fmt.Errorf("failed to get extension %s:%s: %w", e.Name, e.Tag, err)
+						}
+
+						extensionData = append(extensionData, extension.ExtensionInfo{
+							Name:    ext.Schema.Name,
+							Path:    path.Join(extensionPath, "golang", "guest"),
+							Version: "v0.1.0",
+						})
+					} else {
+						panic("Only local atm")
+					}
+				}
+
+				// extensionData is setup for use in generating go.mod...
+
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.Schema
 				switch scalefunc.Language(sf.Language) {
@@ -160,6 +196,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						GoBin:           goBin,
 						TinyGoBin:       tinygoBin,
 						Args:            tinygoArgs,
+						Extensions:      extensionData,
 					}
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:

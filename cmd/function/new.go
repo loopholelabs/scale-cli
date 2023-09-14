@@ -32,6 +32,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/template"
 	"github.com/loopholelabs/scale-cli/utils"
+	"github.com/loopholelabs/scale/extension"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
@@ -103,13 +104,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				type ExtensionInfo struct {
-					Name    string
-					Path    string
-					Version string
-				}
-
-				var extensionData = make([]ExtensionInfo, 0)
+				var extensionData = make([]extension.ExtensionInfo, 0)
 				for _, e := range extensions {
 					var extensionPath string
 					parsedExtension := scale.Parse(e)
@@ -128,7 +123,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 						switch scalefunc.Language(language) {
 						case scalefunc.Go:
-							extensionData = append(extensionData, ExtensionInfo{
+							extensionData = append(extensionData, extension.ExtensionInfo{
 								Name:    ext.Schema.Name,
 								Path:    path.Join(extensionPath, "golang", "guest"),
 								Version: "v0.1.0",
@@ -202,6 +197,18 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Name:         parsedSignature.Name,
 						Tag:          parsedSignature.Tag,
 					},
+				}
+
+				scaleFile.Extensions = make([]scalefile.ExtensionSchema, 0)
+
+				for _, ex := range extensions {
+					parsedExtension := scale.Parse(ex)
+
+					scaleFile.Extensions = append(scaleFile.Extensions, scalefile.ExtensionSchema{
+						Organization: parsedExtension.Organization,
+						Name:         parsedExtension.Name,
+						Tag:          parsedExtension.Tag,
+					})
 				}
 
 				scaleFilePath := path.Join(sourceDir, "scalefile")
