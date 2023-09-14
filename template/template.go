@@ -29,9 +29,18 @@ go 1.20
 
 replace {{ .old_signature_dependency }} {{ .old_signature_version }} => {{ .new_signature_dependency }} {{ .new_signature_version }}
 
+{{ range $extension := .extensions -}}
+		replace {{ $extension.Name }} => {{ $extension.Path }}
+{{end -}}
+
 {{ range $dependency := .dependencies -}}
     require {{ $dependency.Name }} {{ $dependency.Version }}
 {{end -}}
+
+{{ range $extension := .extensions -}}
+		require {{ $extension.Name }} {{ $extension.Version }}
+{{end -}}
+
 `
 
 	GoFunctionTemplate = `
@@ -101,7 +110,7 @@ model Context {
 	}
 	
 	model HttpConfig {
-		int32 timeout {
+		int32 Timeout {
 			default = 60
 		}
 	}
@@ -125,7 +134,7 @@ model Context {
 	}
 	
 	model ConnectionDetails {
-		string url {
+		string Url {
 			default = "https://google.com"
 		}
 	}
