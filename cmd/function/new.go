@@ -18,6 +18,11 @@ package function
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"strings"
+	textTemplate "text/template"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -31,10 +36,6 @@ import (
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
-	"strings"
-	textTemplate "text/template"
 )
 
 // NewCmd encapsulates the commands for creating new Functions
@@ -42,6 +43,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 	var language string
 	var signature string
+	var extensions []string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
 			Use:      "new <name>:<tag> [flags]",
@@ -52,9 +54,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultSignature
+				et := storage.DefaultExtension
 				if ch.Config.StorageDirectory != "" {
 					var err error
 					st, err = storage.NewSignature(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+					et, err = storage.NewExtension(ch.Config.StorageDirectory)
 					if err != nil {
 						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
@@ -94,6 +101,48 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if err != nil {
 						return fmt.Errorf("error creating directory %s: %w", sourceDir, err)
 					}
+				}
+
+				type ExtensionInfo struct {
+					Name    string
+					Path    string
+					Version string
+				}
+
+				var extensionData = make([]ExtensionInfo, 0)
+				for _, e := range extensions {
+					var extensionPath string
+					parsedExtension := scale.Parse(e)
+					if parsedExtension.Organization == "local" {
+						extensionPath, err = et.Path(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
+						if err != nil {
+							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
+						}
+
+						ext, err := et.Get(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
+						if err != nil {
+							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
+						}
+
+						fmt.Printf("Including extension %v\n", ext.Schema)
+
+						switch scalefunc.Language(language) {
+						case scalefunc.Go:
+							extensionData = append(extensionData, ExtensionInfo{
+								Name:    ext.Schema.Name,
+								Path:    path.Join(extensionPath, "golang", "guest"),
+								Version: "v0.1.0",
+							})
+						default:
+							panic("Only go extension for now")
+						}
+					} else {
+						panic("Only local extension for now")
+					}
+				}
+
+				for _, d := range extensionData {
+					fmt.Printf("Extension %s Path %s Ver %s\n", d.Name, d.Path, d.Version)
 				}
 
 				var signaturePath string
@@ -181,6 +230,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"package_name":      functionName,
 						"signature_path":    signaturePath,
 						"signature_version": signatureVersion,
+						"extensions":        extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -350,7 +400,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
 		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language for the new scale function (go, rust, ts)")
 		newCmd.Flags().StringVarP(&signature, "signature", "s", "", "the signature to use with the new scale function")
-
+		newCmd.Flags().StringArrayVarP(&extensions, "extension", "e", []string{}, "the extensions to use in the scale function")
 		cmd.AddCommand(newCmd)
 	}
 }
