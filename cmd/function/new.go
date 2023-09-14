@@ -119,8 +119,6 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
 						}
 
-						fmt.Printf("Including extension %v\n", ext.Schema)
-
 						switch scalefunc.Language(language) {
 						case scalefunc.Go:
 							extensionData = append(extensionData, extension.ExtensionInfo{
@@ -134,10 +132,6 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					} else {
 						panic("Only local extension for now")
 					}
-				}
-
-				for _, d := range extensionData {
-					fmt.Printf("Extension %s Path %s Ver %s\n", d.Name, d.Path, d.Version)
 				}
 
 				var signaturePath string
