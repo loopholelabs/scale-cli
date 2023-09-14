@@ -165,8 +165,6 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if e.Organization == "local" {
 						extensionPath, err := ets.Path(e.Name, e.Tag, e.Organization, "")
 
-						fmt.Printf("TODO: Include extension %v in build\n", e.Name)
-
 						ext, err := ets.Get(e.Name, e.Tag, e.Organization, "")
 						if err != nil {
 							return fmt.Errorf("failed to get extension %s:%s: %w", e.Name, e.Tag, err)
