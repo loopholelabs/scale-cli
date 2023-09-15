@@ -35,6 +35,23 @@ echo "Building function"
 echo "Exporting function"
 ./cmd/cmd function export local/testfn:latest ext/
 
+echo "Updating runner go.mod..."
+
+sig=`cat ext/fn/go.mod | grep testsig_latest | sed -e "s/guest/host/"`
+ext=`cat ext/fn/go.mod | grep testext_latest | sed -e "s/guest/host/"`
+
+echo "Signature is " ${sig}
+echo "Extension is " ${ext}
+
+# Get rid of any old or previous replacements
+cat ext/runner/go.mod | grep -v testsig_latest | grep -v testext_latest > ext/runner/go.mod.new
+mv ext/runner/go.mod.new ext/runner/go.mod
+
+# Now insert the correct locations
+echo "" >> ext/runner/go.mod
+echo ${sig} >> ext/runner/go.mod
+echo ${ext} >> ext/runner/go.mod
+
 echo "Running..."
 
 cd ext/runner
