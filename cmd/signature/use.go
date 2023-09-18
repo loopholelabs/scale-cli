@@ -18,6 +18,9 @@ package signature
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -31,8 +34,6 @@ import (
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
 )
 
 // UseCmd encapsulates the commands for using a Signature

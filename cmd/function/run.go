@@ -18,6 +18,14 @@ package function
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -31,13 +39,6 @@ import (
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-	"io"
-	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 )
 
 // RunCmd encapsulates the commands for running Functions
