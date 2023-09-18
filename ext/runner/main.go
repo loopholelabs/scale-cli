@@ -16,6 +16,8 @@ import (
 type FetchExtension struct {
 }
 
+// implementor
+
 type HttpConnector struct {
 }
 
@@ -52,11 +54,14 @@ func main() {
 	}
 
 	ext_impl := &FetchExtension{}
-	fns := HttpFetch.InstallExtension(ext_impl)
 
 	ctx := context.Background()
 
-	config := scale.NewConfig(sig.New).WithContext(ctx).WithFunctions([]*scalefunc.Schema{s}).WithExtensions(fns)
+	// runtime
+	config := scale.NewConfig(sig.New).
+		WithContext(ctx).
+		WithFunctions([]*scalefunc.Schema{s}).
+		WithExtension(HttpFetch.New(ext_impl))
 
 	r, err := scale.New(config)
 	if err != nil {
@@ -76,5 +81,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Data from scaleFunction: %s\n", sigctx.Context.MyString)
+	fmt.Printf("Data(1) from scaleFunction: %s\n", sigctx.Context.MyString)
+
+	err = i.Run(context.Background(), sigctx)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Data(2) from scaleFunction: %s\n", sigctx.Context.MyString)
+
 }
