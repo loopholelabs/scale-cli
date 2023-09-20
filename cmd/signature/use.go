@@ -132,7 +132,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = m.RemoveReplacement("signature", golang.DefaultVersion)
+					err = m.RemoveReplacement("signature", "v0.1.0")
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
@@ -142,7 +142,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = m.AddReplacement("signature", golang.DefaultVersion, signaturePath, signatureVersion)
+					err = m.AddReplacement("signature", "v0.1.0", signaturePath, signatureVersion)
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}

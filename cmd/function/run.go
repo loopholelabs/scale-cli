@@ -44,7 +44,6 @@ import (
 func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		var listen string
-		var pooling bool
 		runCmd := &cobra.Command{
 			Use:      "run [ ...[ <org>/<name>:<tag> ] ] [flags]",
 			Args:     cobra.MinimumNArgs(1),
@@ -145,7 +144,8 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to create type check signature: %w", err)
 				}
 
-				s, err := scale.New(scale.NewConfig(typecheckSignature.Signature).WithContext(ctx).WithFunctions(fns).WithPooling(pooling))
+				writer := ch.Printer.Out()
+				s, err := scale.New(scale.NewConfig(typecheckSignature.Signature).WithContext(ctx).WithFunctions(fns).WithStdout(writer).WithStderr(writer))
 				if err != nil {
 					return fmt.Errorf("failed to create scale: %w", err)
 				}
@@ -215,7 +215,6 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		runCmd.Flags().StringVarP(&listen, "listen", "l", ":8080", "the address to listen on")
-		runCmd.Flags().BoolVar(&pooling, "pooling", false, "whether to enable pooling of functions")
 		cmd.AddCommand(runCmd)
 	}
 }

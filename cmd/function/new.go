@@ -235,7 +235,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 					err = cargofileTempl.Execute(dependencyFile, map[string]interface{}{
 						"package":              functionName,
-						"version":              signatureVersion,
+						"version":              "0.1.0",
 						"signature_dependency": "signature",
 						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag),
 						"signature_version":    signatureVersion,

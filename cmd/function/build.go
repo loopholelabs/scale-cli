@@ -26,7 +26,6 @@ import (
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
-	"github.com/loopholelabs/scale-cli/version"
 	"github.com/loopholelabs/scale/build"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
@@ -144,12 +143,14 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
+				out := ch.Printer.Out()
+
 				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.Schema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
 					opts := &build.LocalGolangOptions{
-						Version:         version.Version,
+						Output:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,
@@ -163,7 +164,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
 					opts := &build.LocalRustOptions{
-						Version:         version.Version,
+						Output:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,

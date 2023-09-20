@@ -10,9 +10,9 @@ require (
 	github.com/go-openapi/swag v0.22.4
 	github.com/go-openapi/validate v0.22.1
 	github.com/loopholelabs/auth v0.2.47
-	github.com/loopholelabs/cmdutils v0.1.3
+	github.com/loopholelabs/cmdutils v0.1.4
 	github.com/loopholelabs/releaser v0.1.1
-	github.com/loopholelabs/scale v0.3.20-dev32
+	github.com/loopholelabs/scale v0.4.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.16.0
-	github.com/valyala/fasthttp v1.48.0
+	github.com/valyala/fasthttp v1.50.0
 )
 
 require (
@@ -35,7 +35,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/briandowns/spinner v1.23.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
-	github.com/evanw/esbuild v0.19.2 // indirect
+	github.com/evanw/esbuild v0.19.3 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -92,7 +92,7 @@ require (
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/term v0.10.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
