@@ -2,6 +2,8 @@ module github.com/loopholelabs/scale-cli
 
 go 1.20
 
+replace github.com/loopholelabs/scale => ../scale
+
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/go-openapi/errors v0.20.4
@@ -62,6 +64,7 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot v1.1.3 // indirect
+	github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4 // indirect
 	github.com/loopholelabs/scale-signature-interfaces v0.1.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
