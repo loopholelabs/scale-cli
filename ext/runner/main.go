@@ -48,10 +48,31 @@ func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpRe
 func main() {
 	fmt.Printf("Running scale function with ext...\n")
 
-	s, err := scalefunc.Read("../local-testfn-latest.scale")
+	sgo, err := scalefunc.Read("../local-testfngo-latest.scale")
 	if err != nil {
 		panic(err)
 	}
+
+	testfn(sgo)
+
+	srs, err := scalefunc.Read("../local-testfnrs-latest.scale")
+	if err != nil {
+		panic(err)
+	}
+
+	testfn(srs)
+
+	sts, err := scalefunc.Read("../local-testfnts-latest.scale")
+	if err != nil {
+		panic(err)
+	}
+
+	testfn(sts)
+
+}
+
+func testfn(fn *scalefunc.Schema) {
+	fmt.Printf("Running scale function with ext... %s\n", fn.Language)
 
 	ext_impl := &FetchExtension{}
 
@@ -60,7 +81,7 @@ func main() {
 	// runtime
 	config := scale.NewConfig(sig.New).
 		WithContext(ctx).
-		WithFunctions([]*scalefunc.Schema{s}).
+		WithFunctions([]*scalefunc.Schema{fn}).
 		WithExtension(HttpFetch.New(ext_impl))
 
 	r, err := scale.New(config)
@@ -81,13 +102,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("Data(1) from scaleFunction: %s\n", sigctx.Context.MyString)
+	fmt.Printf("Data(1)[%s] from scaleFunction: %s\n", fn.Language, sigctx.Context.MyString)
 
 	err = i.Run(context.Background(), sigctx)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("Data(2) from scaleFunction: %s\n", sigctx.Context.MyString)
+	fmt.Printf("Data(2)[%s] from scaleFunction: %s\n", fn.Language, sigctx.Context.MyString)
 
 }
