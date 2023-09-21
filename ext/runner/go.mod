@@ -25,7 +25,7 @@ require (
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/tetratelabs/wazero v1.5.0 // indirect
 	github.com/zclconf/go-cty v1.13.2 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 )
 
 
