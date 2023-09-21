@@ -65,7 +65,7 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot v1.1.3 // indirect
-	github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4 // indirect
+	github.com/loopholelabs/scale-extension-interfaces v0.1.0 // indirect
 	github.com/loopholelabs/scale-signature-interfaces v0.1.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
