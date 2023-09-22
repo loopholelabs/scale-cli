@@ -124,10 +124,16 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 							extensionData = append(extensionData, extension.ExtensionInfo{
 								Name:    ext.Schema.Name,
 								Path:    path.Join(extensionPath, "golang", "guest"),
-								Version: "v0.1.0",
+								Version: "0.1.0",
+							})
+						case scalefunc.Rust:
+							extensionData = append(extensionData, extension.ExtensionInfo{
+								Name:    ext.Schema.Name,
+								Path:    path.Join(extensionPath, "rust", "guest"),
+								Version: "0.1.0",
 							})
 						default:
-							panic("Only go extension for now")
+							panic("Only go or rust extension for now")
 						}
 					} else {
 						panic("Only local extension for now")
@@ -292,6 +298,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"signature_version":    signatureVersion,
 						"signature_path":       signaturePath,
 						"registry":             "scale",
+						"extensions":           extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
