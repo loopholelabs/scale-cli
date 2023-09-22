@@ -66,6 +66,10 @@ signature = { package = "{{ .signature_package }}", path = "{{ .signature_path }
 signature = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "scale" }
 {{ end }}
 
+{{ range $extension := .extensions -}}
+{{ $extension.Name }} = { package = "{{ $extension.Name }}", path = "{{ $extension.Path }}" }
+{{end -}}
+
 [profile.release]
 opt-level = 3
 lto = true
