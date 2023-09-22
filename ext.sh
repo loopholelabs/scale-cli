@@ -32,21 +32,22 @@ echo "Exporting function"
 mkdir ext/fn-rs
 echo "Creating function"
 ./cmd/cmd function new -d ext/fn-rs -s local/testsig:latest -e local/testext:latest -l rust testfnrs:latest
-# cat ext/fn_code.rs > ext/fn-rs/main.rs
+cat ext/fn_code.rs > ext/fn-rs/lib.rs
 echo "Building function"
 ./cmd/cmd function build -d ext/fn-rs
 echo "Exporting function"
 ./cmd/cmd function export local/testfnrs:latest ext/
 
+
 # Create a function using the extension in Typescript
-mkdir ext/fn-ts
-echo "Creating function"
-./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -e local/testext:latest -l rust testfnts:latest
+#mkdir ext/fn-ts
+#echo "Creating function"
+#./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -e local/testext:latest -l rust testfnts:latest
 # cat ext/fn_code.ts > ext/fn-ts/main.ts
-echo "Building function"
-./cmd/cmd function build -d ext/fn-ts
-echo "Exporting function"
-./cmd/cmd function export local/testfnts:latest ext/
+#echo "Building function"
+#./cmd/cmd function build -d ext/fn-ts
+#echo "Exporting function"
+#./cmd/cmd function export local/testfnts:latest ext/
 
 # Sort out runner
 echo "Updating runner go.mod..."
