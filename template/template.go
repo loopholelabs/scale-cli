@@ -67,7 +67,7 @@ signature = { package = "{{ .signature_package }}", version = "{{ .signature_ver
 {{ end }}
 
 {{ range $extension := .extensions -}}
-{{ $extension.Name }} = { package = "{{ $extension.Name }}", path = "{{ $extension.Path }}" }
+{{ $extension.Name }} = { package = "{{ $extension.Package }}", path = "{{ $extension.Path }}" }
 {{end -}}
 
 [profile.release]
