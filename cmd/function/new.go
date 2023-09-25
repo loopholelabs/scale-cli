@@ -119,6 +119,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
 						}
 
+						extPackageName := fmt.Sprintf("%s_%s_%s_guest", parsedExtension.Organization, parsedExtension.Name, parsedExtension.Tag)
+
 						switch scalefunc.Language(language) {
 						case scalefunc.Go:
 							extensionData = append(extensionData, extension.ExtensionInfo{
@@ -131,6 +133,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 								Name:    ext.Schema.Name,
 								Path:    path.Join(extensionPath, "rust", "guest"),
 								Version: "v0.1.0",
+								Package: extPackageName,
 							})
 						default:
 							panic("Only go or rust extension for now")
