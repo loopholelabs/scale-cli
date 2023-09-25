@@ -124,13 +124,13 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 							extensionData = append(extensionData, extension.ExtensionInfo{
 								Name:    ext.Schema.Name,
 								Path:    path.Join(extensionPath, "golang", "guest"),
-								Version: "0.1.0",
+								Version: "v0.1.0",
 							})
 						case scalefunc.Rust:
 							extensionData = append(extensionData, extension.ExtensionInfo{
 								Name:    ext.Schema.Name,
 								Path:    path.Join(extensionPath, "rust", "guest"),
-								Version: "0.1.0",
+								Version: "v0.1.0",
 							})
 						default:
 							panic("Only go or rust extension for now")
