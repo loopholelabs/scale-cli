@@ -88,13 +88,15 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					outputPath = path.Join(wd, outputPath)
 				}
 
-				oInfo, err := os.Stat(output)
+				oInfo, err := os.Stat(outputPath)
 				if err != nil {
-					return fmt.Errorf("failed to stat output path %s: %w", output, err)
-				}
-
-				if !oInfo.IsDir() {
-					return fmt.Errorf("output path %s is not a directory", output)
+					ch.Printer.Printf("Creating output directory %s\n", printer.BoldBlue(outputPath))
+					err = os.MkdirAll(outputPath, 0755)
+					if err != nil {
+						return fmt.Errorf("failed to create output directory %s: %w", outputPath, err)
+					}
+				} else if !oInfo.IsDir() {
+					return fmt.Errorf("output path %s is not a directory", outputPath)
 				}
 
 				if outputName == "" {
@@ -102,27 +104,27 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					if raw {
 						suffix = "wasm"
 					}
-					output = path.Join(output, fmt.Sprintf("%s-%s-%s.%s", parsed.Organization, parsed.Name, parsed.Tag, suffix))
+					outputPath = path.Join(outputPath, fmt.Sprintf("%s-%s-%s.%s", parsed.Organization, parsed.Name, parsed.Tag, suffix))
 				} else {
-					output = path.Join(output, outputName)
+					outputPath = path.Join(outputPath, outputName)
 				}
 
 				if raw {
-					err = os.WriteFile(output, e.Schema.Function, 0644)
+					err = os.WriteFile(outputPath, e.Schema.Function, 0644)
 				} else {
-					err = os.WriteFile(output, e.Schema.Encode(), 0644)
+					err = os.WriteFile(outputPath, e.Schema.Encode(), 0644)
 				}
 				if err != nil {
-					return fmt.Errorf("failed to write function to %s: %w", output, err)
+					return fmt.Errorf("failed to write function to %s: %w", outputPath, err)
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(output))
+					ch.Printer.Printf("Exported scale function %s to %s\n", printer.BoldGreen(fmt.Sprintf("%s/%s:%s", parsed.Organization, parsed.Name, parsed.Tag)), printer.BoldBlue(outputPath))
 					return nil
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
-					"destination": output,
+					"destination": outputPath,
 					"org":         parsed.Organization,
 					"name":        parsed.Name,
 					"tag":         parsed.Tag,

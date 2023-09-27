@@ -51,7 +51,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 					sourceDir = path.Join(wd, sourceDir)
 				}
-				err := os.WriteFile(path.Join(sourceDir, fmt.Sprintf("scale.signature")), []byte(template.SignatureFile), 0644)
+				err := os.WriteFile(path.Join(sourceDir, "scale.signature"), []byte(template.SignatureFile), 0644)
 				if err != nil {
 					return fmt.Errorf("error writing signature: %w", err)
 				}
@@ -62,7 +62,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				return ch.Printer.PrintResource(map[string]string{
-					"path": path.Join(directory, fmt.Sprintf("scale.signature")),
+					"path": path.Join(directory, "scale.signature"),
 				})
 			},
 		}

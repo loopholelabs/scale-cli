@@ -118,7 +118,10 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 					sig, err := sts.Get(sf.Signature.Name, sf.Signature.Tag, sf.Signature.Organization, "")
 					if err != nil {
-						return fmt.Errorf("failed to get signature %s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
+						return fmt.Errorf("failed to get signature local/%s:%s: %w", sf.Signature.Name, sf.Signature.Tag, err)
+					}
+					if sig == nil {
+						return fmt.Errorf("signature local/%s:%s not found", sf.Signature.Name, sf.Signature.Tag)
 					}
 
 					signatureSchema = sig.Schema
@@ -145,7 +148,6 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				out := ch.Printer.Out()
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.Schema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
@@ -176,10 +178,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 					scaleFunc, err = build.LocalRust(opts)
 				default:
-					end()
 					return fmt.Errorf("language %s is not supported for local builds", sf.Language)
 				}
-				end()
 				if err != nil {
 					return fmt.Errorf("failed to build scale function: %w", err)
 				}
