@@ -90,10 +90,12 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 
 				oInfo, err := os.Stat(outputPath)
 				if err != nil {
-					return fmt.Errorf("failed to stat output path %s: %w", outputPath, err)
-				}
-
-				if !oInfo.IsDir() {
+					ch.Printer.Printf("Creating output directory %s\n", printer.BoldBlue(outputPath))
+					err = os.MkdirAll(outputPath, 0755)
+					if err != nil {
+						return fmt.Errorf("failed to create output directory %s: %w", outputPath, err)
+					}
+				} else if !oInfo.IsDir() {
 					return fmt.Errorf("output path %s is not a directory", outputPath)
 				}
 
