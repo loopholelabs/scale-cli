@@ -71,7 +71,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				kind := args[2]
 				output := args[3]
 
-				kindString := "guest"
+				var kindString string
 				switch kind {
 				case "guest":
 					switch scalefunc.Language(language) {
