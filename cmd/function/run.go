@@ -29,6 +29,7 @@ import (
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/signature/converter"
 	"github.com/loopholelabs/scale/storage"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
 	"io"
@@ -144,72 +145,111 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return fmt.Errorf("failed to create type check signature: %w", err)
 				}
 
-				writer := ch.Printer.Out()
-				s, err := scale.New(scale.NewConfig(typecheckSignature.Signature).WithContext(ctx).WithFunctions(fns).WithStdout(writer).WithStderr(writer))
-				if err != nil {
-					return fmt.Errorf("failed to create scale: %w", err)
-				}
-
-				stop := make(chan os.Signal, 1)
-				signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
-
-				server := fasthttp.Server{
-					Handler: func(ctx *fasthttp.RequestCtx) {
-						if !ctx.IsPost() {
-							ctx.Error("Unsupported method", fasthttp.StatusMethodNotAllowed)
-							return
-						}
-						instance, err := s.Instance()
-						if err != nil {
-							ctx.Error(fmt.Sprintf("Failed to create instance: %v", err), fasthttp.StatusInternalServerError)
-							return
-						}
-						sig, err := converter.NewSignature(fns[0].SignatureSchema)
-						if err != nil {
-							ctx.Error(fmt.Sprintf("Failed to create signature: %v", err), fasthttp.StatusInternalServerError)
-							return
-						}
-						err = sig.FromJSON(ctx.PostBody())
-						if err != nil {
-							ctx.Error(fmt.Sprintf("Failed to parse signature: %v", err), fasthttp.StatusInternalServerError)
-							return
-						}
-						err = instance.Run(ctx, sig)
-						if err != nil {
-							ctx.Error(fmt.Sprintf("Failed to run function: %v", err), fasthttp.StatusInternalServerError)
-							return
-						}
-
-						body, err := sig.ToJSON()
-						if err != nil {
-							ctx.Error(fmt.Sprintf("Failed to encode signature: %v", err), fasthttp.StatusInternalServerError)
-							return
-						}
-
-						ctx.SetContentType("application/json")
-						ctx.SetStatusCode(fasthttp.StatusOK)
-						ctx.SetBody(body)
-					},
-					CloseOnShutdown: true,
-					IdleTimeout:     time.Second,
-				}
-
-				var wg sync.WaitGroup
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					ch.Printer.Printf("Scale Functions %s listening at %s", printer.BoldGreen(args), printer.BoldGreen(listen))
-					err = server.ListenAndServe(listen)
+				if isatty.IsTerminal(os.Stdin.Fd()) || isatty.IsCygwinTerminal(os.Stdin.Fd()) {
+					writer := ch.Printer.Out()
+					s, err := scale.New(scale.NewConfig(typecheckSignature.Signature).WithContext(ctx).WithFunctions(fns).WithStdout(writer).WithStderr(writer))
 					if err != nil {
-						ch.Printer.Printf("error starting server: %v", printer.BoldRed(err))
+						return fmt.Errorf("failed to create scale: %w", err)
 					}
-				}()
-				<-stop
-				err = server.Shutdown()
-				if err != nil {
-					return fmt.Errorf("failed to shutdown server: %w", err)
+
+					stop := make(chan os.Signal, 1)
+					signal.Notify(stop, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+					server := fasthttp.Server{
+						Handler: func(ctx *fasthttp.RequestCtx) {
+							if !ctx.IsPost() {
+								ctx.Error("Unsupported method", fasthttp.StatusMethodNotAllowed)
+								return
+							}
+							instance, err := s.Instance()
+							if err != nil {
+								ctx.Error(fmt.Sprintf("Failed to create instance: %v", err), fasthttp.StatusInternalServerError)
+								return
+							}
+							sig, err := converter.NewSignature(fns[0].SignatureSchema)
+							if err != nil {
+								ctx.Error(fmt.Sprintf("Failed to create signature: %v", err), fasthttp.StatusInternalServerError)
+								return
+							}
+							err = sig.FromJSON(ctx.PostBody())
+							if err != nil {
+								ctx.Error(fmt.Sprintf("Failed to parse signature: %v", err), fasthttp.StatusInternalServerError)
+								return
+							}
+							err = instance.Run(ctx, sig)
+							if err != nil {
+								ctx.Error(fmt.Sprintf("Failed to run function: %v", err), fasthttp.StatusInternalServerError)
+								return
+							}
+
+							body, err := sig.ToJSON()
+							if err != nil {
+								ctx.Error(fmt.Sprintf("Failed to encode signature: %v", err), fasthttp.StatusInternalServerError)
+								return
+							}
+
+							ctx.SetContentType("application/json")
+							ctx.SetStatusCode(fasthttp.StatusOK)
+							ctx.SetBody(body)
+						},
+						CloseOnShutdown: true,
+						IdleTimeout:     time.Second,
+					}
+
+					var wg sync.WaitGroup
+					wg.Add(1)
+					go func() {
+						defer wg.Done()
+						ch.Printer.Printf("Scale Functions %s listening at %s\n", printer.BoldGreen(args), printer.BoldGreen(listen))
+						err = server.ListenAndServe(listen)
+						if err != nil {
+							ch.Printer.Printf("error starting server: %v\n", printer.BoldRed(err))
+						}
+					}()
+					<-stop
+					err = server.Shutdown()
+					if err != nil {
+						return fmt.Errorf("failed to shutdown server: %w", err)
+					}
+					wg.Wait()
+				} else {
+					s, err := scale.New(scale.NewConfig(typecheckSignature.Signature).WithContext(ctx).WithFunctions(fns))
+					if err != nil {
+						return fmt.Errorf("failed to create scale: %w", err)
+					}
+
+					inputData, err := io.ReadAll(os.Stdin)
+					if err != nil {
+						return fmt.Errorf("failed to read from stdin: %w", err)
+					}
+					instance, err := s.Instance()
+					if err != nil {
+						return fmt.Errorf("failed to create instance: %w", err)
+					}
+					sig, err := converter.NewSignature(fns[0].SignatureSchema)
+					if err != nil {
+						return fmt.Errorf("failed to create signature: %w", err)
+					}
+					err = sig.FromJSON(inputData)
+					if err != nil {
+						return fmt.Errorf("failed to parse signature: %w", err)
+					}
+					err = instance.Run(ctx, sig)
+					if err != nil {
+						return fmt.Errorf("failed to run function: %w", err)
+					}
+
+					outputData, err := sig.ToJSON()
+					if err != nil {
+						return fmt.Errorf("failed to encode signature: %w", err)
+					}
+
+					_, err = os.Stdout.Write(outputData)
+					if err != nil {
+						return fmt.Errorf("failed to write to stdout: %w", err)
+					}
 				}
-				wg.Wait()
+
 				return nil
 			},
 		}
