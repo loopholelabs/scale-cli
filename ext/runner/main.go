@@ -22,10 +22,12 @@ type HttpConnector struct {
 }
 
 func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector, error) {
+	fmt.Printf(" -FetchExt- New called. (%v)\n", c)
 	return &HttpConnector{}, nil
 }
 
 func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpResponse, error) {
+	fmt.Printf(" -FetchExt- HttpConnector.Fetch called.\n")
 	r := HttpFetch.HttpResponse{}
 	// Do the actual fetch here...
 
