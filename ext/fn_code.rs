@@ -13,7 +13,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
     if fetcher.is_err() {
       // Return an error...
       let val = ctx.unwrap();
-      val.my_string = "Error".to_string();
+      val.my_string = "Error New err".to_string();
       return signature::next(Some(val));
     }
 
@@ -22,7 +22,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
     if f.is_none() {
       // Return an error...
       let val = ctx.unwrap();
-      val.my_string = "Error".to_string();
+      val.my_string = "Error New none".to_string();
       return signature::next(Some(val));
     }
 
@@ -32,7 +32,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
     if res.is_err() {
       // Return an error...
       let val = ctx.unwrap();
-      val.my_string = "Error".to_string();
+      val.my_string = "Error res err".to_string();
       return signature::next(Some(val));
     }
 
@@ -41,7 +41,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
     if f1.is_none() {
       // Return an error...
       let val = ctx.unwrap();
-      val.my_string = "Error".to_string();
+      val.my_string = "Error res none".to_string();
       return signature::next(Some(val));
     }
 
