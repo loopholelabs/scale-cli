@@ -182,7 +182,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				// extensionData is setup for use in generating go.mod...
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
+				//end :=
+				ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.Schema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
