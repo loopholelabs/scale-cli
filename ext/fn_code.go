@@ -13,7 +13,7 @@ func Scale(ctx *signature.Context) (*signature.Context, error) {
 
 	fetcher, err := HttpFetch.New(c)
 	if err != nil {
-		ctx.MyString = "Error"
+		ctx.MyString = fmt.Sprintf("Error from New (%s)", err.Error())
 		return ctx, nil
 	}
 
@@ -22,7 +22,7 @@ func Scale(ctx *signature.Context) (*signature.Context, error) {
 	})
 
 	if err != nil {
-		ctx.MyString = "Error"
+		ctx.MyString = fmt.Sprintf("Error from Fetch (%s)", err.Error())
 		return ctx, nil
 	}
 
