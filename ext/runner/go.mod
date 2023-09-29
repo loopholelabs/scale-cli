@@ -112,5 +112,14 @@ require (
 
 
 
+
+
+
+
+
+
+
+
+
 replace signature => /home/jimmy/.config/scale/signatures/local_testsig_latest_e6ddebc792ee929e2654b4281baca1376e05bf5a96d4bdf63a05a2aab5f9e749_signature/golang/host
 replace HttpFetch => /home/jimmy/.config/scale/extensions/local_testext_latest_5c7d22390f9101d459292d76c11b5e9f66c327b1766aae34b9cc75f9f40e8206_extension/golang/host
