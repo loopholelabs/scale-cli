@@ -10,10 +10,9 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
 
     let fetcher = New(c);
 
-    if fetcher.is_err() {
-      // Return an error...
+    if let Err(e) = fetcher {
       let val = ctx.unwrap();
-      val.my_string = "Error New err".to_string();
+      val.my_string = format!("Error New err {e}");
       return signature::next(Some(val));
     }
 
@@ -26,22 +25,20 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
       return signature::next(Some(val));
     }
 
-
     let res = f.unwrap().Fetch(fetch::ConnectionDetails{ url: "https://ifconfig.me".to_string() });
 
-    if res.is_err() {
-      // Return an error...
+    if let Err(e) = res {
       let val = ctx.unwrap();
-      val.my_string = "Error res err".to_string();
+      val.my_string = format!("Error Fetch err {e}");
       return signature::next(Some(val));
     }
-
+  
     let f1 = res.unwrap();
 
     if f1.is_none() {
       // Return an error...
       let val = ctx.unwrap();
-      val.my_string = "Error res none".to_string();
+      val.my_string = "Error Fetch none".to_string();
       return signature::next(Some(val));
     }
 
