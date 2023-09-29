@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"HttpFetch"
 	sig "signature"
@@ -21,13 +23,21 @@ type FetchExtension struct {
 type HttpConnector struct {
 }
 
+var tryErrorsNew = false
+var tryErrorsFetch = false
+
 func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector, error) {
-	//	fmt.Printf(" -FetchExt- New called. (%v)\n", c)
+	if tryErrorsNew {
+		return nil, errors.New("Error from New")
+	}
 	return &HttpConnector{}, nil
 }
 
 func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpResponse, error) {
-	//	fmt.Printf(" -FetchExt- HttpConnector.Fetch called.\n")
+	if tryErrorsFetch {
+		return HttpFetch.HttpResponse{}, errors.New("Error from Fetch")
+	}
+
 	r := HttpFetch.HttpResponse{}
 	// Do the actual fetch here...
 
@@ -56,20 +66,34 @@ func main() {
 	}
 
 	testfn(sgo)
+	// Make sure things work if the extension returns an error...
+	tryErrorsNew = true
+	testfn(sgo)
+	tryErrorsNew = false
+	tryErrorsFetch = true
+	testfn(sgo)
 
+	tryErrorsNew = false
+	tryErrorsFetch = false
 	srs, err := scalefunc.Read("../local-testfnrs-latest.scale")
 	if err != nil {
 		panic(err)
 	}
 
 	testfn(srs)
+	// Make sure things work if the extension returns an error...
+	tryErrorsNew = true
+	testfn(srs)
+	tryErrorsNew = false
+	tryErrorsFetch = true
+	testfn(srs)
 
-	sts, err := scalefunc.Read("../local-testfnts-latest.scale")
-	if err != nil {
-		panic(err)
-	}
+	//	sts, err := scalefunc.Read("../local-testfnts-latest.scale")
+	//	if err != nil {
+	//		panic(err)
+	//	}
 
-	testfn(sts)
+	//	testfn(sts)
 
 }
 
@@ -84,7 +108,8 @@ func testfn(fn *scalefunc.Schema) {
 	config := scale.NewConfig(sig.New).
 		WithContext(ctx).
 		WithFunctions([]*scalefunc.Schema{fn}).
-		WithExtension(HttpFetch.New(ext_impl))
+		WithExtension(HttpFetch.New(ext_impl)).
+		WithStdout(os.Stdout)
 
 	r, err := scale.New(config)
 	if err != nil {
