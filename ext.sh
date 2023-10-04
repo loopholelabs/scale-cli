@@ -40,9 +40,9 @@ echo "Exporting function"
 
 
 # Create a function using the extension in Typescript
-#mkdir ext/fn-ts
-#echo "Creating function"
-#./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -e local/testext:latest -l rust testfnts:latest
+mkdir ext/fn-ts
+echo "Creating function"
+./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -l typescript testfnts:latest
 # cat ext/fn_code.ts > ext/fn-ts/main.ts
 #echo "Building function"
 #./cmd/cmd function build -d ext/fn-ts
