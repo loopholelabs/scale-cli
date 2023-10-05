@@ -27,6 +27,7 @@ import (
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/compile/golang"
 	"github.com/loopholelabs/scale/compile/rust"
+	"github.com/loopholelabs/scale/compile/typescript"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
@@ -95,6 +96,8 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						signaturePath = path.Join(signaturePath, "golang", "guest")
 					case scalefunc.Rust:
 						signaturePath = path.Join(signaturePath, "rust", "guest")
+					case scalefunc.TypeScript:
+						signaturePath = path.Join(signaturePath, "typescript", "guest")
 					default:
 						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
 					}
@@ -114,6 +117,8 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						signaturePath = res.GetPayload().GolangImportPathGuest
 					case scalefunc.Rust:
 						signaturePath = res.GetPayload().RustImportPathGuest
+					case scalefunc.TypeScript:
+						return fmt.Errorf("failed to use signature %s/%s:%s: typescript is not currently support via the registry", parsed.Organization, parsed.Name, parsed.Tag)
 					default:
 						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
 					}
@@ -196,6 +201,35 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = os.WriteFile(path.Join(sourceDir, "Cargo.toml"), cargofileData, 0644)
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+				case scalefunc.TypeScript:
+					packageFileData, err := os.ReadFile(path.Join(sourceDir, "package.json"))
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					p, err := typescript.ParseManifest(packageFileData)
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					err = p.RemoveDependency("signature")
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					err = p.AddDependency("signature", signaturePath)
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+					packageFileData, err = p.Write()
+					if err != nil {
+						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
+					}
+
+					err = os.WriteFile(path.Join(sourceDir, "package.json"), packageFileData, 0644)
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}

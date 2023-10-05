@@ -16,56 +16,45 @@
 
 package template
 
-type Dependency struct {
-	Name    string
-	Version string
-}
-
 const (
 	GoModfileTemplate = `
-module {{ .package }}
+module {{ .package_name }}
 
 go 1.20
 
-replace {{ .old_signature_dependency }} {{ .old_signature_version }} => {{ .new_signature_dependency }} {{ .new_signature_version }}
+replace signature v0.1.0 => {{ .signature_path }} {{ .signature_version }}
 
-{{ range $dependency := .dependencies -}}
-    require {{ $dependency.Name }} {{ $dependency.Version }}
-{{end -}}
+require signature v0.1.0
 `
 
 	GoFunctionTemplate = `
-package {{ .package }}
+package {{ .package_name }}
 
 import (
 	"signature"
 )
 
-func Scale(ctx *signature.{{ .context }}) (*signature.{{ .context }}, error) {
+func Scale(ctx *signature.{{ .context_name }}) (*signature.{{ .context_name }}, error) {
 	return signature.Next(ctx)
 }
 `
 
 	RustCargofileTemplate = `
 [package]
-name = "{{ .package }}"
-version = "{{ .version }}"
+name = "{{ .package_name }}"
+version = "0.1.0"
 edition = "2021"
 
 [lib]
 path = "lib.rs"
 
 [dependencies]
-{{ range $dependency := .dependencies -}}
-{{ $dependency.Name }} = "{{ $dependency.Version }}"
-{{end -}}
-
 {{ if .signature_path }}
-{{ .signature_dependency }} = { package = "{{ .signature_package }}", path = "{{ .signature_path }}" }
+signature = { package = "{{ .signature_package }}", path = "{{ .signature_path }}" }
 {{ end }}
 
 {{ if .signature_version }}
-{{ .signature_dependency }} = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "scale" }
+signature = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "scale" }
 {{ end }}
 
 [profile.release]
@@ -76,8 +65,26 @@ codegen-units = 1
 	RustFunctionTemplate = `
 use signature::types;
 
-pub fn scale(ctx: Option<&mut types::{{ .context }}>) -> Result<Option<types::{{ .context }}>, Box<dyn std::error::Error>> {
+pub fn scale(ctx: Option<types::{{ .context_name }}>) -> Result<Option<types::{{ .context_name }}>, Box<dyn std::error::Error>> {
     return signature::next(ctx);
+}
+`
+
+	TypescriptPackageTemplate = `
+{
+  "name": "{{ .package_name }}",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "dependencies": {
+    "signature": "file:{{ .signature_path }}"
+  }
+}
+`
+	TypeScriptFunctionTemplate = `
+import * as signature from "signature";
+
+export function scale(ctx?: signature.{{ .context_name }}): signature.{{ .context_name }} | undefined {
+    return signature.Next(ctx);
 }
 `
 

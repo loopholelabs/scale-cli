@@ -116,6 +116,9 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					case scalefunc.Rust:
 						signatureVersion = ""
 						signaturePath = path.Join(signaturePath, "rust", "guest")
+					case scalefunc.TypeScript:
+						signatureVersion = ""
+						signaturePath = path.Join(signaturePath, "typescript", "guest")
 					default:
 						return fmt.Errorf("language %s is not supported", language)
 					}
@@ -138,6 +141,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					case scalefunc.Rust:
 						signatureVersion = "0.1.0"
 						signaturePath = ""
+					case scalefunc.TypeScript:
+						return fmt.Errorf("typescript functions are not currently supported via the registry")
 					default:
 						return fmt.Errorf("language %s is not supported", language)
 					}
@@ -173,17 +178,9 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = modfileTempl.Execute(dependencyFile, map[string]interface{}{
-						"package":                  functionName,
-						"old_signature_dependency": "signature",
-						"old_signature_version":    "",
-						"new_signature_dependency": signaturePath,
-						"new_signature_version":    signatureVersion,
-						"dependencies": []template.Dependency{
-							{
-								Name:    "signature",
-								Version: "v0.1.0",
-							},
-						},
+						"package_name":      functionName,
+						"signature_path":    signaturePath,
+						"signature_version": signatureVersion,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -206,8 +203,8 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = funcTempl.Execute(funcFile, map[string]interface{}{
-						"package": functionName,
-						"context": signatureContext,
+						"package_name": functionName,
+						"context_name": signatureContext,
 					})
 					if err != nil {
 						_ = funcFile.Close()
@@ -234,13 +231,10 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = cargofileTempl.Execute(dependencyFile, map[string]interface{}{
-						"package":              functionName,
-						"version":              "0.1.0",
-						"signature_dependency": "signature",
-						"signature_package":    fmt.Sprintf("%s_%s_%s_guest", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag),
-						"signature_version":    signatureVersion,
-						"signature_path":       signaturePath,
-						"registry":             "scale",
+						"package_name":      functionName,
+						"signature_package": fmt.Sprintf("%s_%s_%s_guest", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag),
+						"signature_version": signatureVersion,
+						"signature_path":    signaturePath,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -263,7 +257,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					err = funcTempl.Execute(funcFile, map[string]interface{}{
-						"context": signatureContext,
+						"context_name": signatureContext,
 					})
 					if err != nil {
 						_ = funcFile.Close()
@@ -274,35 +268,58 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if err != nil {
 						return fmt.Errorf("error closing lib.rs file: %w", err)
 					}
-				//case scalefunc.TypeScript:
-				//	scaleFile.Language = scalefunc.TypeScript
-				//	scaleFile.Dependencies = []scalefile.Dependency{
-				//		{
-				//			Name:    "@loopholelabs/scale-signature-http",
-				//			Version: "0.3.8",
-				//		},
-				//		{
-				//			Name:    "@loopholelabs/scale-signature",
-				//			Version: "0.2.11",
-				//		},
-				//	}
-				//
-				//	tmpl, err := textTemplate.New("dependencies").Parse(template.TypeScriptTemplate)
-				//	if err != nil {
-				//		return fmt.Errorf("error parsing dependency template: %w", err)
-				//	}
-				//
-				//	dependencyFile, err := os.Create(fmt.Sprintf("%s/package.json", directory))
-				//	if err != nil {
-				//		return fmt.Errorf("error creating dependencies file: %w", err)
-				//	}
-				//
-				//	err = tmpl.Execute(dependencyFile, scaleFile.Dependencies)
-				//
-				//	if err != nil {
-				//		_ = dependencyFile.Close()
-				//		return fmt.Errorf("error writing dependencies file: %w", err)
-				//	}
+				case scalefunc.TypeScript:
+					scaleFile.Language = string(scalefunc.TypeScript)
+					scaleFile.Function = "scale"
+					analytics.Event("new-function", map[string]string{"language": "typescript"})
+
+					packageTempl, err := textTemplate.New("dependencies").Parse(template.TypescriptPackageTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing package.json template: %w", err)
+					}
+
+					dependencyFile, err := os.Create(path.Join(sourceDir, "package.json"))
+					if err != nil {
+						return fmt.Errorf("error creating package.json file: %w", err)
+					}
+
+					err = packageTempl.Execute(dependencyFile, map[string]interface{}{
+						"package_name":      functionName,
+						"signature_path":    signaturePath,
+						"signature_version": signatureVersion,
+					})
+					if err != nil {
+						_ = dependencyFile.Close()
+						return fmt.Errorf("error writing package.json file: %w", err)
+					}
+
+					err = dependencyFile.Close()
+					if err != nil {
+						return fmt.Errorf("error closing package.json file: %w", err)
+					}
+
+					funcTempl, err := textTemplate.New("function").Parse(template.TypeScriptFunctionTemplate)
+					if err != nil {
+						return fmt.Errorf("error parsing function template: %w", err)
+					}
+
+					funcFile, err := os.Create(path.Join(sourceDir, "index.ts"))
+					if err != nil {
+						return fmt.Errorf("error creating index.ts file: %w", err)
+					}
+
+					err = funcTempl.Execute(funcFile, map[string]interface{}{
+						"context_name": signatureContext,
+					})
+					if err != nil {
+						_ = funcFile.Close()
+						return fmt.Errorf("error writing index.ts file: %w", err)
+					}
+
+					err = funcFile.Close()
+					if err != nil {
+						return fmt.Errorf("error closing index.ts file: %w", err)
+					}
 				default:
 					return fmt.Errorf("language %s is not supported", language)
 				}

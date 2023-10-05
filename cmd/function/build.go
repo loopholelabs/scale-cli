@@ -177,6 +177,18 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Args:            cargoArgs,
 					}
 					scaleFunc, err = build.LocalRust(opts)
+				case scalefunc.TypeScript:
+					opts := &build.LocalTypescriptOptions{
+						Output:          out,
+						Scalefile:       sf,
+						SourceDirectory: sourceDir,
+						SignatureSchema: signatureSchema,
+						Storage:         stb,
+						Release:         release,
+						Target:          build.WASITarget,
+						NPMBin:          npmBin,
+					}
+					scaleFunc, err = build.LocalTypescript(opts)
 				default:
 					return fmt.Errorf("language %s is not supported for local builds", sf.Language)
 				}
