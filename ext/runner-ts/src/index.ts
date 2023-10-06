@@ -17,8 +17,9 @@
 import {ScaleFunc, V1Alpha, Go, Rust} from "@loopholelabs/scalefile/scalefunc";
 
 import { New, Config, Scale } from "@loopholelabs/scale";
-/*
+
 import { New as SigNew } from "@loopholelabs/signature";
+/*
 import { New as ExtNew } from "@loopholelabs/HttpFetch";
 */
 import * as fs from 'fs';
