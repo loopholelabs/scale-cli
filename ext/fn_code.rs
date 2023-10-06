@@ -4,14 +4,14 @@ use HttpFetch::types as fetch;
 use HttpFetch::New;
 use HttpFetch::HttpConnector;
 
-pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>, Box<dyn std::error::Error>> {
+pub fn scale(ctx: Option<types::Context>) -> Result<Option<types::Context>, Box<dyn std::error::Error>> {
 
     let c = fetch::HttpConfig{ timeout: 10 };
 
     let fetcher = New(c);
 
     if let Err(e) = fetcher {
-      let val = ctx.unwrap();
+      let mut val = ctx.unwrap();
       val.my_string = format!("Error New err {e}");
       return signature::next(Some(val));
     }
@@ -20,7 +20,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
 
     if f.is_none() {
       // Return an error...
-      let val = ctx.unwrap();
+      let mut val = ctx.unwrap();
       val.my_string = "Error New none".to_string();
       return signature::next(Some(val));
     }
@@ -28,7 +28,7 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
     let res = f.unwrap().Fetch(fetch::ConnectionDetails{ url: "https://ifconfig.me".to_string() });
 
     if let Err(e) = res {
-      let val = ctx.unwrap();
+      let mut val = ctx.unwrap();
       val.my_string = format!("Error Fetch err {e}");
       return signature::next(Some(val));
     }
@@ -37,14 +37,14 @@ pub fn scale(ctx: Option<&mut types::Context>) -> Result<Option<types::Context>,
 
     if f1.is_none() {
       // Return an error...
-      let val = ctx.unwrap();
+      let mut val = ctx.unwrap();
       val.my_string = "Error Fetch none".to_string();
       return signature::next(Some(val));
     }
 
     let r = f1.unwrap();
 
-    let val = ctx.unwrap();
+    let mut val = ctx.unwrap();
 
     let string = String::from_utf8(r.body);
 
