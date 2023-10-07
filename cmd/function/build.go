@@ -34,6 +34,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path"
+	"strings"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -43,6 +44,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 
 	var release bool
+	var target string
 
 	var goBin string
 	var tinygoBin string
@@ -86,6 +88,16 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				if sf.Tag == "" || !scalefunc.ValidString(sf.Tag) {
 					return utils.InvalidStringError("tag", sf.Tag)
+				}
+
+				buildTarget := build.WASITarget
+				switch strings.ToLower(target) {
+				case "wasi":
+					buildTarget = build.WASITarget
+				case "wasm":
+					buildTarget = build.WASMTarget
+				default:
+					return fmt.Errorf("invalid build target %s", target)
 				}
 
 				sourceDir := directory
@@ -158,7 +170,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						SignatureSchema: signatureSchema,
 						Storage:         stb,
 						Release:         release,
-						Target:          build.WASITarget,
+						Target:          buildTarget,
 						GoBin:           goBin,
 						TinyGoBin:       tinygoBin,
 						Args:            tinygoArgs,
@@ -172,7 +184,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						SignatureSchema: signatureSchema,
 						Storage:         stb,
 						Release:         release,
-						Target:          build.WASITarget,
+						Target:          buildTarget,
 						CargoBin:        cargoBin,
 						Args:            cargoArgs,
 					}
@@ -185,7 +197,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						SignatureSchema: signatureSchema,
 						Storage:         stb,
 						Release:         release,
-						Target:          build.WASITarget,
+						Target:          buildTarget,
 						NPMBin:          npmBin,
 					}
 					scaleFunc, err = build.LocalTypescript(opts)
@@ -240,6 +252,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 		buildCmd.Flags().StringVarP(&tag, "tag", "t", "", "the (optional) tag of this scale function")
 
 		buildCmd.Flags().BoolVar(&release, "release", false, "build the function in release mode")
+		buildCmd.Flags().StringVar(&target, "target", "wasi", "the compile target for the function")
 
 		buildCmd.Flags().StringVar(&tinygoBin, "tinygo", "", "the (optional) path to the tinygo binary")
 		buildCmd.Flags().StringVar(&goBin, "go", "", "the (optional) path to the go binary")

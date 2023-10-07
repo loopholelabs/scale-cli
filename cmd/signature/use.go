@@ -97,7 +97,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					case scalefunc.Rust:
 						signaturePath = path.Join(signaturePath, "rust", "guest")
 					case scalefunc.TypeScript:
-						signaturePath = path.Join(signaturePath, "typescript", "guest")
+						signaturePath = path.Join(signaturePath, "typescript", "guest.tar.gz")
 					default:
 						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
 					}
@@ -220,7 +220,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = p.AddDependency("signature", signaturePath)
+					err = p.AddDependency("signature", fmt.Sprintf("file:%s", signaturePath))
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
