@@ -118,7 +118,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						signaturePath = path.Join(signaturePath, "rust", "guest")
 					case scalefunc.TypeScript:
 						signatureVersion = ""
-						signaturePath = path.Join(signaturePath, "typescript", "guest")
+						signaturePath = path.Join(signaturePath, "typescript", "guest.tar.gz")
 					default:
 						return fmt.Errorf("language %s is not supported", language)
 					}
