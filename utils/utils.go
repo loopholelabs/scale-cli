@@ -67,7 +67,7 @@ func (s *ScaleFunctionNamedReadCloser) Name() string {
 
 func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Init(ch.Config.GetLogFile())
+		log.Init(ch.Config.GetLogFile(), ch.Debug())
 		err := ch.Config.GlobalRequiredFlags(cmd)
 		if err != nil {
 			return err
@@ -80,10 +80,10 @@ func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comm
 
 		if !ch.Config.DisableAutoUpdate {
 			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
-			latest, err := updateClient.GetLatest()
+			latestReleaseName, err := updateClient.GetLatestReleaseName()
 			if err == nil {
-				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
+				if latestReleaseName != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latestReleaseName)
 				}
 			}
 		}
@@ -94,7 +94,7 @@ func PreRunUpdateCheck(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comm
 
 func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Init(ch.Config.GetLogFile())
+		log.Init(ch.Config.GetLogFile(), ch.Debug())
 		err := ch.Config.GlobalRequiredFlags(cmd)
 		if err != nil {
 			return err
@@ -118,10 +118,10 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 
 		if !ch.Config.DisableAutoUpdate {
 			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
-			latest, err := updateClient.GetLatest()
+			latestReleaseName, err := updateClient.GetLatestReleaseName()
 			if err == nil {
-				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
+				if latestReleaseName != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latestReleaseName)
 				}
 			}
 		}
@@ -132,7 +132,7 @@ func PreRunAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra
 
 func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		log.Init(ch.Config.GetLogFile())
+		log.Init(ch.Config.GetLogFile(), ch.Debug())
 		err := ch.Config.GlobalRequiredFlags(cmd)
 		if err != nil {
 			return err
@@ -154,10 +154,10 @@ func PreRunOptionalAuthenticatedAPI(ch *cmdutils.Helper[*config.Config]) func(cm
 
 		if !ch.Config.DisableAutoUpdate {
 			updateClient := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
-			latest, err := updateClient.GetLatest()
+			latestReleaseName, err := updateClient.GetLatestReleaseName()
 			if err == nil {
-				if latest != version.Version {
-					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latest)
+				if latestReleaseName != version.Version {
+					ch.Printer.Printf("A new version of the Scale CLI is available: %s. Please run 'scale update' to update.\n\n", latestReleaseName)
 				}
 			}
 		}

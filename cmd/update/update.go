@@ -1,17 +1,17 @@
 /*
- 	Copyright 2023 Loophole Labs
+	Copyright 2023 Loophole Labs
 
- 	Licensed under the Apache License, Version 2.0 (the "License");
- 	you may not use this file except in compliance with the License.
- 	You may obtain a copy of the License at
+	Licensed under the Apache License, Version 2.0 (the "License");
+	you may not use this file except in compliance with the License.
+	You may obtain a copy of the License at
 
- 		   http://www.apache.org/licenses/LICENSE-2.0
+		   http://www.apache.org/licenses/LICENSE-2.0
 
- 	Unless required by applicable law or agreed to in writing, software
- 	distributed under the License is distributed on an "AS IS" BASIS,
- 	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- 	See the License for the specific language governing permissions and
- 	limitations under the License.
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
 */
 
 package update
@@ -44,7 +44,7 @@ func Cmd() command.SetupCommand[*config.Config] {
 			Short: "Update the Scale CLI to the latest version",
 			Long:  "Update the Scale CLI to the latest version using the Scale Update service",
 			PreRunE: func(cmd *cobra.Command, args []string) error {
-				log.Init(ch.Config.GetLogFile())
+				log.Init(ch.Config.GetLogFile(), ch.Debug())
 				err := ch.Config.GlobalRequiredFlags(cmd)
 				if err != nil {
 					return err
@@ -54,16 +54,16 @@ func Cmd() command.SetupCommand[*config.Config] {
 			PostRunE: utils.PostRunAnalytics(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				c := client.New(fmt.Sprintf("https://%s", ch.Config.UpdateEndpoint))
-				latest, err := c.GetLatest()
+				latestReleaseName, err := c.GetLatestReleaseName()
 				if err != nil {
 					return fmt.Errorf("error getting latest version: %w", err)
 				}
-				if latest == version.Version {
+				if latestReleaseName == version.Version {
 					ch.Printer.Println("Scale CLI is already up to date")
 					return nil
 				}
 
-				end := ch.Printer.PrintProgress(fmt.Sprintf("Updating Scale CLI to version %s...", printer.BoldGreen(latest)))
+				end := ch.Printer.PrintProgress(fmt.Sprintf("Updating Scale CLI to version %s...", printer.BoldGreen(latestReleaseName)))
 				executable, err := os.Executable()
 				if err != nil {
 					end()
@@ -81,7 +81,7 @@ func Cmd() command.SetupCommand[*config.Config] {
 				tarExecutable := filepath.Join(executableDirectory, fmt.Sprintf("%s.tar.gz", executableName))
 				previousExecutable := filepath.Join(executableDirectory, fmt.Sprintf("%s.previous", executableName))
 
-				latestBinary, err := c.DownloadVersion(latest)
+				latestBinary, err := c.GetReleaseArtifact(latestReleaseName)
 				if err != nil {
 					end()
 					return fmt.Errorf("error downloading latest version: %w", err)
@@ -134,7 +134,7 @@ func Cmd() command.SetupCommand[*config.Config] {
 
 				analytics.Event("update")
 
-				ch.Printer.Printf("Scale CLI updated to version %s\n", printer.BoldGreen(latest))
+				ch.Printer.Printf("Scale CLI updated to version %s\n", printer.BoldGreen(latestReleaseName))
 				return nil
 			},
 		}

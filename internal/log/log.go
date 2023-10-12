@@ -21,12 +21,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/pkgerrors"
 	"io"
+	"os"
 	"sync"
 )
 
 var (
 	once   sync.Once
-	Logger = NewLogger(io.Discard)
+	Logger = NewLogger(io.Discard, zerolog.InfoLevel)
 )
 
 // init sets up the time format and an error marshaller that lets us record an error's stack trace
@@ -36,21 +37,29 @@ func init() {
 }
 
 // NewLogger creates a new zerolog.Logger with default values
-func NewLogger(w io.Writer) *zerolog.Logger {
-	l := zerolog.New(w).Level(zerolog.DebugLevel).With().Timestamp().Logger()
+func NewLogger(w io.Writer, level zerolog.Level) *zerolog.Logger {
+	l := zerolog.New(w).Level(level).With().Timestamp().Logger()
 	return &l
 }
 
-func Init(logFile string) {
+func Init(logFile string, debug bool) {
 	once.Do(func() {
-		writer := &lumberjack.Logger{
-			Filename:   logFile,
-			MaxSize:    128,
-			MaxAge:     7,
-			MaxBackups: 4,
+		var writer io.Writer
+		if logFile == "stdout" {
+			writer = os.Stdout
+		} else {
+			writer = &lumberjack.Logger{
+				Filename:   logFile,
+				MaxSize:    128,
+				MaxAge:     7,
+				MaxBackups: 4,
+			}
 		}
-
-		Logger = NewLogger(writer)
+		if debug {
+			Logger = NewLogger(writer, zerolog.DebugLevel)
+		} else {
+			Logger = NewLogger(writer, zerolog.InfoLevel)
+		}
 		Logger.Info().Msg("logger initialized")
 	})
 }
