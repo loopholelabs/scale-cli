@@ -23,9 +23,7 @@ import { Decoder, Encoder, Kind } from "@loopholelabs/polyglot";
 
 import { HttpConfig, HttpResponse, ConnectionDetails } from "@loopholelabs/HttpFetch";
 
-import { HttpFetchIfc, HttpConnector } from "@loopholelabs/HttpFetch";
-
-import * as fs from 'fs';
+import { HttpFetchIfc, HttpConnector, New as FetchNew } from "@loopholelabs/HttpFetch";
 
 let scale_runtime: Scale<Signature>;
 
@@ -132,6 +130,8 @@ async function init() {
 
     console.log("Scale function go=" + data_go.length)
 
+    console.log("ScaleFunc is ", ScaleFunc);
+
     const sfn_go = ScaleFunc.Decode(data_go);
 
     const mod_rs = await fetch("local-testfnrs-latest.scale");
@@ -144,9 +144,14 @@ async function init() {
     let impl = new Fetcher();
     let ex = new Ext(impl);
 
+    let ex2 = FetchNew(impl);
+
+    console.log("Old fetch", ex);
+    console.log("New fetch", ex2);
+
     let config = new Config(SigNew);
     config.WithFunctions([sfn_go]);
-    config.WithExtension(ex);
+    config.WithExtension(ex2);
 
     scale_runtime = await New(config);
   
