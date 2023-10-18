@@ -43,8 +43,9 @@ func Event(name string, properties ...map[string]string) {
 	if handler != nil {
 		if len(properties) > 0 {
 			handler.Event(name, properties[0])
+		} else {
+			handler.Event(name, nil)
 		}
-		handler.Event(name, nil)
 	}
 }
 
