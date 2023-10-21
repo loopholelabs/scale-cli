@@ -14,7 +14,7 @@
 	limitations under the License.
 */
 
-package apikey
+package organization
 
 import (
 	"github.com/loopholelabs/cmdutils"
@@ -23,32 +23,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type apiKey struct {
-	Name    string `header:"name" json:"name"`
+type organization struct {
 	ID      string `header:"id" json:"id"`
-	Value   string `header:"value" json:"value"`
+	Default string `header:"default" json:"default"`
 	Created string `header:"created" json:"created"`
 }
 
-type apiKeyRedacted struct {
-	Name    string `header:"name" json:"name"`
-	ID      string `header:"id" json:"id"`
-	Created string `header:"created" json:"created"`
-}
-
-// Cmd encapsulates the commands for api keys.
+// Cmd encapsulates the commands for authentication.
 func Cmd() command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		apikeyCmd := &cobra.Command{
-			Use:   "apikey",
-			Short: "Create, list, and manage API Keys",
+			Use:   "organization",
+			Short: "Create, list, and manage Organizations",
 		}
 
 		listSetup := ListCmd()
 		listSetup(apikeyCmd, ch)
-
-		getSetup := GetCmd()
-		getSetup(apikeyCmd, ch)
 
 		createSetup := CreateCmd()
 		createSetup(apikeyCmd, ch)
