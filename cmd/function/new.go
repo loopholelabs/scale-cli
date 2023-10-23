@@ -135,8 +135,15 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 								Version: "v0.1.0",
 								Package: extPackageName,
 							})
+						case scalefunc.TypeScript:
+							extensionData = append(extensionData, extension.ExtensionInfo{
+								Name:    ext.Schema.Name,
+								Path:    path.Join(extensionPath, "typescript", "guest"),
+								Version: "v0.1.0",
+								Package: extPackageName,
+							})
 						default:
-							panic("Only go or rust extension for now")
+							panic("Invalid language")
 						}
 					} else {
 						panic("Only local extension for now")
@@ -348,6 +355,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"package_name":      functionName,
 						"signature_path":    signaturePath,
 						"signature_version": signatureVersion,
+						"extensions":        extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()

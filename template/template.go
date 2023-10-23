@@ -90,7 +90,11 @@ pub fn scale(ctx: Option<types::{{ .context_name }}>) -> Result<Option<types::{{
   "main": "index.ts",
   "dependencies": {
     "signature": "file:{{ .signature_path }}"
-  }
+
+		{{ range $extension := .extensions -}}
+		,"{{ $extension.Name }}": "file:{{ $extension.Path }}"
+		{{end -}}
+	}
 }
 `
 	TypeScriptFunctionTemplate = `
