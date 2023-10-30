@@ -27,6 +27,7 @@ var tryErrorsNew = false
 var tryErrorsFetch = false
 
 func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector, error) {
+	fmt.Printf("#Fetch# New(%v)\n", c)
 	if tryErrorsNew {
 		return nil, errors.New("Error from New")
 	}
@@ -34,6 +35,7 @@ func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector,
 }
 
 func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpResponse, error) {
+	fmt.Printf("#Fetch# Fetch(%v)\n", u)
 	if tryErrorsFetch {
 		return HttpFetch.HttpResponse{}, errors.New("Error from Fetch")
 	}
@@ -60,40 +62,30 @@ func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpRe
 func main() {
 	fmt.Printf("Running scale function with ext...\n")
 
-	sgo, err := scalefunc.Read("../local-testfngo-latest.scale")
-	if err != nil {
-		panic(err)
+	functions := []string{
+		//		"../local-testfngo-latest.scale",
+		//		"../local-testfnrs-latest.scale",
+		"../local-testfnts-latest.scale",
 	}
 
-	testfn(sgo)
-	// Make sure things work if the extension returns an error...
-	tryErrorsNew = true
-	testfn(sgo)
-	tryErrorsNew = false
-	tryErrorsFetch = true
-	testfn(sgo)
+	for _, n := range functions {
 
-	tryErrorsNew = false
-	tryErrorsFetch = false
-	srs, err := scalefunc.Read("../local-testfnrs-latest.scale")
-	if err != nil {
-		panic(err)
+		sgo, err := scalefunc.Read(n)
+		if err != nil {
+			panic(err)
+		}
+
+		tryErrorsNew = false
+		tryErrorsFetch = false
+		testfn(sgo)
+		// Make sure things work if the extension returns an error...
+		tryErrorsNew = true
+		testfn(sgo)
+		tryErrorsNew = false
+		tryErrorsFetch = true
+		testfn(sgo)
+
 	}
-
-	testfn(srs)
-	// Make sure things work if the extension returns an error...
-	tryErrorsNew = true
-	testfn(srs)
-	tryErrorsNew = false
-	tryErrorsFetch = true
-	testfn(srs)
-
-	//	sts, err := scalefunc.Read("../local-testfnts-latest.scale")
-	//	if err != nil {
-	//		panic(err)
-	//	}
-
-	//	testfn(sts)
 
 }
 
@@ -109,7 +101,8 @@ func testfn(fn *scalefunc.Schema) {
 		WithContext(ctx).
 		WithFunctions([]*scalefunc.Schema{fn}).
 		WithExtension(HttpFetch.New(ext_impl)).
-		WithStdout(os.Stdout)
+		WithStdout(os.Stdout).
+		WithRawOutput(true)
 
 	r, err := scale.New(config)
 	if err != nil {
