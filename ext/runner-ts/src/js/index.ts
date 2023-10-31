@@ -129,7 +129,7 @@ async function runTest(functions: ScaleFunc[], ex: Extension) {
     console.log("Output was (" + ctx.context.myString + ")");
   } catch(e) {
       // There was an error! Need to write an error to context etc
-      console.log("Error from scale", e);   
+      console.log("Error from scale", e);
   }
 }
 

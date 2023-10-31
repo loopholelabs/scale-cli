@@ -1,6 +1,9 @@
 #!/bin/bash
 
-rm -rf ext/sig ext/ext ext/fn-go ext/fn-rs ext/fn-ts local-testfngo-latest.scale local-testfnrs-latest.scale local-testfnts-latest.scale
+rm -rf ~/.config/scale/functions/*
+
+rm -rf ext/sig ext/ext ext/fn-go ext/fn-rs ext/fn-ts
+rm ext/*.scale
 
 # First lets create a signature
 mkdir ext/sig
@@ -38,16 +41,25 @@ echo "Building function"
 echo "Exporting function"
 ./cmd/cmd function export local/testfnrs:latest ext/
 
-
 # Create a function using the extension in Typescript
 mkdir ext/fn-ts
 echo "Creating function"
-./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -l typescript testfnts:latest
-# cat ext/fn_code.ts > ext/fn-ts/main.ts
-#echo "Building function"
-#./cmd/cmd function build -d ext/fn-ts
-#echo "Exporting function"
-#./cmd/cmd function export local/testfnts:latest ext/
+#./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -l ts testfnts:latest
+./cmd/cmd function new -d ext/fn-ts -s local/testsig:latest -e local/testext:latest -l ts testfnts:latest
+cat ext/fn_code.ts > ext/fn-ts/index.ts
+
+# Known issues with scale-cli
+cd ext/fn-ts
+
+cat package.json | sed "s/guest/guest.tar.gz/" > p2
+mv p2 package.json
+npm install
+cd ../..
+
+echo "Building function"
+./cmd/cmd function build -d ext/fn-ts
+echo "Exporting function"
+./cmd/cmd function export local/testfnts:latest ext/
 
 # Sort out runner
 echo "Updating runner go.mod..."

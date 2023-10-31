@@ -27,7 +27,6 @@ var tryErrorsNew = false
 var tryErrorsFetch = false
 
 func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector, error) {
-	fmt.Printf("#Fetch# New(%v)\n", c)
 	if tryErrorsNew {
 		return nil, errors.New("Error from New")
 	}
@@ -35,7 +34,6 @@ func (fe *FetchExtension) New(c *HttpFetch.HttpConfig) (HttpFetch.HttpConnector,
 }
 
 func (hc *HttpConnector) Fetch(u *HttpFetch.ConnectionDetails) (HttpFetch.HttpResponse, error) {
-	fmt.Printf("#Fetch# Fetch(%v)\n", u)
 	if tryErrorsFetch {
 		return HttpFetch.HttpResponse{}, errors.New("Error from Fetch")
 	}
