@@ -1,5 +1,9 @@
 #!/bin/bash
 
+rm -rf ~/.config/scale/signatures
+rm -rf ~/.config/scale/functions
+rm -rf ~/.config/scale/extensions
+
 rm -rf ext/sig ext/ext ext/fn-go ext/fn-rs ext/fn-ts local-testfngo-latest.scale local-testfnrs-latest.scale local-testfnts-latest.scale
 
 # First lets create a signature

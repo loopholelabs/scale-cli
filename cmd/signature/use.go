@@ -24,7 +24,6 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
@@ -50,7 +49,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				var err error
-				parsed := scale.Parse(args[0])
+				parsed := utils.Parse(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
 				}
@@ -98,7 +97,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					case scalefunc.Rust:
 						signaturePath = path.Join(signaturePath, "rust", "guest")
 					case scalefunc.TypeScript:
-						signaturePath = path.Join(signaturePath, "typescript", "guest")
+						signaturePath = path.Join(signaturePath, "typescript", "guest.tar.gz")
 					default:
 						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
 					}
@@ -221,7 +220,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}
 
-					err = p.AddDependency("signature", signaturePath)
+					err = p.AddDependency("signature", fmt.Sprintf("file:%s", signaturePath))
 					if err != nil {
 						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsed.Organization, parsed.Name, parsed.Tag, err)
 					}

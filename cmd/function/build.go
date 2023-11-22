@@ -151,7 +151,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 				out := ch.Printer.Out()
 
 				// Deal with extensions...
-				extensionData := make([]extension.ExtensionInfo, 0)
+				extensionData := make([]extension.Info, 0)
+				extensionSchemas := make([]*extension.Schema, 0)
 
 				ets := storage.DefaultExtension
 				if ch.Config.StorageDirectory != "" {
@@ -170,11 +171,14 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 							return fmt.Errorf("failed to get extension %s:%s: %w", e.Name, e.Tag, err)
 						}
 
-						extensionData = append(extensionData, extension.ExtensionInfo{
-							Name:    ext.Schema.Name,
+						extensionData = append(extensionData, extension.Info{
+							Name:    e.Name,
 							Path:    path.Join(extensionPath, "golang", "guest"),
 							Version: "v0.1.0",
 						})
+
+						extensionSchemas = append(extensionSchemas, ext.Schema)
+
 					} else {
 						panic("Only local atm")
 					}
@@ -184,26 +188,27 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				//end :=
 				ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
-				var scaleFunc *scalefunc.Schema
+				var scaleFunc *scalefunc.V1BetaSchema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
 					opts := &build.LocalGolangOptions{
-						Output:          out,
-						Scalefile:       sf,
-						SourceDirectory: sourceDir,
-						SignatureSchema: signatureSchema,
-						Storage:         stb,
-						Release:         release,
-						Target:          build.WASITarget,
-						GoBin:           goBin,
-						TinyGoBin:       tinygoBin,
-						Args:            tinygoArgs,
-						Extensions:      extensionData,
+						Stdout:           out,
+						Scalefile:        sf,
+						SourceDirectory:  sourceDir,
+						SignatureSchema:  signatureSchema,
+						Storage:          stb,
+						Release:          release,
+						Target:           build.WASITarget,
+						GoBin:            goBin,
+						TinyGoBin:        tinygoBin,
+						Args:             tinygoArgs,
+						Extensions:       extensionData,
+						ExtensionSchemas: extensionSchemas,
 					}
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
 					opts := &build.LocalRustOptions{
-						Output:          out,
+						Stdout:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,
@@ -212,11 +217,13 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Target:          build.WASITarget,
 						CargoBin:        cargoBin,
 						Args:            cargoArgs,
+						//						Extensions:       extensionData,
+						ExtensionSchemas: extensionSchemas,
 					}
 					scaleFunc, err = build.LocalRust(opts)
 				case scalefunc.TypeScript:
 					opts := &build.LocalTypescriptOptions{
-						Output:          out,
+						Stdout:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,

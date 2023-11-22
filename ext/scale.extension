@@ -1,7 +1,5 @@
 
 	version = "v1alpha"
-	name = "HttpFetch"
-	tag = "alpha"
 	
 	function New {
 		params = "HttpConfig"

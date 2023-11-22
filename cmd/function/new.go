@@ -26,7 +26,6 @@ import (
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -104,17 +103,17 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				var extensionData = make([]extension.ExtensionInfo, 0)
+				var extensionData = make([]extension.Info, 0)
 				for _, e := range extensions {
 					var extensionPath string
-					parsedExtension := scale.Parse(e)
+					parsedExtension := utils.Parse(e)
 					if parsedExtension.Organization == "local" {
 						extensionPath, err = et.Path(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
 						if err != nil {
 							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
 						}
 
-						ext, err := et.Get(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
+						_, err := et.Get(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
 						if err != nil {
 							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
 						}
@@ -123,14 +122,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 						switch scalefunc.Language(language) {
 						case scalefunc.Go:
-							extensionData = append(extensionData, extension.ExtensionInfo{
-								Name:    ext.Schema.Name,
+							extensionData = append(extensionData, extension.Info{
+								Name:    parsedExtension.Name,
 								Path:    path.Join(extensionPath, "golang", "guest"),
 								Version: "v0.1.0",
 							})
 						case scalefunc.Rust:
-							extensionData = append(extensionData, extension.ExtensionInfo{
-								Name:    ext.Schema.Name,
+							extensionData = append(extensionData, extension.Info{
+								Name:    parsedExtension.Name,
 								Path:    path.Join(extensionPath, "rust", "guest"),
 								Version: "v0.1.0",
 								Package: extPackageName,
@@ -146,7 +145,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				var signaturePath string
 				var signatureVersion string
 				var signatureContext string
-				parsedSignature := scale.Parse(signature)
+				parsedSignature := utils.Parse(signature)
 				if parsedSignature.Organization == "local" {
 					signaturePath, err = st.Path(parsedSignature.Name, parsedSignature.Tag, parsedSignature.Organization, "")
 					if err != nil {
@@ -205,12 +204,11 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Name:         parsedSignature.Name,
 						Tag:          parsedSignature.Tag,
 					},
+					Extensions: []scalefile.ExtensionSchema{},
 				}
 
-				scaleFile.Extensions = make([]scalefile.ExtensionSchema, 0)
-
 				for _, ex := range extensions {
-					parsedExtension := scale.Parse(ex)
+					parsedExtension := utils.Parse(ex)
 
 					scaleFile.Extensions = append(scaleFile.Extensions, scalefile.ExtensionSchema{
 						Organization: parsedExtension.Organization,

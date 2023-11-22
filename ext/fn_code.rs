@@ -1,8 +1,8 @@
 
 use signature::types;
-use HttpFetch::types as fetch;
-use HttpFetch::New;
-use HttpFetch::HttpConnector;
+use testext::types as fetch;
+use testext::New;
+use testext::HttpConnector;
 
 pub fn scale(ctx: Option<types::Context>) -> Result<Option<types::Context>, Box<dyn std::error::Error>> {
 

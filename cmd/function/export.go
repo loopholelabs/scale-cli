@@ -18,18 +18,18 @@ package function
 
 import (
 	"fmt"
+	"os"
+	"path"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
 )
 
 // ExportCmd encapsulates the commands for exporting Functions
@@ -54,7 +54,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					}
 				}
 
-				parsed := scale.Parse(args[0])
+				parsed := utils.Parse(args[0])
 				if parsed.Organization == "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
 				}

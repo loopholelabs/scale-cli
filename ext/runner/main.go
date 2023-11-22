@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 
-	"HttpFetch"
 	sig "signature"
+	HttpFetch "testext"
 
 	scale "github.com/loopholelabs/scale"
 	scalefunc "github.com/loopholelabs/scale/scalefunc"
@@ -97,7 +97,7 @@ func main() {
 
 }
 
-func testfn(fn *scalefunc.Schema) {
+func testfn(fn *scalefunc.V1BetaSchema) {
 	fmt.Printf("Running scale function with ext... %s\n", fn.Language)
 
 	ext_impl := &FetchExtension{}
@@ -107,7 +107,7 @@ func testfn(fn *scalefunc.Schema) {
 	// runtime
 	config := scale.NewConfig(sig.New).
 		WithContext(ctx).
-		WithFunctions([]*scalefunc.Schema{fn}).
+		WithFunctions([]*scalefunc.V1BetaSchema{fn}).
 		WithExtension(HttpFetch.New(ext_impl)).
 		WithStdout(os.Stdout)
 

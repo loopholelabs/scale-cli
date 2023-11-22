@@ -1,7 +1,7 @@
 package testfn
 
 import (
-	"HttpFetch"
+	HttpFetch "testext"
 	"fmt"
 	"signature"
 )
