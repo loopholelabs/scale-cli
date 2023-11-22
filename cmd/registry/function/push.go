@@ -19,11 +19,11 @@ package function
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/go-openapi/runtime"
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -52,7 +52,7 @@ func PushCmd() command.SetupCommand[*config.Config] {
 					}
 				}
 
-				parsed := scale.Parse(args[0])
+				parsed := utils.Parse(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
 				}

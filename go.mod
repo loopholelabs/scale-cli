@@ -12,7 +12,7 @@ require (
 	github.com/loopholelabs/auth v0.2.47
 	github.com/loopholelabs/cmdutils v0.1.4
 	github.com/loopholelabs/releaser v0.1.5
-	github.com/loopholelabs/scale v0.4.5
+	github.com/loopholelabs/scale v0.4.5-0.20231121182940-b0543281dde4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible

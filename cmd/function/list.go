@@ -18,6 +18,7 @@ package function
 
 import (
 	"fmt"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -60,9 +61,9 @@ func ListCmd() command.SetupCommand[*config.Config] {
 					funcs[i] = functionModel{
 						Name:      entry.Schema.Name,
 						Tag:       entry.Schema.Tag,
-						Signature: entry.Schema.SignatureName,
+						Signature: entry.Schema.Signature.Name,
 						Language:  string(entry.Schema.Language),
-						Version:   string(entry.Schema.Version),
+						Version:   string(entry.Schema.Tag), // FIXME
 						Hash:      entry.Hash,
 						Org:       entry.Organization,
 					}

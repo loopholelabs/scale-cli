@@ -18,6 +18,14 @@ package function
 
 import (
 	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -32,13 +40,6 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"github.com/valyala/fasthttp"
-	"io"
-	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"syscall"
-	"time"
 )
 
 // RunCmd encapsulates the commands for running Functions
@@ -63,9 +64,9 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				fns := make([]*scalefunc.Schema, 0, len(args))
+				fns := make([]*scalefunc.V1BetaSchema, 0, len(args))
 				for _, f := range args {
-					parsed := scale.Parse(f)
+					parsed := utils.Parse(f)
 					if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 						return utils.InvalidStringError("organization name", parsed.Organization)
 					}
@@ -115,7 +116,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 							return fmt.Errorf("failed to close response body: %w", err)
 						}
 
-						s := new(scalefunc.Schema)
+						s := new(scalefunc.V1BetaSchema)
 						err = s.Decode(data)
 						if err != nil {
 							end()
@@ -140,7 +141,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 				analytics.Event("run-function", map[string]string{"chain-size": fmt.Sprintf("%d", len(fns))})
 
 				ctx := cmd.Context()
-				typecheckSignature, err := converter.NewSignature(fns[0].SignatureSchema)
+				typecheckSignature, err := converter.NewSignature(fns[0].Signature.Schema)
 				if err != nil {
 					return fmt.Errorf("failed to create type check signature: %w", err)
 				}
@@ -166,7 +167,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 								ctx.Error(fmt.Sprintf("Failed to create instance: %v", err), fasthttp.StatusInternalServerError)
 								return
 							}
-							sig, err := converter.NewSignature(fns[0].SignatureSchema)
+							sig, err := converter.NewSignature(fns[0].Signature.Schema)
 							if err != nil {
 								ctx.Error(fmt.Sprintf("Failed to create signature: %v", err), fasthttp.StatusInternalServerError)
 								return
@@ -226,7 +227,7 @@ func RunCmd(hidden bool) command.SetupCommand[*config.Config] {
 					if err != nil {
 						return fmt.Errorf("failed to create instance: %w", err)
 					}
-					sig, err := converter.NewSignature(fns[0].SignatureSchema)
+					sig, err := converter.NewSignature(fns[0].Signature.Schema)
 					if err != nil {
 						return fmt.Errorf("failed to create signature: %w", err)
 					}

@@ -18,10 +18,14 @@ package function
 
 import (
 	"fmt"
+	"os"
+	"path"
+	"strings"
+	textTemplate "text/template"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/analytics"
 	"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
@@ -31,10 +35,6 @@ import (
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
-	"strings"
-	textTemplate "text/template"
 )
 
 // NewCmd encapsulates the commands for creating new Functions
@@ -99,7 +99,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				var signaturePath string
 				var signatureVersion string
 				var signatureContext string
-				parsedSignature := scale.Parse(signature)
+				parsedSignature := utils.Parse(signature)
 				if parsedSignature.Organization == "local" {
 					signaturePath, err = st.Path(parsedSignature.Name, parsedSignature.Tag, parsedSignature.Organization, "")
 					if err != nil {
