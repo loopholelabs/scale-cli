@@ -19,6 +19,10 @@ package function
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+	"path"
+	"strings"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
@@ -32,9 +36,6 @@ import (
 	"github.com/loopholelabs/scale/signature"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
-	"os"
-	"path"
-	"strings"
 )
 
 // BuildCmd encapsulates the commands for building Functions
@@ -160,11 +161,11 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				out := ch.Printer.Out()
 
-				var scaleFunc *scalefunc.Schema
+				var scaleFunc *scalefunc.V1BetaSchema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
 					opts := &build.LocalGolangOptions{
-						Output:          out,
+						Stdout:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,
@@ -178,7 +179,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
 					opts := &build.LocalRustOptions{
-						Output:          out,
+						Stdout:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,
@@ -191,7 +192,7 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 					scaleFunc, err = build.LocalRust(opts)
 				case scalefunc.TypeScript:
 					opts := &build.LocalTypescriptOptions{
-						Output:          out,
+						Stdout:          out,
 						Scalefile:       sf,
 						SourceDirectory: sourceDir,
 						SignatureSchema: signatureSchema,

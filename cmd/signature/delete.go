@@ -18,10 +18,10 @@ package signature
 
 import (
 	"fmt"
+
 	"github.com/loopholelabs/cmdutils"
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
-	"github.com/loopholelabs/scale"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/scalefunc"
@@ -49,7 +49,7 @@ func DeleteCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
-				parsed := scale.Parse(args[0])
+				parsed := utils.Parse(args[0])
 				if parsed.Organization != "" && !scalefunc.ValidString(parsed.Organization) {
 					return utils.InvalidStringError("organization name", parsed.Organization)
 				}

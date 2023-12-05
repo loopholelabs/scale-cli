@@ -20,6 +20,9 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/go-openapi/runtime"
 	runtimeClient "github.com/go-openapi/runtime/client"
 	"github.com/loopholelabs/auth/pkg/client/session"
@@ -32,7 +35,6 @@ import (
 	"github.com/loopholelabs/scale-cli/version"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/spf13/cobra"
-	"io"
 )
 
 var (
@@ -46,7 +48,7 @@ type ScaleFunctionNamedReadCloser struct {
 	name   string
 }
 
-func NewScaleFunctionNamedReadCloser(sf *scalefunc.Schema) *ScaleFunctionNamedReadCloser {
+func NewScaleFunctionNamedReadCloser(sf *scalefunc.V1BetaSchema) *ScaleFunctionNamedReadCloser {
 	return &ScaleFunctionNamedReadCloser{
 		reader: io.NopCloser(bytes.NewReader(sf.Encode())),
 		name:   sf.Name,
@@ -216,4 +218,27 @@ func PostRunAnalytics(_ *cmdutils.Helper[*config.Config]) func(cmd *cobra.Comman
 
 func InvalidStringError(kind string, str string) error {
 	return fmt.Errorf("invalid %s '%s', %ss can only include letters, numbers, periods (`.`), and dashes (`-`)", kind, str, kind)
+}
+
+type Parsed struct {
+	Organization string
+	Name         string
+	Tag          string
+}
+
+// Parse parses a function or signature name of the form <org>/<name>:<tag> into its organization, name, and tag
+func Parse(name string) *Parsed {
+	orgSplit := strings.Split(name, "/")
+	if len(orgSplit) == 1 {
+		orgSplit = []string{"", name}
+	}
+	tagSplit := strings.Split(orgSplit[1], ":")
+	if len(tagSplit) == 1 {
+		tagSplit = []string{tagSplit[0], ""}
+	}
+	return &Parsed{
+		Organization: orgSplit[0],
+		Name:         tagSplit[0],
+		Tag:          tagSplit[1],
+	}
 }
