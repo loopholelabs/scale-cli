@@ -27,12 +27,13 @@ import (
 	"github.com/loopholelabs/cmdutils/pkg/command"
 	"github.com/loopholelabs/cmdutils/pkg/printer"
 	"github.com/loopholelabs/scale-cli/analytics"
-	"github.com/loopholelabs/scale-cli/client/registry"
+	//"github.com/loopholelabs/scale-cli/client/registry"
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/template"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
+	sig "github.com/loopholelabs/scale/signature"
 	"github.com/loopholelabs/scale/storage"
 	"github.com/spf13/cobra"
 )
@@ -76,7 +77,103 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				if signature == "" {
-					return fmt.Errorf("signature is required")
+					// As default:
+					// make new + gen a signature with the {name}-signature:{tag} of fn
+
+					signature = "local/" + functionName + "-signature:" + functionTag
+
+					// new signature
+					analytics.Event("new-signature")
+					sourceDir := directory
+					if !path.IsAbs(sourceDir) {
+						wd, err := os.Getwd()
+						if err != nil {
+							return fmt.Errorf("failed to get working directory: %w", err)
+						}
+						sourceDir = path.Join(wd, sourceDir)
+					}
+					err := os.WriteFile(path.Join(sourceDir, "scale.signature"), []byte(template.SignatureFile), 0644)
+					if err != nil {
+						return fmt.Errorf("error writing signature: %w", err)
+					}
+
+					if ch.Printer.Format() == printer.Human {
+						ch.Printer.Printf("Successfully created new scale signature\n")
+					}
+
+					// generate signature
+					if !path.IsAbs(sourceDir) {
+						wd, err := os.Getwd()
+						if err != nil {
+							return fmt.Errorf("failed to get working directory: %w", err)
+						}
+						sourceDir = path.Join(wd, sourceDir)
+					}
+
+					signaturePath := path.Join(sourceDir, "scale.signature")
+					signatureFile, err := sig.ReadSchema(signaturePath)
+					if err != nil {
+						return fmt.Errorf("failed to read signature file at %s: %w", signaturePath, err)
+					}
+
+					nametag := strings.Split(args[0], ":")
+					if len(nametag) != 2 {
+						return fmt.Errorf("invalid name or tag %s", args[0])
+					}
+					name := nametag[0] + "-signature"
+					tag := nametag[1]
+
+					if name == "" || !scalefunc.ValidString(name) {
+						return utils.InvalidStringError("name", name)
+					}
+
+					if tag == "" || !scalefunc.ValidString(tag) {
+						return utils.InvalidStringError("tag", tag)
+					}
+
+					end := ch.Printer.PrintProgress(fmt.Sprintf("Generating scale signature local/%s:%s...", name, tag))
+
+					st := storage.DefaultSignature
+					if ch.Config.StorageDirectory != "" {
+						st, err = storage.NewSignature(ch.Config.StorageDirectory)
+						if err != nil {
+							end()
+							return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
+						}
+					}
+
+					oldEntry, err := st.Get(name, tag, "local", "")
+					if err != nil {
+						end()
+						return fmt.Errorf("failed to check if scale signature already exists: %w", err)
+					}
+
+					if oldEntry != nil {
+						err = st.Delete(name, tag, oldEntry.Organization, oldEntry.Hash)
+						if err != nil {
+							end()
+							return fmt.Errorf("failed to delete existing scale signature %s:%s: %w", name, tag, err)
+						}
+					}
+
+					err = st.Put(name, tag, "local", signatureFile)
+					if err != nil {
+						end()
+						return fmt.Errorf("failed to store scale signature: %w", err)
+					}
+
+					end()
+
+					if ch.Printer.Format() == printer.Human {
+						ch.Printer.Printf("Successfully generated scale signature %s\n", printer.BoldGreen(fmt.Sprintf("local/%s:%s", name, tag)))
+					}
+
+					ch.Printer.PrintResource(map[string]string{
+						"name":      name,
+						"tag":       tag,
+						"org":       "local",
+						"directory": directory,
+					})
 				}
 
 				sourceDir := directory
@@ -124,29 +221,31 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 					signatureContext = sig.Schema.Context
 				} else {
-					ctx := cmd.Context()
-					client := ch.Config.APIClient()
+					// HOTFIX - pending: fixing registry push/del
 
-					end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag))
-					res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(parsedSignature.Organization).WithName(parsedSignature.Name).WithTag(parsedSignature.Tag))
-					end()
-					if err != nil {
-						return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag, err)
-					}
+					//ctx := cmd.Context()
+					//client := ch.Config.APIClient()
 
-					switch scalefunc.Language(language) {
-					case scalefunc.Go:
-						signatureVersion = ""
-						signaturePath = res.GetPayload().GolangImportPathGuest
-					case scalefunc.Rust:
-						signatureVersion = "0.1.0"
-						signaturePath = ""
-					case scalefunc.TypeScript:
-						return fmt.Errorf("typescript functions are not currently supported via the registry")
-					default:
-						return fmt.Errorf("language %s is not supported", language)
-					}
-					signatureContext = res.GetPayload().Context
+					//end := ch.Printer.PrintProgress(fmt.Sprintf("Fetching signature %s/%s:%s...", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag))
+					//res, err := client.Registry.GetRegistrySignatureOrgNameTag(registry.NewGetRegistrySignatureOrgNameTagParamsWithContext(ctx).WithOrg(parsedSignature.Organization).WithName(parsedSignature.Name).WithTag(parsedSignature.Tag))
+					//end()
+					//if err != nil {
+					//return fmt.Errorf("failed to use signature %s/%s:%s: %w", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag, err)
+					//}
+
+					//switch scalefunc.Language(language) {
+					//case scalefunc.Go:
+					//signatureVersion = ""
+					//signaturePath = res.GetPayload().GolangImportPathGuest
+					//case scalefunc.Rust:
+					//signatureVersion = "0.1.0"
+					//signaturePath = ""
+					//case scalefunc.TypeScript:
+					//return fmt.Errorf("typescript functions are not currently supported via the registry")
+					//default:
+					//return fmt.Errorf("language %s is not supported", language)
+					//}
+					//signatureContext = res.GetPayload().Context
 				}
 
 				scaleFile := &scalefile.Schema{
