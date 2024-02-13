@@ -297,6 +297,10 @@ github.com/loopholelabs/releaser v0.1.5 h1:5Loa2RAsFOtapi7Zju6NTzqsfefMw7Y5atfjW
 github.com/loopholelabs/releaser v0.1.5/go.mod h1:nzpPRwuPTlr1k0cCwYvWrbkv6O3Js9EN7OHu0b7UBrM=
 github.com/loopholelabs/scale v0.4.5-0.20231121182940-b0543281dde4 h1:KdvU3lvuY3laPObr4mHCgHXaQ/0oDJS9YSp9sblM1cA=
 github.com/loopholelabs/scale v0.4.5-0.20231121182940-b0543281dde4/go.mod h1:dNlkEXKHZ3ecJVUN6xmWeDQWvFIQ0OknqV3BR3t2oIg=
+github.com/loopholelabs/scale v0.4.5-0.20240212235608-c526627c9e9c h1:cDfxIva9ZvZnSLEAoxOZrk2VQCHnhALCsi86B6Mwufo=
+github.com/loopholelabs/scale v0.4.5-0.20240212235608-c526627c9e9c/go.mod h1:cGCWQTZnkdE7tGUoNwD96rv/zPL7bzsjhyERADyJxtc=
+github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4 h1:leEQ1uJgTcyKdJojndhZRBAbOxcUz3u5Ol05Kz6tedQ=
+github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4/go.mod h1:/qjvg9RglZaRhw3cE+dj6AaZRYHCOR+ohuZX8MSxD8E=
 github.com/loopholelabs/scale-signature-interfaces v0.1.7 h1:aOJJZpCKn/Q5Q0Gj+/Q6c7/iABEbojjbCzIqw7Mxyi0=
 github.com/loopholelabs/scale-signature-interfaces v0.1.7/go.mod h1:3XLMjJjBf5lYxMtNKk+2XAWye4UyrkvUBJ9L6x2QCAk=
 github.com/magiconair/properties v1.8.7 h1:IeQXZAiQcpL9mgcAe1Nu6cX9LLw6ExEHKjN0VQdvPDY=

@@ -12,7 +12,7 @@ require (
 	github.com/loopholelabs/auth v0.2.47
 	github.com/loopholelabs/cmdutils v0.1.4
 	github.com/loopholelabs/releaser v0.1.5
-	github.com/loopholelabs/scale v0.4.5-0.20231121182940-b0543281dde4
+	github.com/loopholelabs/scale v0.4.5-0.20240212235608-c526627c9e9c
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -64,6 +64,7 @@ require (
 	github.com/klauspost/compress v1.17.1 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot v1.1.3 // indirect
+	github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4 // indirect
 	github.com/loopholelabs/scale-signature-interfaces v0.1.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
