@@ -77,12 +77,16 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				if signature == "" {
-					// As default:
+					// As default, if not defined with --signature:
 					// make new + gen a signature with the {name}-signature:{tag} of fn
-
 					signature = "local/" + functionName + "-signature:" + functionTag
 
 					// new signature
+					if ch.Printer.Format() == printer.Human {
+						ch.Printer.Printf("Creating a new Scale Signature... \n\nMore info on Signatures, and to define your own: ")
+						ch.Printer.Printf(printer.BoldBlue("https://scale.sh/docs/signatures/overview\n\n"))
+					}
+
 					analytics.Event("new-signature")
 					sourceDir := directory
 					if !path.IsAbs(sourceDir) {
@@ -98,10 +102,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 
 					if ch.Printer.Format() == printer.Human {
-						ch.Printer.Printf("Successfully created new scale signature\n")
+						ch.Printer.Printf("✅ Successfully defined a new scale signature %s\n\n", printer.BoldGreen(fmt.Sprintf("%s-signature:%s", functionName, functionTag)))
 					}
 
 					// generate signature
+					if ch.Printer.Format() == printer.Human {
+						ch.Printer.Printf("Generating scale signature %s\n\n", printer.BoldGreen(fmt.Sprintf("local/%s-signature:%s", functionName, functionTag)))
+					}
+
 					if !path.IsAbs(sourceDir) {
 						wd, err := os.Getwd()
 						if err != nil {
@@ -165,7 +173,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					end()
 
 					if ch.Printer.Format() == printer.Human {
-						ch.Printer.Printf("Successfully generated scale signature %s\n", printer.BoldGreen(fmt.Sprintf("local/%s:%s", name, tag)))
+						ch.Printer.Printf("✅ Successfully generated scale signature %s\n\nHere is the relevant output of `scale signature list` for this signature\n\n", printer.BoldGreen(fmt.Sprintf("local/%s:%s", name, tag)))
 					}
 
 					ch.Printer.PrintResource(map[string]string{
@@ -433,7 +441,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 				}
 
 				if ch.Printer.Format() == printer.Human {
-					ch.Printer.Printf("Successfully created new %s scale function %s:%s\n", printer.BoldGreen(language), printer.BoldGreen(functionName), printer.BoldGreen(functionTag))
+					ch.Printer.Printf("✅ Successfully created new %s scale function %s:%s\n", printer.BoldGreen(language), printer.BoldGreen(functionName), printer.BoldGreen(functionTag))
 					return nil
 				}
 
