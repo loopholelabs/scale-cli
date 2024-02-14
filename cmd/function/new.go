@@ -72,6 +72,10 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return utils.InvalidStringError("function name", functionName)
 				}
 
+				if strings.Contains(functionName, "-") {
+					return utils.InvalidStringError("function name cannot have a '-' found in:", functionName)
+				}
+
 				if functionTag == "" || !scalefunc.ValidString(functionTag) {
 					return utils.InvalidStringError("function tag", functionTag)
 				}
