@@ -122,7 +122,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 					default:
 						return fmt.Errorf("failed to use signature %s/%s:%s: unknown or unsupported language", parsed.Organization, parsed.Name, parsed.Tag)
 					}
-					signatureVersion = "0.1.0"
+					signatureVersion = "v0.1.0"
 				}
 
 				switch scalefunc.Language(sf.Language) {
