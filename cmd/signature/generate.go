@@ -71,6 +71,10 @@ func GenerateCmd(hidden bool) command.SetupCommand[*config.Config] {
 					return utils.InvalidStringError("name", name)
 				}
 
+				if strings.Contains(name, "-") {
+					return utils.InvalidStringError("signature name cannot have a '-' found in:", name)
+				}
+
 				if tag == "" || !scalefunc.ValidString(tag) {
 					return utils.InvalidStringError("tag", tag)
 				}
