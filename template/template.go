@@ -116,20 +116,18 @@ model Context {
 
 	ExtensionFile = `
 	version = "v1alpha"
-	name = "HttpFetch"
-	tag = "alpha"
-	
+
 	function New {
 		params = "HttpConfig"
-		return = "HttpConnector"	
+		return = "HttpConnector"
 	}
-	
+
 	model HttpConfig {
 		int32 Timeout {
 			default = 60
 		}
 	}
-	
+
 	model HttpResponse {
 		string_map Headers {
 			value = "StringList"
@@ -141,19 +139,19 @@ model Context {
 			initial_size = 0
 		}
 	}
-	
+
 	model StringList {
 		string_array Values {
 			initial_size = 0
 		}
 	}
-	
+
 	model ConnectionDetails {
 		string Url {
 			default = "https://google.com"
 		}
 	}
-	
+
 	interface HttpConnector {
 		function Fetch {
 			params = "ConnectionDetails"
