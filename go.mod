@@ -2,8 +2,6 @@ module github.com/loopholelabs/scale-cli
 
 go 1.20
 
-replace github.com/loopholelabs/scale => ../scale
-
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/go-openapi/errors v0.20.4
@@ -14,7 +12,7 @@ require (
 	github.com/loopholelabs/auth v0.2.47
 	github.com/loopholelabs/cmdutils v0.1.4
 	github.com/loopholelabs/releaser v0.1.5
-	github.com/loopholelabs/scale v0.4.3
+	github.com/loopholelabs/scale v0.4.5-0.20240305214714-64dbccf9c683
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/natefinch/lumberjack v2.0.0+incompatible
@@ -28,6 +26,8 @@ require (
 	github.com/valyala/fasthttp v1.50.0
 )
 
+require github.com/loopholelabs/wasm-toolkit v0.0.5 // indirect
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
@@ -39,21 +39,21 @@ require (
 	github.com/briandowns/spinner v1.23.0 // indirect
 	github.com/cloudflare/circl v1.3.5 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/evanw/esbuild v0.19.4 // indirect
+	github.com/evanw/esbuild v0.19.5 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.21.4 // indirect
-	github.com/go-openapi/jsonpointer v0.19.5 // indirect
-	github.com/go-openapi/jsonreference v0.20.0 // indirect
+	github.com/go-openapi/jsonpointer v0.20.0 // indirect
+	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/loads v0.21.2 // indirect
-	github.com/go-openapi/spec v0.20.8 // indirect
+	github.com/go-openapi/spec v0.20.9 // indirect
 	github.com/go-resty/resty/v2 v2.10.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d // indirect
 	github.com/gofiber/fiber/v2 v2.50.0 // indirect
 	github.com/gofiber/helmet/v2 v2.2.26 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/go-github/v55 v55.0.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
@@ -66,7 +66,11 @@ require (
 	github.com/klauspost/compress v1.17.1 // indirect
 	github.com/lensesio/tableprinter v0.0.0-20201125135848-89e81fc956e7 // indirect
 	github.com/loopholelabs/polyglot v1.1.3 // indirect
-	github.com/loopholelabs/scale-extension-interfaces v0.1.0 // indirect
+	//<<<<<<< HEAD
+	//	github.com/loopholelabs/scale-extension-interfaces v0.1.0 // indirect
+	//=======
+	github.com/loopholelabs/scale-extension-interfaces v0.0.0-20230920094333-3a483b301bf4 // indirect
+	//>>>>>>> staging
 	github.com/loopholelabs/scale-signature-interfaces v0.1.7 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -90,9 +94,10 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/zclconf/go-cty v1.14.1 // indirect
-	go.mongodb.org/mongo-driver v1.11.3 // indirect
-	go.opentelemetry.io/otel v1.14.0 // indirect
-	go.opentelemetry.io/otel/trace v1.14.0 // indirect
+	go.mongodb.org/mongo-driver v1.12.1 // indirect
+	go.opentelemetry.io/otel v1.19.0 // indirect
+	go.opentelemetry.io/otel/metric v1.19.0 // indirect
+	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect

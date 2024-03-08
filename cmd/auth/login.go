@@ -44,6 +44,7 @@ var (
 // LoginCmd encapsulates the commands for logging in
 func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var apiKey string
+	var organization string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		loginCmd := &cobra.Command{
 			Use:      "login [flags]",
@@ -79,7 +80,7 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 						return fmt.Errorf("error getting device flow: %w", err)
 					}
 
-					browserURL := fmt.Sprintf("https://%s/device-auth?code=%s", ch.Config.UIEndpoint, flow.GetPayload().DeviceCode)
+					browserURL := fmt.Sprintf("https://%s/device-auth?code=%s&organization=%s", ch.Config.UIEndpoint, flow.GetPayload().DeviceCode, organization)
 					switch ch.Printer.Format() {
 					case printer.Human:
 						ch.Printer.Printf("\n%s%s\n", printer.Bold("Confirmation Code: "), printer.BoldGreen(flow.GetPayload().DeviceCode))
@@ -171,7 +172,7 @@ func LoginCmd(hidden bool) command.SetupCommand[*config.Config] {
 		}
 
 		loginCmd.Flags().StringVarP(&apiKey, "api-key", "a", "", "The API Key to authenticate with the Scale API")
-
+		loginCmd.Flags().StringVarP(&organization, "organization", "o", "", "The organization to authenticate with")
 		cmd.AddCommand(loginCmd)
 	}
 }

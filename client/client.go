@@ -14,5 +14,5 @@
 	limitations under the License.
 */
 
-//go:generate swagger generate client -f https://api.scale.sh/v1/swagger.json -t ../ -c client -m client/models
+//go:generate go run -mod=mod github.com/go-swagger/go-swagger/cmd/swagger@v0.30.5 generate client -f https://api.scale.sh/v1/swagger.json -t ../ -c client -m client/models
 package client
