@@ -31,6 +31,8 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/template"
 	"github.com/loopholelabs/scale-cli/utils"
+  "github.com/loopholelabs/scale"
+	"github.com/loopholelabs/scale/extension"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	sig "github.com/loopholelabs/scale/signature"
@@ -43,6 +45,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 	var directory string
 	var language string
 	var signature string
+	var extensions []string
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		newCmd := &cobra.Command{
 			Use:      "new <name>:<tag> [flags]",
@@ -53,9 +56,14 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				st := storage.DefaultSignature
+				et := storage.DefaultExtension
 				if ch.Config.StorageDirectory != "" {
 					var err error
 					st, err = storage.NewSignature(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+					et, err = storage.NewExtension(ch.Config.StorageDirectory)
 					if err != nil {
 						return fmt.Errorf("failed to instantiate function storage for %s: %w", ch.Config.StorageDirectory, err)
 					}
@@ -205,6 +213,52 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					}
 				}
 
+				var extensionData = make([]extension.Info, 0)
+				for _, e := range extensions {
+					var extensionPath string
+					parsedExtension := scale.Parse(e)
+					if parsedExtension.Organization == "local" {
+						extensionPath, err = et.Path(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
+						if err != nil {
+							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
+						}
+
+						ext, err := et.Get(parsedExtension.Name, parsedExtension.Tag, parsedExtension.Organization, "")
+						if err != nil {
+							return fmt.Errorf("error while getting extension %s: %w", parsedExtension.Name, err)
+						}
+
+						extPackageName := fmt.Sprintf("%s_%s_%s_guest", parsedExtension.Organization, parsedExtension.Name, parsedExtension.Tag)
+
+						switch scalefunc.Language(language) {
+						case scalefunc.Go:
+							extensionData = append(extensionData, extension.Info{
+								Name:    ext.Name,
+								Path:    path.Join(extensionPath, "golang", "guest"),
+								Version: "v0.1.0",
+							})
+						case scalefunc.Rust:
+							extensionData = append(extensionData, extension.Info{
+								Name:    ext.Name,
+								Path:    path.Join(extensionPath, "rust", "guest"),
+								Version: "v0.1.0",
+								Package: extPackageName,
+							})
+						case scalefunc.TypeScript:
+							extensionData = append(extensionData, extension.Info{
+								Name:    ext.Name,
+								Path:    path.Join(extensionPath, "typescript", "guest"),
+								Version: "v0.1.0",
+								Package: extPackageName,
+							})
+						default:
+							panic("Invalid language")
+						}
+					} else {
+						panic("Only local extension for now")
+					}
+				}
+
 				var signaturePath string
 				var signatureVersion string
 				var signatureContext string
@@ -271,6 +325,18 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 					},
 				}
 
+				scaleFile.Extensions = make([]scalefile.ExtensionSchema, 0)
+
+				for _, ex := range extensions {
+					parsedExtension := scale.Parse(ex)
+
+					scaleFile.Extensions = append(scaleFile.Extensions, scalefile.ExtensionSchema{
+						Organization: parsedExtension.Organization,
+						Name:         parsedExtension.Name,
+						Tag:          parsedExtension.Tag,
+					})
+				}
+
 				scaleFilePath := path.Join(sourceDir, "scalefile")
 				switch scalefunc.Language(language) {
 				case scalefunc.Go:
@@ -292,6 +358,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"package_name":      functionName,
 						"signature_path":    signaturePath,
 						"signature_version": signatureVersion,
+						"extensions":        extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -346,6 +413,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"signature_package": fmt.Sprintf("%s_%s_%s_guest", parsedSignature.Organization, parsedSignature.Name, parsedSignature.Tag),
 						"signature_version": signatureVersion,
 						"signature_path":    signaturePath,
+						"extensions":        extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -398,6 +466,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 						"package_name":      functionName,
 						"signature_path":    signaturePath,
 						"signature_version": signatureVersion,
+						"extensions":        extensionData,
 					})
 					if err != nil {
 						_ = dependencyFile.Close()
@@ -461,7 +530,7 @@ func NewCmd(hidden bool) command.SetupCommand[*config.Config] {
 		newCmd.Flags().StringVarP(&directory, "directory", "d", ".", "the directory to create the new scale function in")
 		newCmd.Flags().StringVarP(&language, "language", "l", string(scalefunc.Go), "the language for the new scale function (go, rust, ts)")
 		newCmd.Flags().StringVarP(&signature, "signature", "s", "", "the signature to use with the new scale function")
-
+		newCmd.Flags().StringArrayVarP(&extensions, "extension", "e", []string{}, "the extensions to use in the scale function")
 		cmd.AddCommand(newCmd)
 	}
 }

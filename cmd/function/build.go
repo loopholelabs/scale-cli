@@ -31,6 +31,7 @@ import (
 	"github.com/loopholelabs/scale-cli/internal/config"
 	"github.com/loopholelabs/scale-cli/utils"
 	"github.com/loopholelabs/scale/build"
+	"github.com/loopholelabs/scale/extension"
 	"github.com/loopholelabs/scale/scalefile"
 	"github.com/loopholelabs/scale/scalefunc"
 	"github.com/loopholelabs/scale/signature"
@@ -161,20 +162,58 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 
 				out := ch.Printer.Out()
 
+				// Deal with extensions...
+				extensionData := make([]extension.Info, 0)
+				extensionSchemas := make([]*extension.Schema, 0)
+
+				ets := storage.DefaultExtension
+				if ch.Config.StorageDirectory != "" {
+					ets, err = storage.NewExtension(ch.Config.StorageDirectory)
+					if err != nil {
+						return fmt.Errorf("failed to instantiate extension storage for %s: %w", ch.Config.StorageDirectory, err)
+					}
+				}
+
+				for _, e := range sf.Extensions {
+					if e.Organization == "local" {
+						extensionPath, err := ets.Path(e.Name, e.Tag, e.Organization, "")
+
+						ext, err := ets.Get(e.Name, e.Tag, e.Organization, "")
+						if err != nil {
+							return fmt.Errorf("failed to get extension %s:%s: %w", e.Name, e.Tag, err)
+						}
+
+						extensionData = append(extensionData, extension.Info{
+							Name:    e.Name,
+							Path:    path.Join(extensionPath, "golang", "guest"),
+							Version: "v0.1.0",
+						})
+
+						extensionSchemas = append(extensionSchemas, ext.Schema)
+
+					} else {
+						panic("Only local atm")
+					}
+				}
+
+				// extensionData is setup for use in generating go.mod...
+				ch.Printer.PrintProgress(fmt.Sprintf("Building scale function local/%s:%s...", sf.Name, sf.Tag))
 				var scaleFunc *scalefunc.V1BetaSchema
 				switch scalefunc.Language(sf.Language) {
 				case scalefunc.Go:
 					opts := &build.LocalGolangOptions{
-						Stdout:          out,
-						Scalefile:       sf,
-						SourceDirectory: sourceDir,
-						SignatureSchema: signatureSchema,
-						Storage:         stb,
-						Release:         release,
-						Target:          buildTarget,
-						GoBin:           goBin,
-						TinyGoBin:       tinygoBin,
-						Args:            tinygoArgs,
+						Stdout:           out,
+						Scalefile:        sf,
+						SourceDirectory:  sourceDir,
+						SignatureSchema:  signatureSchema,
+						Storage:          stb,
+						Release:          release,
+						Target:           build.WASITarget,
+						GoBin:            goBin,
+						TinyGoBin:        tinygoBin,
+						Args:             tinygoArgs,
+						Extensions:       extensionData,
+						ExtensionSchemas: extensionSchemas,
 					}
 					scaleFunc, err = build.LocalGolang(opts)
 				case scalefunc.Rust:
@@ -188,6 +227,8 @@ func BuildCmd(hidden bool) command.SetupCommand[*config.Config] {
 						Target:          buildTarget,
 						CargoBin:        cargoBin,
 						Args:            cargoArgs,
+						//						Extensions:       extensionData,
+						ExtensionSchemas: extensionSchemas,
 					}
 					scaleFunc, err = build.LocalRust(opts)
 				case scalefunc.TypeScript:

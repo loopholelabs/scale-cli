@@ -25,6 +25,15 @@ go 1.20
 replace signature v0.1.0 => {{ .signature_path }} {{ .signature_version }}
 
 require signature v0.1.0
+
+{{ range $extension := .extensions -}}
+		replace {{ $extension.Name }} => {{ $extension.Path }}
+{{end -}}
+
+{{ range $extension := .extensions -}}
+		require {{ $extension.Name }} {{ $extension.Version }}
+{{end -}}
+
 `
 
 	GoFunctionTemplate = `
@@ -57,6 +66,10 @@ signature = { package = "{{ .signature_package }}", path = "{{ .signature_path }
 signature = { package = "{{ .signature_package }}", version = "{{ .signature_version }}", registry = "scale" }
 {{ end }}
 
+{{ range $extension := .extensions -}}
+{{ $extension.Name }} = { package = "{{ $extension.Package }}", path = "{{ $extension.Path }}" }
+{{end -}}
+
 [profile.release]
 opt-level = 3
 lto = true
@@ -77,7 +90,11 @@ pub fn scale(ctx: Option<types::{{ .context_name }}>) -> Result<Option<types::{{
   "main": "index.ts",
   "dependencies": {
     "signature": "file:{{ .signature_path }}"
-  }
+
+		{{ range $extension := .extensions -}}
+		,"{{ $extension.Name }}": "file:{{ $extension.Path }}"
+		{{end -}}
+	}
 }
 `
 	TypeScriptFunctionTemplate = `
@@ -96,4 +113,49 @@ model Context {
     default = "DefaultValue"
   }
 }`
+
+	ExtensionFile = `
+	version = "v1alpha"
+
+	function New {
+		params = "HttpConfig"
+		return = "HttpConnector"
+	}
+
+	model HttpConfig {
+		int32 Timeout {
+			default = 60
+		}
+	}
+
+	model HttpResponse {
+		string_map Headers {
+			value = "StringList"
+		}
+		int32 StatusCode {
+			default = 0
+		}
+		bytes Body {
+			initial_size = 0
+		}
+	}
+
+	model StringList {
+		string_array Values {
+			initial_size = 0
+		}
+	}
+
+	model ConnectionDetails {
+		string Url {
+			default = "https://google.com"
+		}
+	}
+
+	interface HttpConnector {
+		function Fetch {
+			params = "ConnectionDetails"
+			return = "HttpResponse"
+		}
+	}`
 )
