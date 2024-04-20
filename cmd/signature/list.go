@@ -33,7 +33,7 @@ func ListCmd(hidden bool) command.SetupCommand[*config.Config] {
 	return func(cmd *cobra.Command, ch *cmdutils.Helper[*config.Config]) {
 		listCmd := &cobra.Command{
 			Use:      "list",
-			Short:    "list locally available scale functions",
+			Short:    "list locally available scale signatures",
 			Args:     cobra.NoArgs,
 			PreRunE:  utils.PreRunUpdateCheck(ch),
 			PostRunE: utils.PostRunAnalytics(ch),
