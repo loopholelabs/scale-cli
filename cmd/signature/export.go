@@ -134,7 +134,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 
 				for _, file := range files {
 					name := filepath.Base(file)
-					if manifest || (name != "go.mod" && name != "Cargo.toml") {
+					if manifest || (name != "go.mod" && name != "Cargo.toml" && name != "package.json") {
 						data, err := os.ReadFile(file)
 						if err != nil {
 							return fmt.Errorf("failed to read file %s: %w", file, err)
