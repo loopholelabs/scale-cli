@@ -99,7 +99,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				case scalefunc.Rust:
 					language = "rust"
 				case scalefunc.TypeScript:
-					language = "ts"
+					language = "typescript"
 				default:
 					return fmt.Errorf("invalid signature language %s: must be go, rust, or typescript", language)
 				}
