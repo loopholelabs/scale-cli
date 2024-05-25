@@ -75,14 +75,14 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 				switch kind {
 				case "guest":
 					switch scalefunc.Language(language) {
-					case scalefunc.Go, scalefunc.Rust:
+					case scalefunc.Go, scalefunc.Rust, scalefunc.TypeScript:
 					default:
 						return fmt.Errorf("invalid signature language %s for guest: must be go or rust", language)
 					}
 					kindString = "guest"
 				case "host":
 					switch scalefunc.Language(language) {
-					case scalefunc.Go:
+					case scalefunc.Go, scalefunc.TypeScript:
 					default:
 						return fmt.Errorf("invalid signature language %s for guest: must be go", language)
 					}
@@ -98,6 +98,8 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 					language = "golang"
 				case scalefunc.Rust:
 					language = "rust"
+				case scalefunc.TypeScript:
+					language = "typescript"
 				default:
 					return fmt.Errorf("invalid signature language %s: must be go, rust, or typescript", language)
 				}
@@ -132,7 +134,7 @@ func ExportCmd() command.SetupCommand[*config.Config] {
 
 				for _, file := range files {
 					name := filepath.Base(file)
-					if manifest || (name != "go.mod" && name != "Cargo.toml") {
+					if manifest || (name != "go.mod" && name != "Cargo.toml" && name != "package.json") {
 						data, err := os.ReadFile(file)
 						if err != nil {
 							return fmt.Errorf("failed to read file %s: %w", file, err)
