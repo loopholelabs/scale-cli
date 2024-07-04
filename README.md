@@ -6,7 +6,7 @@
 [![Test](https://github.com/loopholelabs/scale-cli/actions/workflows/test.yml/badge.svg)](https://github.com/loopholelabs/scale-cli/actions/workflows/test.yml)
 [![Build](https://github.com/loopholelabs/scale-cli/actions/workflows/build.yml/badge.svg)](https://github.com/loopholelabs/scale-cli/actions/workflows/build.yml)
 
-This repository contains the source for the [Scale Functions](https://scale.sh) CLI.
+This repository contains the source for the [Scale](https://scale.sh) CLI.
 
 ## Usage and Documentation
 
