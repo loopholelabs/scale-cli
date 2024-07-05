@@ -5,10 +5,10 @@ go 1.20
 require (
 	github.com/denisbrodbeck/machineid v1.0.1
 	github.com/go-openapi/errors v0.22.0
-	github.com/go-openapi/runtime v0.26.0
+	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-openapi/swag v0.23.0
-	github.com/go-openapi/validate v0.22.1
+	github.com/go-openapi/validate v0.24.0
 	github.com/loopholelabs/auth v0.2.47
 	github.com/loopholelabs/cmdutils v0.1.4
 	github.com/loopholelabs/releaser v0.1.5
@@ -26,7 +26,10 @@ require (
 	github.com/valyala/fasthttp v1.55.0
 )
 
-require github.com/loopholelabs/wasm-toolkit v0.0.5 // indirect
+require (
+	github.com/loopholelabs/wasm-toolkit v0.0.5 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+)
 
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7 // indirect
@@ -42,13 +45,13 @@ require (
 	github.com/evanw/esbuild v0.19.5 // indirect
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/analysis v0.21.4 // indirect
-	github.com/go-openapi/jsonpointer v0.20.0 // indirect
-	github.com/go-openapi/jsonreference v0.20.2 // indirect
-	github.com/go-openapi/loads v0.21.2 // indirect
-	github.com/go-openapi/spec v0.20.9 // indirect
+	github.com/go-openapi/analysis v0.23.0 // indirect
+	github.com/go-openapi/jsonpointer v0.21.0 // indirect
+	github.com/go-openapi/jsonreference v0.21.0 // indirect
+	github.com/go-openapi/loads v0.22.0 // indirect
+	github.com/go-openapi/spec v0.21.0 // indirect
 	github.com/go-resty/resty/v2 v2.11.0 // indirect
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d // indirect
 	github.com/gofiber/fiber/v2 v2.52.5 // indirect
@@ -92,9 +95,9 @@ require (
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/zclconf/go-cty v1.14.1 // indirect
 	go.mongodb.org/mongo-driver v1.14.0 // indirect
-	go.opentelemetry.io/otel v1.19.0 // indirect
-	go.opentelemetry.io/otel/metric v1.19.0 // indirect
-	go.opentelemetry.io/otel/trace v1.19.0 // indirect
+	go.opentelemetry.io/otel v1.24.0 // indirect
+	go.opentelemetry.io/otel/metric v1.24.0 // indirect
+	go.opentelemetry.io/otel/trace v1.24.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d // indirect
@@ -105,6 +108,5 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
