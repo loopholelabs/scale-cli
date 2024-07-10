@@ -11,7 +11,7 @@ require (
 	github.com/go-openapi/validate v0.24.0
 	github.com/loopholelabs/auth v0.2.92
 	github.com/loopholelabs/cmdutils v0.1.4
-	github.com/loopholelabs/releaser v0.1.5
+	github.com/loopholelabs/releaser v0.1.6
 	github.com/loopholelabs/scale v0.4.8
 	github.com/mattn/go-isatty v0.0.20
 	github.com/mitchellh/go-homedir v1.1.0
@@ -53,7 +53,7 @@ require (
 	github.com/go-openapi/jsonreference v0.21.0 // indirect
 	github.com/go-openapi/loads v0.22.0 // indirect
 	github.com/go-openapi/spec v0.21.0 // indirect
-	github.com/go-resty/resty/v2 v2.11.0 // indirect
+	github.com/go-resty/resty/v2 v2.13.1 // indirect
 	github.com/gocarina/gocsv v0.0.0-20230616125104-99d496ca653d // indirect
 	github.com/gofiber/fiber/v2 v2.52.5 // indirect
 	github.com/gofiber/helmet/v2 v2.2.26 // indirect
