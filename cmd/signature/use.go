@@ -43,7 +43,7 @@ func UseCmd(hidden bool) command.SetupCommand[*config.Config] {
 		useCmd := &cobra.Command{
 			Use:      "use <org>/<name>:<tag> [flags]",
 			Args:     cobra.ExactArgs(1),
-			Short:    "create a new scale signature with the given name and tag",
+			Short:    "Use a specified Scale Signature in your function. Will update your go.mod and scalefile with passed in Signature's' metadata and path info.",
 			Hidden:   hidden,
 			PreRunE:  utils.PreRunOptionalAuthenticatedAPI(ch),
 			PostRunE: utils.PostRunOptionalAuthenticatedAPI(ch),
